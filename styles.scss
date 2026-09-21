@@ -57,3 +57,23 @@ table.updates thead { display: none; }
 
 /* Page description stays in <meta>; don't repeat it visibly on section pages */
 #title-block-header .description { display: none; }
+
+/* Justified body text, with hyphenation to avoid wide word gaps */
+main p,
+main li,
+main dd,
+.pub {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* On narrow phone screens justification creates big gaps; keep left-aligned there */
+@media (max-width: 575px) {
+  main p,
+  main li,
+  main dd,
+  .pub {
+    text-align: left;
+  }
+}
