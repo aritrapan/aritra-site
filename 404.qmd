@@ -1,0 +1,13 @@
+---
+title: "Page not found"
+pagetitle: "Page not found"
+---
+
+That address does not exist on this site. The site was rebuilt in 2026 and the old `.php` pages are gone.
+
+- [Home](index.qmd)
+- [Research and publications](research.qmd)
+- [Teaching](teaching.qmd)
+- [Projects](projects.qmd)
+- [Workshops and memberships](workshops.qmd)
+- [Blog](blog.qmd)

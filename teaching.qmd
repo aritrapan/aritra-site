@@ -1,0 +1,27 @@
+---
+title: "Teaching"
+pagetitle: "Teaching"
+description: "Courses taught by Aritra Pan at the Madras School of Economics and earlier at IMI Bhubaneswar, IIM Bodh Gaya, IFMR GSB (Krea) and IMT Ghaziabad."
+---
+
+I teach applied, code-first courses: every topic is anchored in a dataset and a case, and students write code from the first session. Course material is shared with enrolled students through the institute's learning platform.
+
+## Madras School of Economics (2026 onwards)
+
+| Course | Programme | Notes |
+|---|---|---|
+| Statistics with R | M.Sc. Data Science | Probability, distributions, sampling, estimation and hypothesis testing, taught entirely through R on case datasets. |
+| Introduction to Artificial Intelligence | M.Sc. Data Science | Search, constraint satisfaction, reasoning under uncertainty, and knowledge graphs, with Python notebooks. |
+| Programming in SQL | MBA | Relational modelling and MySQL 8, from single-table queries to analytics-style window functions, with a short bridge to NoSQL and BI. |
+
+: {tbl-colwidths="[30,22,48]"}
+
+## Earlier courses
+
+<!-- Fill from the courses table export: course name, institution, term. Delete this comment when done. -->
+
+Business analytics, data management using SQL, management information systems, business intelligence and data science, and statistics for management, taught at IMI Bhubaneswar, IIM Bodh Gaya, IFMR GSB (Krea University) and IMT Ghaziabad between 2017 and 2026.
+
+## Executive and faculty development
+
+Management Development Programmes on data and business analytics for organisations including PwC, the Reserve Bank of India and GMR, and Faculty Development Programmes for faculty and research scholars from IITs, IIMs, IMT and other institutes. Details on the [Workshops](workshops.qmd) page.

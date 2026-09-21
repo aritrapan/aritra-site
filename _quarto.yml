@@ -1,0 +1,60 @@
+project:
+  type: website
+  output-dir: _site
+  resources:
+    - robots.txt
+    - CNAME
+    - publications.bib
+    - img/
+
+website:
+  title: "Aritra Pan"
+  site-url: https://aritra.ai
+  description: "Aritra Pan — Associate Professor of Data Science, Madras School of Economics. Applied NLP, financial market microstructure, AI in management education."
+  favicon: img/favicon.png
+  image: img/AP.png
+  open-graph: true
+  twitter-card: true
+  google-analytics: ""
+  navbar:
+    pinned: true
+    left:
+      - href: index.qmd
+        text: Home
+      - href: research.qmd
+        text: Research
+      - href: teaching.qmd
+        text: Teaching
+      - href: projects.qmd
+        text: Projects
+      - href: workshops.qmd
+        text: Workshops
+      - href: opportunities.qmd
+        text: Work with me
+      - href: blog.qmd
+        text: Blog
+    right:
+      - icon: google
+        href: https://scholar.google.co.in/citations?user=m9SYPDMAAAAJ
+        aria-label: Google Scholar
+      - icon: linkedin
+        href: https://in.linkedin.com/in/aritrapan
+        aria-label: LinkedIn
+      - icon: envelope
+        href: mailto:aritra.pan@mse.ac.in
+        aria-label: Email
+  page-footer:
+    left: "© 2022–2026 Aritra Pan"
+    center: "[ORCID 0000-0001-5740-0804](https://orcid.org/0000-0001-5740-0804) · [Scopus 57214111533](https://www.scopus.com/authid/detail.uri?authorId=57214111533)"
+    right: "Built with [Quarto](https://quarto.org)"
+  page-navigation: false
+  search: false
+
+format:
+  html:
+    theme: [flatly, styles.scss]
+    toc: false
+    include-in-header: schema.html
+    link-external-newwindow: true
+    smooth-scroll: true
+    lang: en

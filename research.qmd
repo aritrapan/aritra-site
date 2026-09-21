@@ -1,0 +1,98 @@
+---
+title: "Research"
+pagetitle: "Research"
+description: "Publications of Aritra Pan: transformer-based topic modelling and bibliometrics, market microstructure and connectedness, and generative AI in management education."
+toc: true
+toc-location: left
+toc-title: "On this page"
+---
+
+My work sits at the intersection of computational text analysis and empirical finance, with a growing strand on how generative AI changes management education. Full records: [Google Scholar](https://scholar.google.co.in/citations?user=m9SYPDMAAAAJ) · [ORCID](https://orcid.org/0000-0001-5740-0804) · [Scopus](https://www.scopus.com/authid/detail.uri?authorId=57214111533) · [BibTeX](publications.bib).
+
+## Refereed journal articles
+
+### AI and management education
+
+::: {.pub}
+Pan, A. (2026). [The AI-augmented collaborative learning model: A conceptual framework for integrating generative AI in business and management education](https://www.sciencedirect.com/science/article/pii/S1472811726001618).
+<span class="venue">*The International Journal of Management Education* (Elsevier) <span class="tag">Scopus Q1</span><span class="tag">ABDC B</span></span>
+:::
+
+### Transformer-based topic modelling and research mapping
+
+::: {.pub}
+Pan, A., Mukhopadhyay, S., Banerjee, S., & Sanyal, P. (2025). [Mapping the luxury fashion marketing research landscape: a BERT-based topic modelling approach](https://www.tandfonline.com/doi/full/10.1080/2573234X.2025.2599770).
+<span class="venue">*Journal of Business Analytics* (Taylor & Francis) <span class="tag">Scopus Q2</span><span class="tag">ABDC C</span></span>
+:::
+
+::: {.pub}
+Ray, S., Pan, A., Shukla, A., & Rastogi, S. K. (2025). [Mapping and decoding green finance research: themes and topic interconnections using a multi-method approach](https://doi.org/10.1108/IJPPM-08-2024-0557).
+<span class="venue">*International Journal of Productivity and Performance Management* (Emerald) <span class="tag">Scopus Q1</span><span class="tag">ABDC B</span></span>
+:::
+
+::: {.pub}
+Banerjee, S., & Pan, A. (2024). [From Colonial Legacies to Linguistic Inclusion: A BERTopic-Enhanced Bibliometric Insight into Global South Higher Education](https://ieeexplore.ieee.org/abstract/document/10643545/).
+<span class="venue">*IEEE Access* <span class="tag">Scopus Q1</span></span>
+:::
+
+### Financial markets and connectedness
+
+::: {.pub}
+Das, S., Pan, A., & Jain, N. K. (2023). [Investigating the muti-scaling properties and connectedness of the sovereign bond yields: Hurst exponent and network analysis approach](https://doi.org/10.1016/j.heliyon.2023.e16666).
+<span class="venue">*Heliyon* (Cell Press) <span class="tag">Scopus Q1</span></span>
+:::
+
+::: {.pub}
+Pan, A., & Misra, A. K. (2022). [Carry-forward modeling for high frequency limit-order executions: an emerging market perspective](https://digitalcommons.newhaven.edu/americanbusinessreview/vol25/iss1/7/).
+<span class="venue">*American Business Review* (University of New Haven) <span class="tag">Scopus</span><span class="tag">ABDC A</span></span>
+:::
+
+::: {.pub}
+Pan, A., & Misra, A. K. (2021). [A Comprehensive Study on Bid-Ask Spread and its Determinants in India](https://www.tandfonline.com/doi/full/10.1080/23322039.2021.1898735).
+<span class="venue">*Cogent Economics & Finance* (Taylor & Francis) <span class="tag">Scopus</span><span class="tag">ESCI</span><span class="tag">ABDC B</span></span>
+:::
+
+::: {.pub}
+Pan, A., & Misra, A. K. (2020). [Assessment of Asymmetric Information Cost in Indian Stock Market: A Sectoral Approach](https://doi.org/10.1177/0972150919865085).
+<span class="venue">*Global Business Review* (Sage) <span class="tag">Scopus</span><span class="tag">ABDC B</span></span>
+:::
+
+### Machine learning applications
+
+::: {.pub}
+Pan, A., Mukhopadhyay, S., & Samanta, S. (2022). [Liver Disease Detection: A Review of Machine Learning Algorithms and Scope of Optimization](https://www.igi-global.com/article/liver-disease-detection/316666).
+<span class="venue">*International Journal of Healthcare Information Systems and Informatics* (IGI Global) <span class="tag">Scopus</span><span class="tag">ABDC C</span></span>
+:::
+
+## Teaching case
+
+::: {.pub}
+Pan, A., & Misra, A. K. (2018). [Asymmetric Information During Merger: A Case of SBI](https://www.etcases.com/asymmetric-information-during-merger-a-case-of-sbi.html).
+<span class="venue">ET Cases, *The Economic Times*</span>
+:::
+
+## Conference presentations
+
+- Pan, A., Shukla, A., & Ray, S. (2024). Identifying themes and research clusters in green finance using language transformers (BERT) and a topic recommendation system. *9th Pan-IIM World Management Conference*, IIM Sambalpur, 22–24 January.
+- Pan, A., Mukhopadhyay, S., & Banerjee, S. (2023). What after bibliometrics? Recommending topics for research in luxury fashion marketing: a topic recommendation approach. *56th Annual Convention of ORSI and 10th International Conference on Business Analytics and Intelligence (ICBAI)*, IISc Bangalore, December.
+- Pan, A., & Banerjee, S. (2023). A topic recommendation approach for luxury fashion marketing research beyond bibliometrics. *9th International Conference on the Global Business Environment*, with EGADE Business School, Tecnológico de Monterrey, 15–16 December.
+- Pan, A., Banerjee, S., & Bharadwaja, M. (2023). Decoding persuasive appeals: a focus group study in management instruction. *9th International Conference on the Global Business Environment*, with EGADE Business School, Tecnológico de Monterrey, 15–16 December.
+- Pan, A., Sanyal, P., & Mandal, S. (2023). Identifying themes and research clusters in neuromarketing using language transformers (BERT) and a topic recommendation system. *3rd International Business Analytics Conference*, K J Somaiya Institute of Management, Mumbai, with New Jersey City University, March. Invited for submission to *Management Decision*.
+- Das, S., & Pan, A. (2023). Investigating the multi-scaling properties and connectedness of sovereign bond yields: Hurst exponent analysis approach. *5th International Conference on Banking and Finance*, IMI Bhubaneswar.
+- Parhi, S., & Pan, A. (2022). Evaluation of socio-environmental factors for green supply chain management. *International Conference on Global Business Environment 2022*, IMI Bhubaneswar.
+- Mukhopadhyay, S., Pan, A., & Samanta, S. (2020). Liver disease detection using machine learning: efficient algorithm selection. *Management Doctoral Colloquium*, IIT Kharagpur.
+- Pan, A., & Misra, A. K. (2017). Asymmetric information during merger: a case of SBI. *International Conference on Financial Markets and Corporate Finance*, IIT Kharagpur.
+- Pan, A. (2017). Characteristics of high frequency trading: a study on NSE. *Management Doctoral Colloquium*, IIT Kharagpur.
+- Pan, A. (2016). High frequency determinants of spread: a study in selected Nifty50 stocks. *Management Doctoral Colloquium*, IIT Kharagpur.
+- Pan, A., Shankar, A., & Titiyal, R. (2015). Changing dimensions of e-recruitment: a roadmap ahead. *Management Doctoral Colloquium*, IIT Kharagpur.
+
+## Invited lectures and talks
+
+- Workshop on Data and Business Analytics for AGMs and Managers, Reserve Bank of India, Bhubaneswar Regional Office, August 2023. [LinkedIn](https://www.linkedin.com/posts/aritrapan_rbiworkshop-analyticsexcellence-activity-7100768521491496960-eNKP)
+- Guest lecture on Big Data Analytics, Ravenshaw University, Cuttack, September 2023. [LinkedIn](https://www.linkedin.com/posts/aritrapan_ravenshawuniversity-analyticsworkshop-bigdata-activity-7103319659113820160-3a8W/)
+- Management Masterclass, Introduction to Business Analytics, IMS India. [YouTube](https://www.youtube.com/watch?v=lwMUlcZ9Reo)
+
+## Editorial and professional service
+
+- Associate Editor, *IMIB Journal of Innovation & Management* (Sage), during tenure at IMI Bhubaneswar.
+- Nominated academic expert (IMT Ghaziabad), CII Smart HR Summit on the Role of Technology in Transforming the Workplace, New Delhi, 2019.

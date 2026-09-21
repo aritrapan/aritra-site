@@ -1,0 +1,29 @@
+---
+title: "Projects"
+pagetitle: "Projects"
+description: "Ongoing research projects and supervised student projects of Aritra Pan."
+---
+
+## Research projects
+
+### Identifying themes and research clusters using language transformers and topic recommendation
+
+![](img/Project%201.png){.column-margin fig-alt="Topic clusters produced by transformer-based topic modelling"}
+
+An ongoing programme extending bibliometric analysis with transformer-based language models. Instead of stopping at citation counts and co-word maps, we embed the full text of abstracts, cluster them with BERTopic, and use the resulting structure to recommend under-explored topics to researchers. Applied so far to green finance, luxury fashion marketing, neuromarketing and Global South higher education — see [Research](research.qmd).
+
+### Multi-scaling properties and connectedness of sovereign bond yields
+
+![](img/Project%202.png){.column-margin fig-alt="Network of sovereign bond yield connectedness"}
+
+Using daily yields of 14 sovereign bond markets across emerging and developed economies from July 2000 to July 2022, we examine scaling properties with the generalised Hurst exponent and spectral density analysis, and connectedness with regularised partial-correlation networks. Both 2-year and 10-year tenors are studied, which also lets us examine spreads against the USA. Yields in both cohorts are anti-persistent (the USA excepted), with developed-economy yields less so than emerging ones, and the networks show community formation that offers diversification benefits — with emerging markets concentrating into one community, most visibly at the short tenor. Published in *Heliyon* (2023).
+
+## Supervised student projects
+
+### Completed
+
+- A study on consumer preferences towards online food delivery applications and their marketing strategies — Retesh Kumar, PGDM 2021–23, IMI Bhubaneswar
+- A comparative study of factors influencing offline and online shopping in the pharmaceutical sector — Deberko Saha, PGDM 2021–23, IMI Bhubaneswar
+- A study on consumer buying behaviour towards e-wallets — Pratyusha Mishra, PGDM 2021–23, IMI Bhubaneswar
+- Impact of social media marketing on impulse buying behaviour — Kanika Bhattacharyya, PGDM 2021–23, IMI Bhubaneswar
+- Factors affecting brand loyalty for toothpastes — Maitreya Sengupta, PGDM 2021–23, IMI Bhubaneswar

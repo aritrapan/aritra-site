@@ -1,0 +1,30 @@
+---
+title: "Work with me"
+pagetitle: "Research internships and collaboration"
+description: "Research internship positions, desired skills, and collaboration opportunities with Aritra Pan at the Madras School of Economics."
+---
+
+## Research internships
+
+I take a small number of research interns each year, usually undergraduate or postgraduate students in computer science, data science, economics or management, working remotely or at MSE, Chennai.
+
+**Applied machine learning in business and social sciences**
+
+- Large language models and transformer-based topic modelling for research mapping and text analysis: working knowledge of Python and text mining.
+- Network modelling in finance and the social sciences: working knowledge of R or Python and the theory of network models.
+
+**Applied tools**
+
+- Interactive research and teaching applications in R Shiny or Python: experience building and deploying small web applications.
+
+To apply, email [aritra.pan@mse.ac.in](mailto:aritra.pan@mse.ac.in) with your CV and a short note on which of the above you want to work on and why.
+
+## Collaboration
+
+For research or consultancy collaboration, write to the same address.
+
+## Past interns
+
+- Aranya Patra — B.Tech (CS & AI), IIIT Lucknow, 2023
+- Ankur Kumar Mandal — B.Tech, IIIT Kottayam, 2023 (jointly with Prof. Priyavrat Sanyal, IIM Visakhapatnam)
+- Kumar Akashdeep — B.Tech, IIIT Kurnool, 2022 (jointly with Prof. Priyavrat Sanyal, IIM Visakhapatnam)

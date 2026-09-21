@@ -1,0 +1,53 @@
+---
+title: "Workshops and memberships"
+pagetitle: "Workshops, training and professional memberships"
+description: "Management and faculty development programmes conducted by Aritra Pan, invited workshops, and professional memberships."
+---
+
+## Training programmes
+
+- Management Development Programmes (MDPs) on data and business analytics for organisations including PwC, the Reserve Bank of India and GMR.
+- Faculty Development Programmes (FDPs) for faculty and research scholars from IITs, IIMs, IMT and other leading institutes.
+
+For customised training programmes or consultancy projects, write to [aritra.pan@mse.ac.in](mailto:aritra.pan@mse.ac.in).
+
+## Invited workshops
+
+### Data and Business Analytics — Reserve Bank of India, Bhubaneswar Regional Office, August 2023
+
+For Assistant General Managers and Managers of RBI from across India.
+
+::: {layout-ncol=3}
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.30.jpg){group="rbi"}
+
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.31.jpg){group="rbi"}
+
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.32.jpg){group="rbi"}
+
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.33.jpg){group="rbi"}
+
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.34.jpg){group="rbi"}
+:::
+
+### Big Data Analytics — Ravenshaw University, Cuttack, September 2023
+
+For students of the Department of Business Administration.
+
+::: {layout-ncol=3}
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.35.jpg){group="ravenshaw"}
+
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.36.jpg){group="ravenshaw"}
+
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.37.jpg){group="ravenshaw"}
+
+![](img/WhatsApp%20Image%202023-09-05%20at%2019.51.38.jpg){group="ravenshaw"}
+:::
+
+## Professional memberships
+
+- Member, IEEE; IEEE Intelligent Transportation Systems Society; IEEE Technology and Engineering Management Society
+- Professional Fellow Member, All India Council for Robotics & Automation (AICRA)
+- Life Member, Operational Research Society of India (ORSI)
+- Member, Institution of Engineers (India)
+- Member, MIT Technology Review Global Panel
+- Certified Microsoft Innovative Educator; Certified Corporate Trainer

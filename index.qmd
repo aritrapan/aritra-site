@@ -1,0 +1,85 @@
+---
+title: "Aritra Pan"
+pagetitle: "Associate Professor of Data Science, Madras School of Economics"
+description: "Associate Professor of Data Science, Madras School of Economics, Chennai."
+image: img/AP.png
+about:
+  id: hero
+  template: trestles
+  image-shape: rectangle
+  image-width: 18em
+  links:
+    - icon: google
+      text: Google Scholar
+      href: https://scholar.google.co.in/citations?user=m9SYPDMAAAAJ
+    - icon: person-vcard
+      text: ORCID
+      href: https://orcid.org/0000-0001-5740-0804
+    - icon: linkedin
+      text: LinkedIn
+      href: https://in.linkedin.com/in/aritrapan
+    - icon: building
+      text: MSE profile
+      href: https://mse.ac.in/faculty/aritra-pan/
+    - icon: envelope
+      text: aritra.pan@mse.ac.in
+      href: mailto:aritra.pan@mse.ac.in
+---
+
+::: {#hero}
+
+::: {.lead}
+Associate Professor of Data Science at the [Madras School of Economics](https://mse.ac.in), Chennai. I work on applied natural language processing and transformer-based topic modelling for mapping research fields, on financial market microstructure and cross-market connectedness, and on generative AI in management education — after a decade in industry as Lead Data Scientist at PwC and in payments software at RS Software.
+:::
+
+I teach in the M.Sc. Data Science and MBA programmes at MSE. Before that I was Assistant Professor and Chairperson of Information Management & Analytics at IMI Bhubaneswar (where I also chaired IT Infrastructure & Cybersecurity and served as Associate Editor of the *IMIB Journal of Innovation & Management*, Sage), Assistant Professor of IT Systems & Analytics at IIM Bodh Gaya, Assistant Professor of Data Science at IFMR GSB, Krea University, and Assistant Professor and Chairperson of Business Analytics at IMT Ghaziabad. My PhD is from IIT Kharagpur, on high-frequency market microstructure.
+
+:::
+
+## Latest updates
+
+| Date | Update |
+|---|---|
+| Aug 26, 2026 | New solo-authored paper: **[The AI-augmented collaborative learning model: A conceptual framework for integrating generative AI in business and management education](https://www.sciencedirect.com/science/article/pii/S1472811726001618)** — *International Journal of Management Education* (Elsevier; Scopus Q1, ABDC B). |
+| Jun 15, 2026 | Joined **Madras School of Economics** as Associate Professor of Data Science. [Faculty profile](https://mse.ac.in/faculty/aritra-pan/). |
+| Dec 17, 2025 | New paper: **[Mapping the luxury fashion marketing research landscape: a BERT-based topic modelling approach](https://www.tandfonline.com/doi/full/10.1080/2573234X.2025.2599770)** — *Journal of Business Analytics* (Scopus Q2, ABDC C). |
+| Jul 11, 2025 | New paper: **[Mapping and decoding green finance research: themes and topic interconnections using a multi-method approach](https://www.emerald.com/ijppm/article-abstract/doi/10.1108/IJPPM-08-2024-0557/1278937/Mapping-and-decoding-green-finance-research-themes)** — *International Journal of Productivity and Performance Management* (Scopus Q1, ABDC B). |
+| Aug 22, 2024 | New paper: **[From Colonial Legacies to Linguistic Inclusion: A BERTopic-Enhanced Bibliometric Insight into Global South Higher Education](https://ieeexplore.ieee.org/abstract/document/10643545)** — *IEEE Access* (Scopus Q1). |
+| Jan 11, 2024 | Paper accepted at the **9th Pan-IIM World Management Conference**, IIM Sambalpur, 22–24 January 2024. |
+| Oct 12, 2023 | Enrolled as **Professional Fellow Member** of the All India Council for Robotics & Automation (AICRA). |
+| Sep 1, 2023 | Invited by **Ravenshaw University, Cuttack** to conduct a workshop on Big Data Analytics for the Department of Business Administration. [Photos](https://www.linkedin.com/posts/aritrapan_ravenshawuniversity-analyticsworkshop-bigdata-activity-7103319659113820160-3a8W). |
+| Aug 23, 2023 | Invited by **RBI Bhubaneswar** to conduct a workshop on Data and Business Analytics for Assistant General Managers and Managers from across India. [Photos](https://www.linkedin.com/posts/aritrapan_rbiworkshop-analyticsexcellence-activity-7100768521491496960-eNKP). |
+| Aug 12, 2023 | Paper accepted at **ORSI 2023 / ICBAI 2023**, IISc Bangalore, 18–20 December 2023. |
+| Jun 2, 2023 | New paper: **[Investigating the muti-scaling properties and connectedness of the sovereign bond yields: Hurst exponent and network analysis approach](https://doi.org/10.1016/j.heliyon.2023.e16666)** — *Heliyon* (Scopus Q1). |
+| Jan 31, 2022 | This website went live. |
+
+: {.updates tbl-colwidths="[16,84]"}
+
+## Affiliations
+
+::: {.timeline}
+- **Associate Professor of Data Science** <span class="where">Madras School of Economics, Chennai — June 2026 onwards</span>
+- **Assistant Professor; Chairperson, Information Management & Analytics; Chairperson, IT Infrastructure & Cybersecurity** <span class="where">International Management Institute (IMI) Bhubaneswar</span>
+- **Assistant Professor, IT Systems & Analytics** <span class="where">Indian Institute of Management (IIM) Bodh Gaya</span>
+- **Assistant Professor, Data Science & Information Systems** <span class="where">IFMR Graduate School of Business, Krea University</span>
+- **Assistant Professor; Chairperson, Business Analytics** <span class="where">Institute of Management Technology (IMT) Ghaziabad</span>
+- **Manager (Analytics) and Lead Data Scientist, Management Consulting (Advisory)** <span class="where">PricewaterhouseCoopers (PwC), Kolkata</span>
+- **Graduate Teaching Assistant** <span class="where">Vinod Gupta School of Management, IIT Kharagpur</span>
+- **Software Engineer** <span class="where">RS Software, Kolkata</span>
+- **Lecturer / Assistant Professor, Computer Science** <span class="where">Syamaprasad Institute of Technology and Management, Kolkata (WBUT/MAKAUT)</span>
+- **Lecturer / Assistant Professor, Computer Science & Engineering** <span class="where">Institute of Engineering and Management (IEM), Kolkata (WBUT/MAKAUT)</span>
+:::
+
+## Education
+
+**Ph.D. in Business Analytics**, Indian Institute of Technology Kharagpur, 2014–2017 (full-time, MHRD scholarship)
+: *Thesis:* Determinants of Bid-Ask Spread and its Implications on Execution Probability in High Frequency Trading.
+: Research on market microstructure explores how the working processes of a market affect prices, transaction costs, trading volume and trading behaviour. The availability of high-frequency orders-and-quotes data has let the classic theories, built on low-frequency data, be re-examined. The thesis empirically analyses, under Indian conditions, (a) the factors driving bid-ask spread, (b) asymmetric-information and transaction costs embedded in the spread, and (c) limit-order execution probability and hazard rates. Return volatility, share price, trading volume and number of trades are significant determinants of spreads; order-processing cost rises with volume; volatility and volume raise the asymmetric-information cost; same-side book depth, opposite-side open indicator, remaining time intervals, spread and tick volume determine execution probability; and tick volume, remaining intervals, quoted spread, price aggressiveness, book depth, return volatility and inferior price drive survival. The findings carry implications for traders and for the exchange regulator.
+: *Keywords:* market microstructure, limit order book, order-processing cost, asymmetric-information cost, execution probability, hazard rates, survival analysis.
+
+**M.Tech. in Soft Computing (Information Technology)**, Indian Institute of Engineering Science and Technology (IIEST), Shibpur, 2012
+: *Thesis:* Design and FPGA-based implementation of a MUX/DEMUX system in SONET/SDH data communication networks.
+
+**B.E. in Computer Science and Technology**, IIEST Shibpur, 2008
+: *Thesis:* Vertical hand-off in 4G architecture.
+

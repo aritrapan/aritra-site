@@ -1,0 +1,9 @@
+---
+title: "Draft: first post"
+description: "Delete this folder or set draft to false and write."
+date: 2026-09-21
+categories: [meta]
+draft: true
+---
+
+This is a placeholder so the blog listing has a valid structure. Each post lives in its own folder under `posts/`, as `index.qmd`, with a YAML header like this one. R or Python code chunks render on build.

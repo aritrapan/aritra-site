@@ -1,0 +1,59 @@
+/*-- scss:defaults --*/
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+$font-family-sans-serif: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+$font-family-base: "Newsreader", Georgia, "Times New Roman", serif;
+$headings-font-family: "Newsreader", Georgia, serif;
+$headings-font-weight: 500;
+$font-size-base: 1.1rem;
+$line-height-base: 1.6;
+
+$body-bg: #ffffff;
+$body-color: #1c2331;
+$primary: #1f4e5f;       // deep teal — links, nav
+$secondary: #6b7280;
+$link-color: #1f4e5f;
+$link-hover-color: #0f2f3a;
+$navbar-bg: #ffffff;
+$navbar-fg: #1c2331;
+$navbar-hl: #1f4e5f;
+$footer-bg: #f5f6f4;
+$border-color: #dfe3e0;
+
+/*-- scss:rules --*/
+.navbar { font-family: $font-family-sans-serif; border-bottom: 1px solid $border-color; }
+.navbar-brand { font-family: "Newsreader", serif; font-weight: 600; font-size: 1.35rem; letter-spacing: 0.01em; }
+.navbar .nav-link { font-size: 0.95rem; }
+
+h1, h2, h3 { letter-spacing: -0.01em; }
+h1.title { font-size: 2.4rem; }
+h2 { margin-top: 2.2rem; font-size: 1.6rem; border-bottom: 1px solid $border-color; padding-bottom: 0.35rem; }
+h3 { font-size: 1.25rem; margin-top: 1.6rem; }
+
+.quarto-about-trestles .about-entity .about-image { border-radius: 4px; }
+.about-links .about-link { font-family: $font-family-sans-serif; font-size: 0.9rem; border-radius: 4px; }
+
+.lead { font-size: 1.3rem; line-height: 1.5; }
+
+/* Publication list */
+.pub { margin-bottom: 1.1rem; }
+.pub .venue { font-family: $font-family-sans-serif; font-size: 0.85rem; color: $secondary; display: block; margin-top: 0.15rem; }
+.pub .tag { font-family: $font-family-sans-serif; font-size: 0.72rem; color: $primary; border: 1px solid rgba($primary, .35); border-radius: 3px; padding: 0.05rem 0.4rem; margin-left: 0.35rem; white-space: nowrap; }
+
+/* Updates table */
+table.updates td:first-child { white-space: nowrap; font-family: $font-family-sans-serif; font-size: 0.85rem; color: $secondary; padding-right: 1.2rem; vertical-align: top; }
+table.updates td { border: none; padding-bottom: 0.6rem; }
+table.updates thead { display: none; }
+
+/* Timeline (affiliations) */
+.timeline { list-style: none; padding-left: 0; }
+.timeline li { padding-left: 1.2rem; border-left: 2px solid $border-color; padding-bottom: 0.9rem; position: relative; }
+.timeline li::before { content: ""; position: absolute; left: -6px; top: 0.55rem; width: 10px; height: 10px; border-radius: 50%; background: $primary; }
+.timeline .where { font-family: $font-family-sans-serif; font-size: 0.85rem; color: $secondary; display: block; }
+
+.nav-footer { font-family: $font-family-sans-serif; font-size: 0.85rem; }
+
+@media (max-width: 767px) { h1.title { font-size: 1.9rem; } .lead { font-size: 1.15rem; } }
+
+/* Page description stays in <meta>; don't repeat it visibly on section pages */
+#title-block-header .description { display: none; }
