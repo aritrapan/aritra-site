@@ -102,3 +102,8 @@ main .timeline li {
   color: $secondary;
 }
 
+/* Keep the name block under the photo centred */
+main .quarto-about-trestles .subtitle {
+  text-align: center;
+  hyphens: manual;
+}
