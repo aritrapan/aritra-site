@@ -1,7 +1,6 @@
 ---
 title: "Dr. Aritra Pan"
-subtitle: "অরিত্র পান"
-subtitle: "Associate Professor of Data Science, Madras School of Economics"
+subtitle: "অরিত্র পান [Associate Professor of Data Science, Madras School of Economics]{.role}"
 pagetitle: "Associate Professor of Data Science, Madras School of Economics"
 description: "Associate Professor of Data Science, Madras School of Economics, Chennai."
 image: img/AP.png
