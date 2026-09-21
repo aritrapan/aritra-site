@@ -1,5 +1,5 @@
 ---
-title: "Aritra Pan"
+title: "Dr. Aritra Pan, Ph.D."
 pagetitle: "Associate Professor of Data Science, Madras School of Economics"
 description: "Associate Professor of Data Science, Madras School of Economics, Chennai."
 image: img/AP.png
@@ -29,7 +29,7 @@ about:
 ::: {#hero}
 
 ::: {.lead}
-Associate Professor of Data Science at the [Madras School of Economics](https://mse.ac.in), Chennai. I work on applied natural language processing and transformer-based models, predictive modelling in financial market microstructure and cross-market connectedness, and on generative AI in management, education and social science - after a decade in industry as Lead Data Scientist at PwC and in payments software as SME Developer at RS Software.
+Associate Professor of Data Science and MBA programmes at the [Madras School of Economics](https://mse.ac.in), Chennai. I work on applied natural language processing and transformer-based models, predictive modelling in financial market microstructure and cross-market connectedness, and on generative AI in management, education and social science - after a decade in industry as Lead Data Scientist at PwC and in payments software as SME Developer at RS Software.
 :::
 
 I teach in the M.Sc. Data Science and MBA programmes at MSE. Before that I was Assistant Professor and Chairperson of Information Management & Analytics at IMI Bhubaneswar (where I also chaired IT Infrastructure & Cybersecurity and served as Associate Editor of the *IMIB Journal of Innovation & Management*, Sage), Assistant Professor of IT Systems & Analytics at IIM Bodh Gaya, Assistant Professor of Data Science at IFMR GSB, Krea University, and Assistant Professor and Chairperson of Business Analytics at IMT Ghaziabad. My PhD is from IIT Kharagpur, on predictive analytics in high-frequency market microstructure.
