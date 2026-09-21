@@ -77,3 +77,18 @@ main dd,
     text-align: left;
   }
 }
+
+/* Timeline fixes: remove default bullets, keep entries left-aligned */
+.timeline ul {
+  list-style: none;
+  padding-left: 0;
+}
+main .timeline li {
+  text-align: left;
+}
+
+/* Current position: green dot with a soft halo */
+.timeline li:first-child::before {
+  background: #2e9e5b;
+  box-shadow: 0 0 0 4px rgba(46, 158, 91, 0.2);
+}
