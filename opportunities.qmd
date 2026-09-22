@@ -10,7 +10,7 @@ I take a small number of research interns each year, usually undergraduate or po
 
 **Applied machine learning in business and social sciences**
 
-- Large language models and transformer-based topic modelling for research mapping and text analysis: working knowledge of Python and text mining.
+- Large language models and transformer-based text analysis in business and social sciences domains: working knowledge of Python and text mining.
 - Network modelling in finance and the social sciences: working knowledge of R or Python and the theory of network models.
 
 **Applied tools**
