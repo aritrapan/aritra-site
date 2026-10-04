@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0b3d26">
 <title>Taas</title>
+<meta name="robots" content="noindex, nofollow">
 <meta name="description" content="29 and Call Bridge: play against the computer, or with friends anywhere using a table code. Free, no sign-up.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -72,7 +73,7 @@ body{display:flex;justify-content:center;overflow:hidden}
 .hand .card.no{filter:brightness(.55)}
 .overlay{position:fixed;inset:0;display:none;z-index:20;justify-content:center;background:rgba(0,0,0,.55)}
 .overlay.show{display:flex}
-#rules,#rulesCB,#home,#online{background:var(--felt2);overflow-y:auto;align-items:flex-start}
+#rules,#rulesCB,#home,#online,#gate{background:var(--felt2);overflow-y:auto;align-items:flex-start}
 .rwrap{width:100%;max-width:520px;padding:16px 14px 40px}
 .rwrap h1{margin:4px 0 2px;font-size:30px;text-align:center}
 .rwrap .sub{text-align:center;opacity:.8;font-size:13px;margin-bottom:8px}
@@ -350,12 +351,26 @@ body{display:flex;justify-content:center;overflow:hidden}
  </div>
 </div>
 
+<div class="overlay" id="gate">
+ <div class="rwrap" style="padding-top:48px">
+  <h1>Taas</h1>
+  <div class="sub">A private card table.</div>
+  <div class="sec">
+   <p>Enter the passcode to come in. This device will remember it.</p>
+   <p style="font-size:13px;opacity:.8">Got an invite link from a friend? Open that link instead: it takes you straight to their table.</p>
+   <label class="fld"><span>Passcode</span><input id="gatePass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+   <button class="btn wide" id="gateBtn">Enter</button>
+   <p class="note" id="gateMsg" style="color:#ef9a9a;margin-top:10px"></p>
+  </div>
+ </div>
+</div>
+
 <div class="overlay" id="online">
  <div class="rwrap">
   <h1 style="font-size:28px">Play online</h1>
   <div class="sub">Your friends join from their own phones or computers, from anywhere.</div>
   <div id="onMenu">
-   <div class="sec">
+   <div class="sec" id="onHostSec">
     <h2>🏠 Host a table</h2>
     <div class="srow"><span>Game</span><span><button class="btn tog" data-og="29">29</button> <button class="btn tog" data-og="cb">Call Bridge</button></span></div>
     <div class="srow"><span>Bots</span><span><button class="btn tog" data-ol="easy">Easy</button> <button class="btn tog" data-ol="hard">Hard</button></span></div>
@@ -1008,11 +1023,12 @@ function soundUI(){
 }
 if(!TEST){ window.taasPause = () => SND.pause();
 window.taasResume = () => SND.resume(); }
-const OVERLAYS = ['home','rules','rulesCB','online'];
+const OVERLAYS = ['home','rules','rulesCB','online','gate'];
 const shown = id => $(id).classList.contains('show');
 function hideOverlays(){ for(const id of OVERLAYS) $(id).classList.remove('show'); }
-function goHome(){ refreshMeta(); hideOverlays(); $('home').classList.add('show'); $('home').scrollTop=0; }
+function goHome(){ if(isLocked()) return showGate(); refreshMeta(); hideOverlays(); $('home').classList.add('show'); $('home').scrollTop=0; }
 globalThis.taasBack = () => {
+  if(shown('gate')) return false;
   if(shown('modal')) return true;
   if(shown('online')){ UI.close(); return true; }
   for(const id of ['rules','rulesCB']) if(shown(id)){ goHome(); return true; }
@@ -1055,10 +1071,12 @@ function init(){
   $('rulesBtn').onclick=()=>openRules(CUR);
   $('startBtn').onclick=()=>startGame('29');
   UI.init();
+  gateInit();
   if('serviceWorker' in navigator && (location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname)))
     navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 function openRules(g){
+  if(isLocked()) return showGate();
   refreshMeta();
   hideOverlays();
   const el=$(g==='cb'?'rulesCB':'rules'); el.classList.add('show'); el.scrollTop=0;
@@ -1066,6 +1084,7 @@ function openRules(g){
   $(g==='cb'?'startCB':'startBtn').textContent = back ? 'Back to game' : (ONLINE ? 'Leave the online table and play solo' : 'Start playing');
 }
 function startGame(g){
+  if(isLocked()) return showGate();
   if(ONLINE){
     if(ONLINE.started && ONLINE.game===g){ hideOverlays(); render(); return; }
     if(!confirm('Leave the online table and play solo?')) return;
@@ -1632,6 +1651,38 @@ function buildViewCB(v){
   return V;
 }
 
+/* ---------- private-table passcode ----------
+   A front-door lock to keep casual visitors out; not real security (anyone reading the page's code could get round it).
+   The page holds only a SHA-256 fingerprint of the passcode, never the passcode itself.
+   To change the passcode, replace GATE_HASH with the SHA-256 of 'taas:' + the new passcode in lower case. */
+const GATE_HASH = '262c192f7ab69bc202a2fd7acf4cbc5a3e00846a6505aef7439cfafa637ce6d3';
+const GATE_KEY = 'taas.unlock';
+let unlocked = false;
+const gateOn = () => !TEST && typeof location!=='undefined' && location.protocol.startsWith('http') && !!GATE_HASH;
+const isLocked = () => gateOn() && !unlocked;
+async function sha256hex(t){
+  const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function showGate(){
+  hideOverlays(); $('gate').classList.add('show'); $('gateMsg').textContent='';
+  setTimeout(()=>{ try{ $('gatePass').focus(); }catch(e){} }, 50);
+}
+async function tryGate(){
+  let h=''; try{ h=await sha256hex('taas:'+$('gatePass').value.trim().toLowerCase()); }catch(e){}
+  if(h===GATE_HASH){
+    unlocked=true; try{ localStorage.setItem(GATE_KEY, h); }catch(e){}
+    $('gatePass').value=''; $('gate').classList.remove('show'); goHome();
+  } else { $('gateMsg').textContent='That passcode isn\'t right.'; $('gatePass').select(); }
+}
+function gateInit(){
+  if(!gateOn()){ unlocked=true; return; }
+  try{ unlocked = localStorage.getItem(GATE_KEY)===GATE_HASH; }catch(e){}
+  $('gateBtn').onclick=tryGate;
+  $('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') tryGate(); });
+  if(!unlocked && !/join=/.test(location.hash)) showGate();     // invite links go straight to the join screen
+}
+
 /* ===================== ONLINE: host a table or join one ===================== *
  * Peer-to-peer over WebRTC (via Trystero). No game server: the host's device runs the game and the bots,
  * and friends' devices only send their choices and draw what the host sends them. Public Nostr relays are
@@ -1817,6 +1868,7 @@ const UI = (() => {
     if(TEST) return;
     const s=ONLINE;
     $('onMenu').style.display = s ? 'none' : '';
+    $('onHostSec').style.display = isLocked() ? 'none' : '';
     $('onLobby').style.display = s ? '' : 'none';
     document.querySelectorAll('[data-og]').forEach(b=>b.classList.toggle('on', b.dataset.og===hostGame));
     document.querySelectorAll('[data-ol]').forEach(b=>b.classList.toggle('on', b.dataset.ol===hostLevel));
@@ -1856,7 +1908,7 @@ const UI = (() => {
   function init(){
     document.querySelectorAll('[data-og]').forEach(b=>b.onclick=()=>{ hostGame=b.dataset.og; render(); });
     document.querySelectorAll('[data-ol]').forEach(b=>b.onclick=()=>{ hostLevel=b.dataset.ol; render(); });
-    $('onCreate').onclick=()=>{ SND.unlock(); NET.host(hostGame, hostLevel); };
+    $('onCreate').onclick=()=>{ if(isLocked()) return showGate(); SND.unlock(); NET.host(hostGame, hostLevel); };
     $('onCode').addEventListener('input', ()=>{ const raw=$('onCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8); $('onCode').value = raw.length>4 ? raw.slice(0,4)+'-'+raw.slice(4) : raw; });
     $('onJoinBtn').onclick=()=>{
       const code=NET.normCode($('onCode').value);
