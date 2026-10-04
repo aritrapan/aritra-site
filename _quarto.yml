@@ -6,6 +6,7 @@ project:
     - CNAME
     - publications.bib
     - img/
+    - taas/
 
 website:
   title: "Aritra Pan"
@@ -33,6 +34,8 @@ website:
         text: Work with me
       - href: blog.qmd
         text: Blog
+      - href: taas/index.html
+        text: Games
     right:
       - icon: google
         href: https://scholar.google.co.in/citations?user=m9SYPDMAAAAJ
