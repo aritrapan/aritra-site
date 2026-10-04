@@ -29,7 +29,7 @@ body{display:flex;justify-content:center;overflow:hidden}
 .btn{border:0;border-radius:10px;padding:9px 14px;font-weight:700;font-size:15px;background:var(--gold);color:#222;cursor:pointer;font-family:inherit}
 .btn.ghost{background:rgba(255,255,255,.16);color:var(--txt)}
 .btn.small{padding:6px 10px;font-size:13px}
-.btn.suit{font-size:22px;min-width:64px;background:#fff;color:#222}
+.btn.suit{font-size:26px;min-width:66px;background:#fff;color:#222}
 .btn.suit small{font-size:12px;color:#666}
 .rs{color:var(--red)!important}
 .info{display:flex;justify-content:space-between;padding:6px 12px;font-size:12.5px;gap:6px;flex-wrap:wrap;background:rgba(0,0,0,.12)}
@@ -57,11 +57,27 @@ body{display:flex;justify-content:center;overflow:hidden}
 .slot1{right:0;top:46px}
 .slot2{left:58px;top:0}
 .slot3{left:0;top:46px}
+@media (min-width:700px) and (min-height:640px){            /* computers and tablets: a bigger table and bigger cards */
+  #app{max-width:640px}
+  .card:not(.mini):not(.micro){width:66px;height:94px;border-radius:8px}
+  .card:not(.mini):not(.micro) .r{font-size:22px;top:3px;left:5px}
+  .card:not(.mini):not(.micro) .s1{font-size:25px;top:25px;left:4px}
+  .card:not(.mini):not(.micro) .s{font-size:36px}
+  .trick{width:206px;height:206px}
+  .slot0{left:70px;bottom:0}.slot1{right:0;top:56px}.slot2{left:70px;top:0}.slot3{left:0;top:56px}
+  .hand{min-height:124px}
+  .seat{font-size:14px}
+}
 .card{width:54px;height:78px;border-radius:7px;background:#fff;color:var(--ink);box-shadow:0 2px 5px rgba(0,0,0,.35);position:relative;flex:none;user-select:none;-webkit-user-select:none}
-.card .r{position:absolute;top:3px;left:5px;font-weight:800;font-size:16px;line-height:1}
-.card .s1{position:absolute;top:20px;left:5px;font-size:13px;line-height:1}
-.card .s{position:absolute;right:5px;bottom:3px;font-size:28px;line-height:1}
-.card.red{color:var(--red)}
+.card .r{position:absolute;top:2px;left:4px;font-weight:800;font-size:18px;line-height:1;letter-spacing:-1px}
+.card .s1{position:absolute;top:20px;left:3px;font-size:21px;line-height:1}
+.card .s{position:absolute;right:4px;bottom:2px;font-size:30px;line-height:1}
+.card.suH,.card.suD,.btn.suit.suH,.btn.suit.suD{color:var(--red)}
+.card.suS,.card.suC,.btn.suit.suS,.btn.suit.suC{color:#1b1b1b}
+body.fc .card.suD,body.fc .btn.suit.suD{color:#1565c0}
+body.fc .card.suC,body.fc .btn.suit.suC{color:#1e7d32}
+.dkS,.dkC{color:#fff}.dkH,.dkD{color:#ff6b6b}
+body.fc .dkD{color:#6cb6ff} body.fc .dkC{color:#7fd88a}
 .card.win{box-shadow:0 0 0 3px var(--gold),0 2px 8px rgba(0,0,0,.5)}
 .msg{text-align:center;min-height:24px;padding:4px 10px;font-size:14px;font-weight:500}
 .actions{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:2px 10px 4px}
@@ -174,7 +190,7 @@ body{display:flex;justify-content:center;overflow:hidden}
   <button class="tile" data-g="cb"><span class="tt">Call Bridge</span><span class="td">Everyone for themselves · call your tricks · spades always trump</span><span class="fan" id="fanCB"></span><span class="tr" id="recCB"></span></button>
   <p class="note" id="homeNote"></p>
 
-  <div class="sec">
+  <div class="sec" id="onlineSec">
    <h2>🌐 Play online with friends</h2>
    <p style="font-size:13px;opacity:.85;margin-top:0">Friends anywhere join your table with a code: no app, no account. Bots take any empty seats.</p>
    <div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" id="goHost">Host a table</button><button class="btn ghost" id="goJoin">Join a table</button></div>
@@ -189,6 +205,12 @@ body{display:flex;justify-content:center;overflow:hidden}
    <label class="fld"><span>Left (West)</span><input id="nm3" maxlength="25" placeholder="West" autocomplete="off"></label>
   </div>
 
+
+  <div class="sec">
+   <h2>🃏 Cards</h2>
+   <div class="srow"><span>Four-colour suits<br><small style="opacity:.75">♠ black · ♥ red · ♦ blue · ♣ green, so look-alike suits never get mixed up</small></span><button class="btn tog" id="togFc">On</button></div>
+   <div class="row" id="fcPreview" style="justify-content:flex-start;gap:6px"></div>
+  </div>
   <div class="sec">
    <h2>🎵 Sound</h2>
    <div class="srow"><span>Background music</span><button class="btn tog" id="togMusic">On</button></div>
@@ -874,8 +896,10 @@ function buildView29(v){
 /* ---------- UI ---------- */
 let VIEW = null;
 const POS = ['s','e','n','w'];
+const GL = s => SYM[s] + '\uFE0E';        // suit symbol drawn as text (never as a coloured emoji), so its colour can be set
+const sym = s => `<span class="dk${s}">${GL(s)}</span>`;   // a coloured suit symbol on the dark table background
 function cardHTML(c,cls=''){
-  return `<div class="card ${red(c.s)?'red':''} ${cls}" data-id="${c.id}"><span class="r">${c.r}</span><span class="s1">${SYM[c.s]}</span><span class="s">${SYM[c.s]}</span></div>`;
+  return `<div class="card su${c.s} ${cls}" data-id="${c.id}"><span class="r">${c.r}</span><span class="s1">${GL(c.s)}</span><span class="s">${GL(c.s)}</span></div>`;
 }
 function safeCard(c){                                  // views may come from another device: accept real cards only
   if(!c || !SYM[c.s] || !(RANKS.includes(c.r) || CR.includes(c.r))) return null;
@@ -902,7 +926,7 @@ function summaryHTML(d){
   if(d.k==='29'){
     const s=SYM[d.trump] ? d.trump : null;
     let h=`<h2>${d.made?'Bid made ✅':'Bid failed ❌'}</h2>
-     <p>${esc(d.bidder)} bid <b>${num(d.bid)}</b>${num(d.target)!==num(d.bid)?` (target after pair: <b>${num(d.target)}</b>)`:''}.${s?` Trump was <b class="${red(s)?'rs':''}">${SYM[s]} ${SUITNAME[s]}</b>${d.revealed?'':' (never revealed)'}.`:''}</p>
+     <p>${esc(d.bidder)} bid <b>${num(d.bid)}</b>${num(d.target)!==num(d.bid)?` (target after pair: <b>${num(d.target)}</b>)`:''}.${s?` Trump was <b>${sym(s)} ${SUITNAME[s]}</b>${d.revealed?'':' (never revealed)'}.`:''}</p>
      <table>${(Array.isArray(d.rows)?d.rows:[]).slice(0,2).map(r=>`<tr><td class="${r.us?'us':'them'} nmc">${esc(r.name)}</td><td><b>${num(r.pts)}</b> pts</td><td>${num(r.tricks)} tricks</td></tr>`).join('')}</table>
      <p>${esc(d.team)} ${d.delta==='+1'?'+1':'−1'} → Match score: Us <b>${fmt(num(d.us))}</b>, Them <b>${fmt(num(d.them))}</b></p>`;
     if(d.overText) h+=`<h2>${esc(d.overText)}</h2>`;
@@ -943,8 +967,8 @@ function renderView(V){
   } else {
     const bidTxt = I.bidder==null ? 'Bidding…' : `Bid: <b>${esc(I.bidder)} ${num(I.bid)}</b>${num(I.target)!==num(I.bid)?` → target <b>${num(I.target)}</b>`:''}`;
     let tr='Trump: —';
-    if(I.trump && SYM[I.trump.s]) tr=`Trump: <b style="font-size:16px" class="${red(I.trump.s)?'rs':''}">${SYM[I.trump.s]}</b>`;
-    else if(I.trump) tr=`Trump: <span class="hid">hidden</span>${SYM[I.trump.mine]?` <small>(yours: ${SYM[I.trump.mine]})</small>`:''}`;
+    if(I.trump && SYM[I.trump.s]) tr=`Trump: <b style="font-size:18px">${sym(I.trump.s)}</b>`;
+    else if(I.trump) tr=`Trump: <span class="hid">hidden</span>${SYM[I.trump.mine]?` <small>(yours: <b style="font-size:17px">${sym(I.trump.mine)}</b>)</small>`:''}`;
     $('info').innerHTML=`<span>${bidTxt}</span><span>${tr}</span><span><span class="us">Us ${num(I.us)}</span> · <span class="them">Them ${num(I.them)}</span></span>`;
   }
   (Array.isArray(V.seats)?V.seats:[]).slice(0,4).forEach((S,k)=>{
@@ -960,7 +984,7 @@ function renderView(V){
   $('msg').textContent=String(V.msg||'');
   let a='';
   for(const x of (Array.isArray(V.actions)?V.actions:[])){
-    if(x.suit){ if(!SYM[x.suit]) continue; a+=`<button class="btn suit ${red(x.suit)?'rs':''}" data-v="${x.suit}">${SYM[x.suit]} <small>×${num(x.n)}</small></button>`; }
+    if(x.suit){ if(!SYM[x.suit]) continue; a+=`<button class="btn suit su${x.suit}" data-v="${x.suit}">${GL(x.suit)} <small>×${num(x.n)}</small></button>`; }
     else a+=`<button class="btn${x.ghost?' ghost':''}" data-v="${esc(x.v)}"${x.num?' data-num="1"':''}>${esc(x.label)}</button>`;
   }
   $('actions').innerHTML=a;
@@ -994,7 +1018,7 @@ function refreshMeta(){
 }
 function layoutHand(){
   const h=$('hand'), cards=h.querySelectorAll('.card'), n=cards.length; if(n<2) return;
-  const avail=Math.min(h.clientWidth||window.innerWidth,520)-12, w=54, step=Math.min(44,(avail-w)/(n-1));
+  const w=cards[0].offsetWidth||54, avail=(h.clientWidth||window.innerWidth)-12, step=Math.min(w*0.82,(avail-w)/(n-1));
   cards.forEach((c,i)=>{ c.style.marginLeft = i ? (step-w)+'px' : '0'; });
 }
 function clearTable(){
@@ -1003,14 +1027,18 @@ function clearTable(){
   for(const id of ['trick','msg','actions','hand','info']) $(id).innerHTML='';
 }
 const SET_KEY='taas.settings';
+let FOURC = true;                                   // four-colour suits: ♠ black, ♥ red, ♦ blue, ♣ green
+function applyFourColour(){ if(TEST) return; document.body.classList.toggle('fc', FOURC);
+  $('togFc').textContent = FOURC ? 'On' : 'Off'; $('togFc').classList.toggle('on', FOURC); }
 function loadSettings(){
   if(TEST) return;
   try{ const s=JSON.parse(localStorage.getItem(SET_KEY)||'null'); if(!s) return;
     if(Array.isArray(s.names)&&s.names.length===4) setNames(s.names);
     for(const k of ['music','sfx','muted']) if(typeof s[k]==='boolean') SND.set[k]=s[k];
-    if(typeof s.vol==='number') SND.set.vol=Math.max(0,Math.min(1,s.vol)); }catch(e){}
+    if(typeof s.vol==='number') SND.set.vol=Math.max(0,Math.min(1,s.vol));
+    if(typeof s.fc==='boolean') FOURC=s.fc; }catch(e){}
 }
-function saveSettings(){ if(TEST) return; try{ localStorage.setItem(SET_KEY, JSON.stringify({names:RAW_NAMES, music:SND.set.music, sfx:SND.set.sfx, vol:SND.set.vol, muted:SND.set.muted})); }catch(e){} }
+function saveSettings(){ if(TEST) return; try{ localStorage.setItem(SET_KEY, JSON.stringify({names:RAW_NAMES, music:SND.set.music, sfx:SND.set.sfx, vol:SND.set.vol, muted:SND.set.muted, fc:FOURC})); }catch(e){} }
 function soundUI(){
   if(TEST) return; const st=SND.set;
   $('muteBtn').textContent = st.muted ? '🔇' : '🔊';
@@ -1050,7 +1078,9 @@ function init(){
   $('skipBtn').onclick=()=>{ SND.skip(); setTimeout(soundUI,60); };
   document.addEventListener('pointerdown', ()=>SND.unlock(), {passive:true});
   document.addEventListener('visibilitychange', ()=> document.hidden ? SND.pause() : SND.resume());
-  soundUI();
+  soundUI(); applyFourColour();
+  $('togFc').onclick=()=>{ FOURC=!FOURC; saveSettings(); applyFourColour(); };
+  $('fcPreview').innerHTML=['A','K','Q','J'].map((r,i)=>cardHTML({r,s:['S','H','D','C'][i]},'mini')).join('');
   loadState(); cbLoad(); refreshMeta();
   const soloG=()=>SOLO?SOLO.G:G, soloCB=()=>SOLO?SOLO.CBG:CBG;
   document.querySelectorAll('.lvl').forEach(b=>b.onclick=()=>{ soloG().level=b.dataset.l; saveState(); refreshMeta(); if(!ONLINE) render(); });
@@ -1072,6 +1102,7 @@ function init(){
   $('startBtn').onclick=()=>startGame('29');
   UI.init();
   gateInit();
+  if(location.protocol==='file:') $('onlineSec').style.display='none';   // the Android app: online play lives on the web version for now
   if('serviceWorker' in navigator && (location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname)))
     navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
