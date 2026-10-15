@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Kanchanpur Register</title>
+<meta name="description" content="Learn sampling, confidence intervals, hypothesis tests, ANOVA and nonparametrics by running a village census office: case files with theory, live labs, challenges and XP.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: an analyst's case desk. Sticky status strip (rank, XP, streak); a live transaction-flow
+   simulation as the hero; case files as a grid; an opened file is a single-column dossier:
+   story, theory, lab, challenges. */
+:root{
+  --bg:#EAEFF4; --surface:#FFFFFF; --sunk:#F3F6F9; --ink:#13233A; --muted:#566880; --line:#C9D3DF;
+  --accent:#1F5FA8; --accent-soft:#DCE7F5; --gold:#A86E06; --gold-soft:#F6E7C8;
+  --fraud:#B3263E; --fraud-soft:#F7DCE1; --ok:#1B7349; --ok-soft:#D7EFE2;
+  --display:"IBM Plex Sans Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1722; --surface:#172232; --sunk:#121C29; --ink:#E3E9F1; --muted:#97A7BB; --line:#2B3B51;
+  --accent:#73AAE9; --accent-soft:#1C3150; --gold:#E3AA3E; --gold-soft:#3A2C12;
+  --fraud:#F06D82; --fraud-soft:#3D1A22; --ok:#52C78E; --ok-soft:#14352A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1722; --surface:#172232; --sunk:#121C29; --ink:#E3E9F1; --muted:#97A7BB; --line:#2B3B51;
+  --accent:#73AAE9; --accent-soft:#1C3150; --gold:#E3AA3E; --gold-soft:#3A2C12;
+  --fraud:#F06D82; --fraud-soft:#3D1A22; --ok:#52C78E; --ok-soft:#14352A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1000px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:700}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font:600 .75rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+.note{font-size:.88rem;color:var(--muted)}
+
+/* status strip */
+.strip{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
+  padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.strip .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+.strip .rank{font:700 1.05rem/1.1 var(--display)}
+.xpbox{flex:1 1 220px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.xpbar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.xpbar>i{display:block;height:100%;background:var(--gold);width:0;transition:width .5s ease}
+.xpmeta{display:flex;justify-content:space-between;font:400 .8rem/1 var(--mono);color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:4px 11px;font:600 .82rem/1.2 var(--mono);white-space:nowrap}
+a.chip{text-decoration:none;color:var(--accent)}
+.chip.hot{border-color:var(--gold);background:var(--gold-soft)}
+
+/* hero */
+.hero{display:grid;gap:18px;padding-block:30px 10px}
+.hero p.lede{font-size:1.08rem;max-width:62ch;margin-top:12px}
+.hero .meta{color:var(--muted);font-size:.9rem;margin-top:8px;max-width:62ch}
+.herotop{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;align-items:end}
+@media (max-width:720px){.herotop{grid-template-columns:1fr}}
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;gap:8px;font-size:.92rem}
+.ticket .row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.ticket .row:last-child{border-bottom:0;padding-bottom:0}
+.ticket .row span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* flow simulation */
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;min-width:0}
+.flow canvas{width:100%;height:auto;display:block;max-width:100%;border-radius:6px}
+.flowbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.flowbar .ctrls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flowstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.flowstats div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:grid;gap:1px}
+.flowstats span{font-size:.72rem;color:var(--muted)}
+.flowstats b{font:600 1.05rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:4px 10px;font:600 .8rem/1.2 var(--mono)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+
+/* case grid */
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.case{position:relative;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;min-height:176px;transition:transform .15s,border-color .15s}
+.case:hover:not([disabled]){transform:translateY(-2px);border-color:var(--accent)}
+.case[disabled]{cursor:not-allowed;opacity:.55}
+.case .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.case .tag{font:600 .72rem/1 var(--mono);letter-spacing:.1em;color:var(--accent)}
+.case h3{font-size:1.25rem}
+.case .nick{font-size:.9rem;color:var(--muted)}
+.case .topics{font-size:.85rem;color:var(--muted);margin-top:auto}
+.stars{font-size:1rem;letter-spacing:2px;color:var(--gold)}
+.stars .off{color:var(--line)}
+.stamp{font:700 .7rem/1 var(--mono);letter-spacing:.1em;padding:4px 7px;border-radius:4px;border:1.5px solid currentColor}
+.stamp.ok{color:var(--ok)} .stamp.lock{color:var(--muted)} .stamp.open{color:var(--accent)}
+.case.boss{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.case.boss .tag,.case.boss .nick,.case.boss .topics{color:var(--bg);opacity:.8}
+
+.section-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:34px 0 12px;flex-wrap:wrap}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.badge{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.badge b{font:600 .95rem/1.2 var(--display);color:var(--muted)}
+.badge.got{border-style:solid;border-color:var(--gold);background:var(--gold-soft);color:var(--ink)}
+.badge.got b{color:var(--ink)}
+.badge .seal{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em}
+
+/* dossier */
+.dossier{display:grid;gap:22px;padding-block:24px}
+.back{justify-self:start;background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px clamp(16px,3vw,26px);display:grid;gap:14px;min-width:0}
+.panel>h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel>h3 .eyebrow{color:var(--accent)}
+.brief{display:grid;gap:12px;max-width:70ch}
+.brief .term{font-weight:600}
+.story{border-left:3px solid var(--gold);padding-left:14px;font-style:italic;max-width:70ch}
+.story b{font-style:normal}
+.formula{font-family:var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:.92rem;white-space:pre;line-height:1.5}
+.refs{font-size:.84rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+
+/* labs */
+.labgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:760px){.labgrid{grid-template-columns:1fr}}
+svg text{fill:var(--ink);font-family:var(--mono)}
+.svgbox{width:100%;overflow-x:auto}
+.svgbox svg{display:block;width:100%;height:auto;max-width:100%}
+.svgbox canvas{display:block;width:100%;height:auto;max-width:100%;border-radius:6px}
+.ctrl{display:grid;gap:6px}
+.ctrl label{font-size:.88rem;color:var(--muted)}
+.ctrl output{font-family:var(--mono);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select,input[type=text],input[type=number]{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:8px;padding:8px 14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:5px 10px;font-size:.85rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.readout div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.readout span{font-size:.76rem;color:var(--muted)}
+.readout b{font:600 1.15rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{font:600 .75rem/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--mono)}
+.up{color:var(--fraud);font-weight:600}.down{color:var(--ok);font-weight:600}
+.target{font:700 1.6rem/1.1 var(--mono);color:var(--accent)}
+.regbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.regbtn{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:7px 8px;font-size:.86rem}
+.regbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.door{width:30%;aspect-ratio:3/4;max-width:120px;border:2px solid var(--line);background:var(--sunk);border-radius:8px 8px 2px 2px;
+  font:700 1.4rem/1 var(--display);display:grid;place-items:center}
+.door.pick{border-color:var(--accent);background:var(--accent-soft)}
+.door.open{background:var(--bg);color:var(--muted);border-style:dashed}
+.door.prize{border-color:var(--gold);background:var(--gold-soft)}
+.doors{display:flex;gap:10px;justify-content:flex-start}
+.mixbar{display:grid;gap:6px}
+.mixrow{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.mixtrack{display:flex;height:30px;border-radius:6px;overflow:hidden;background:var(--sunk)}
+.mixtrack i{display:block;height:100%;transition:width .8s ease;font:600 .72rem/30px var(--mono);text-align:center;overflow:hidden;white-space:nowrap;color:var(--ink)}
+.mixtrack i.u{background:var(--accent-soft)}.mixtrack i.c{background:var(--line)}.mixtrack i.n{background:var(--fraud);color:var(--surface)}
+
+/* challenges */
+.q{border-top:1px solid var(--line);padding-top:14px;display:grid;gap:10px}
+.q:first-of-type{border-top:0;padding-top:0}
+.qhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.qhead .eyebrow{white-space:nowrap}
+.qtext{font-weight:500;max-width:70ch}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:9px 12px}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--fraud);background:var(--fraud-soft)}
+.opt[disabled]{cursor:default}
+.numrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.numrow input{width:12em}
+.fb{border-radius:8px;padding:10px 12px;font-size:.93rem;display:grid;gap:4px}
+.fb.ok{background:var(--ok-soft);border:1px solid var(--ok)}
+.fb.no{background:var(--fraud-soft);border:1px solid var(--fraud)}
+.fb.hint{background:var(--gold-soft);border:1px solid var(--gold)}
+.fb b{font-family:var(--display);font-size:1rem}
+
+.toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;z-index:20;max-width:min(320px,calc(100vw - 32px))}
+.toast{background:var(--ink);color:var(--bg);border-radius:8px;padding:10px 14px;font-size:.9rem;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:pop .25s ease}
+.toast b{color:var(--gold-soft)}
+@keyframes pop{from{transform:translateY(10px);opacity:.3}to{transform:none;opacity:1}}
+.foot{margin-top:40px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:6px;font-size:.86rem;color:var(--muted)}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.sheet .formula{font-size:.84rem}
+.sheet h3{font-size:1rem;margin-bottom:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="strip" id="strip">
+    <div class="who"><span class="eyebrow">Analyst rank</span><span class="rank" id="rank">Trainee Analyst</span></div>
+    <div class="xpbox"><div class="xpbar" aria-hidden="true"><i id="xpfill"></i></div>
+      <div class="xpmeta"><span id="xptext">0 XP</span><span id="xpnext"></span></div></div>
+    <span class="chip" id="streakchip" title="Correct first-try answers in a row">Streak <b id="streak">0</b></span>
+    <span class="chip" title="Badges earned">Badges <b id="badgecount">0</b></span>
+    <a class="chip" href="../" id="hublink">All modules</a>
+  </div>
+  <main id="app"></main>
+  <div class="foot">
+    <span>Kanchanpur Register · part of <a href="../">Statistics, played</a>, a free course you play. Built by <a href="https://aritra.ai" target="_blank" rel="noopener">Aritra Pan</a>. Free to use in teaching.</span>
+    <span>Kanchanpur is a fictional village. Every number comes from one fixed census of 1,200 fictional households and a 40-household pilot, so every answer can be checked.</span>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script>
+(function(){
+"use strict";
+/* ===== Sampling, estimation and testing: Kanchanpur Register ===== */
+/* ---------- data (all computed from the fixed census of 1,200 fictional households and the 40-household tank pilot) ---------- */
+const N=1200, NS=120;
+const WNAME=["Purvi","Pashchimi","Uttari","Dakshini"], VNAME=["Dhoop","Kiran","Suryodaya"];
+const LPCD=[55.2,34.3,56.8,51.2,46.3,48.1,35.2,47.0,44.1,43.8,48.4,41.6,74.7,55.7,62.2,41.1,53.3,65.7,88.6,51.6,45.1,70.1,74.0,52.8,52.6,50.6,29.7,63.1,65.0,40.6,45.4,47.9,42.9,74.6,57.8,26.5,58.0,68.2,50.3,63.3,35.0,50.6,29.4,51.9,31.7,40.6,54.4,60.5,74.9,30.7,51.3,33.5,51.1,32.1,65.5,53.5,59.7,35.9,39.0,68.0,60.4,51.1,49.6,62.6,44.4,43.1,54.9,44.4,58.1,40.8,66.4,32.5,48.8,32.2,42.1,12.2,58.1,55.9,48.5,43.2,56.1,41.6,65.0,47.1,40.2,60.7,58.1,47.6,40.6,49.8,51.5,39.2,42.6,40.9,48.5,44.9,35.9,58.3,56.0,60.0,57.4,46.7,45.4,50.7,48.8,66.7,60.4,49.2,45.6,71.0,40.6,67.5,40.9,47.5,52.3,72.8,62.5,49.4,62.0,50.6,63.5,52.6,64.1,42.8,21.9,65.2,39.3,35.1,45.2,65.5,42.8,47.0,34.4,52.4,61.9,33.1,48.9,47.9,42.1,22.3,65.1,70.5,56.5,53.7,56.7,28.7,47.4,50.2,49.7,57.4,35.4,61.2,48.7,21.6,62.3,26.8,29.7,66.7,35.1,55.2,49.0,72.5,53.2,59.7,39.5,51.6,66.4,37.5,64.9,52.7,40.2,68.6,66.6,52.7,44.6,40.3,52.4,46.2,45.4,36.1,42.7,50.0,68.6,64.0,37.8,55.2,50.0,44.9,56.6,53.5,52.9,51.1,49.4,62.8,57.0,69.7,52.8,40.8,68.2,61.8,43.9,70.4,28.0,44.6,50.1,43.6,50.1,57.1,45.4,44.0,57.8,72.9,74.9,42.3,60.0,41.8,56.2,40.3,53.4,52.2,74.6,39.5,67.0,35.9,47.4,62.8,37.3,51.1,47.5,40.1,41.0,60.0,32.2,61.2,65.0,41.9,46.8,51.4,68.3,54.5,26.3,41.1,49.5,52.1,59.0,67.6,62.5,50.7,41.0,57.3,30.7,54.6,57.0,60.2,53.2,62.8,55.5,63.2,48.8,44.4,54.8,46.5,49.4,55.7,57.9,50.2,63.3,43.4,48.8,71.2,47.1,43.2,43.6,52.2,65.4,34.1,53.2,50.9,43.8,64.1,71.2,44.6,38.3,61.0,41.3,72.2,47.6,48.8,66.2,42.2,28.0,50.9,52.2,56.9,47.9,44.1,39.7,31.8,58.9,65.4,53.2,49.3,73.3,45.1,65.1,55.0,55.0,38.3,51.6,48.8,45.7,52.0,48.1,70.3,45.9,56.7,46.8,38.5,43.1,59.3,58.4,26.2,49.1,41.4,49.6,71.5,63.3,61.4,39.6,53.3,43.7,62.9,56.4,65.3,56.7,61.7,54.0,49.5,48.9,27.7,44.4,47.9,49.8,46.8,53.2,44.8,54.2,54.5,48.1,62.3,37.6,60.7,33.9,59.7,47.2,45.7,40.5,68.4,56.1,40.7,46.3,42.0,43.4,61.7,74.3,43.2,51.0,51.6,50.5,43.4,50.8,69.6,61.7,47.6,47.2,49.9,57.1,49.7,58.6,20.4,52.7,60.3,37.6,48.7,37.8,54.9,62.1,44.7,46.3,45.9,65.7,41.4,65.9,32.2,61.6,34.2,43.8,31.8,60.7,62.8,47.0,59.2,75.0,52.9,55.1,67.0,46.2,59.7,37.3,61.0,57.7,72.8,46.3,44.7,43.7,55.7,24.7,46.6,72.6,64.2,39.6,52.5,53.2,59.3,51.0,48.8,51.3,54.9,51.2,45.6,43.5,57.7,72.1,62.1,55.1,56.0,48.0,52.0,62.8,40.8,55.8,54.6,78.9,72.0,32.5,70.3,44.6,65.4,41.5,58.3,50.8,36.3,66.1,60.5,80.2,21.4,53.5,54.4,35.0,43.1,56.7,35.5,37.7,45.2,65.8,56.1,49.9,58.4,50.4,57.9,60.5,28.4,49.4,47.4,65.5,61.6,51.6,61.3,38.6,51.5,54.6,52.6,52.4,58.8,39.8,60.9,52.2,48.2,78.9,51.4,36.1,67.2,41.2,53.8,49.9,48.4,47.1,38.8,61.2,36.4,40.0,37.5,60.6,56.7,46.3,62.3,45.8,53.6,53.2,42.8,49.5,53.4,74.0,49.7,59.3,54.3,59.0,45.2,45.3,57.3,43.2,64.2,60.5,35.6,35.9,51.6,56.0,73.0,41.6,45.2,51.4,37.2,65.3,56.7,63.1,26.0,59.7,58.8,29.2,69.2,45.4,30.2,74.2,58.0,53.6,55.4,68.8,42.6,50.2,44.4,48.7,58.4,57.6,46.2,49.9,40.9,44.0,38.5,47.7,76.9,39.2,38.9,60.4,49.6,43.5,27.9,43.8,34.5,52.5,63.1,29.3,64.3,52.2,48.8,53.9,53.2,67.0,34.0,64.9,55.5,50.4,33.8,28.3,49.7,59.8,43.2,34.8,31.0,48.9,72.0,46.4,46.7,48.7,59.6,56.5,49.5,48.3,38.1,65.0,47.1,52.3,63.6,47.4,54.8,57.8,62.9,58.0,51.5,78.8,56.1,50.6,57.1,38.4,33.2,59.8,56.8,47.5,53.9,70.3,58.9,54.8,41.5,39.9,39.8,66.3,75.8,40.9,64.8,36.4,67.8,34.8,62.7,34.6,50.2,73.0,51.3,49.2,46.6,67.1,53.5,22.0,77.5,64.7,32.4,41.6,58.8,43.6,59.3,58.4,54.9,64.4,39.5,37.7,55.0,31.3,41.2,49.2,56.6,51.8,44.1,55.2,46.3,49.3,74.6,53.6,58.7,70.7,79.5,68.8,56.6,41.0,56.8,56.6,42.9,50.7,30.8,47.7,64.1,41.4,54.8,33.1,30.4,49.1,40.8,50.9,58.2,42.8,47.4,25.6,31.3,68.7,38.6,56.2,50.8,47.8,55.8,59.3,56.7,45.3,57.1,69.7,56.5,70.7,42.4,30.7,78.7,49.9,46.1,39.2,42.8,51.8,76.5,69.8,57.5,55.6,24.9,40.6,59.9,39.2,74.3,54.9,40.3,64.7,71.8,39.5,54.9,46.1,49.9,53.9,52.9,70.8,39.4,64.1,82.4,66.4,68.4,49.0,40.5,53.9,58.9,47.5,55.9,61.2,55.9,75.0,37.1,48.6,68.1,59.3,65.9,50.1,56.9,53.8,66.1,66.3,65.7,54.5,51.8,49.3,57.1,59.6,50.0,44.0,46.0,69.7,56.5,53.3,51.3,43.1,46.1,45.1,35.7,63.2,57.7,60.7,58.9,63.3,49.2,53.0,46.1,45.7,60.4,59.3,47.4,62.2,68.3,28.5,70.5,64.5,50.5,60.6,72.1,50.9,51.4,37.3,22.4,69.0,34.2,43.8,43.2,56.3,56.7,60.0,47.6,63.4,57.3,37.7,63.3,47.0,71.1,51.6,39.0,55.6,52.4,52.3,28.8,43.8,60.1,57.0,49.6,30.3,52.0,39.5,46.7,41.2,28.0,65.9,43.1,37.4,68.7,37.3,49.9,65.8,66.8,49.7,54.2,41.5,27.7,48.5,57.4,49.1,72.3,30.6,70.2,66.3,76.5,42.6,48.2,58.4,64.0,54.1,56.4,75.6,51.5,57.7,74.6,51.6,69.1,39.3,54.9,48.5,46.5,26.0,41.0,41.5,47.3,61.0,63.9,38.8,51.3,66.0,29.4,46.2,49.4,73.2,35.3,33.2,47.6,68.1,61.2,61.0,57.3,60.4,35.0,65.3,60.8,42.7,49.8,48.9,69.0,41.4,48.4,56.4,54.3,80.2,44.1,56.8,73.0,63.6,69.2,57.6,57.2,65.8,38.2,39.0,51.6,37.3,43.7,50.1,48.1,37.5,38.7,50.5,46.8,58.6,40.3,68.2,66.5,50.8,56.9,63.2,64.1,46.6,67.1,40.0,55.9,43.3,35.6,65.6,57.1,46.1,58.1,67.2,42.1,54.1,48.2,49.7,51.8,62.1,60.3,43.9,63.2,40.1,61.3,44.0,54.3,63.9,30.9,49.4,71.6,59.2,58.2,71.6,56.3,58.0,49.0,60.6,37.0,64.4,37.1,58.9,52.9,63.8,33.2,46.9,39.7,41.3,48.5,53.9,50.5,38.3,50.7,63.3,62.0,47.1,37.2,51.2,59.3,45.6,41.6,51.9,52.0,46.2,62.5,27.6,66.1,68.7,67.2,33.1,41.4,34.0,34.8,42.7,56.6,52.2,42.9,43.6,65.8,53.2,64.2,53.3,42.2,62.8,30.9,34.7,62.6,53.6,61.6,56.1,41.1,59.5,53.5,36.0,57.9,45.5,47.7,68.0,54.6,64.3,42.7,52.1,62.0,20.3,54.6,45.2,70.0,36.9,50.4,70.6,41.8,69.1,50.3,31.3,48.3,37.1,52.0,54.0,63.3,65.8,38.7,33.7,42.3,42.8,61.5,36.1,62.1,43.9,46.8,58.2,33.4,34.0,39.7,62.8,43.7,59.0,43.6,54.4,50.6,62.8,60.0,53.9,67.4,66.0,47.2,72.0,78.8,49.2,56.8,63.4,61.1,83.0,45.7,63.7,32.1,59.8,65.7,32.6,60.1,46.2,39.5,62.6,68.6,46.0,42.4,37.6,48.6,43.1,36.8,46.5,47.9,60.2,53.1,50.7,38.0,56.2,53.0,42.2,62.8,43.5,56.2,47.2,47.7,46.1,43.6,39.0,55.2,46.1,48.1,41.2,79.9,75.1,60.2,54.9,44.1,52.9,43.7,67.9,49.1,49.2,66.0,36.9,48.2,51.7,54.4,31.3,58.6,48.3,51.5,64.0,49.1,37.7,38.8,56.0,33.0,66.6,64.3,62.3,51.7,63.6,54.5,42.2,58.1,57.7,56.0,49.0,38.4,49.5,55.8,54.2,79.9,31.9,33.1,48.0,58.7,63.0,73.3,43.8,76.8,46.5,36.5,52.7,35.7,64.0,66.5,39.7,50.1,44.0,35.1,52.2,57.5,23.9,78.0,55.9,61.6,78.7,60.2,59.0,54.7,33.4,56.5,76.4,48.5,46.1,36.6,53.0,56.0,28.2,52.0,44.8,59.2,71.2,44.3,61.1,67.8,51.2,56.9,57.1,56.5,57.4,34.5];        // census litres per person per day, census row order
+const WARD=[1,3,3,3,0,0,0,2,0,1,0,1,3,2,2,3,2,2,2,1,0,2,0,0,1,0,3,1,1,3,3,2,3,1,1,0,1,2,2,0,2,3,3,3,2,1,0,0,1,3,1,1,0,3,2,3,3,2,2,2,3,2,2,1,3,1,1,3,2,0,1,3,3,1,3,0,3,1,2,1,3,0,1,1,1,2,1,0,3,1,2,2,3,2,0,3,3,1,3,1,2,0,2,0,1,1,2,1,0,2,1,1,0,3,1,2,0,0,1,3,1,2,1,2,0,2,3,3,3,2,2,2,0,0,0,3,2,0,2,0,3,3,3,2,3,2,0,0,3,1,0,3,0,0,2,0,3,1,2,3,2,3,0,1,1,1,2,0,0,1,3,2,1,1,3,2,3,3,3,2,2,1,1,1,0,0,2,3,1,2,2,2,0,1,1,3,0,3,1,2,3,1,2,2,3,2,0,0,2,1,2,1,1,3,1,2,3,2,1,0,3,0,1,0,3,2,1,1,0,2,0,2,3,1,3,3,0,1,1,1,0,2,3,1,1,3,3,3,1,0,0,0,1,2,0,3,1,1,1,1,3,0,1,1,0,0,3,2,1,2,1,3,0,1,1,0,2,1,3,2,3,3,2,0,3,1,3,1,2,3,0,0,1,1,1,2,2,0,1,2,1,0,2,3,1,1,3,3,2,0,2,0,1,1,2,0,2,3,2,0,3,0,2,2,2,2,1,0,3,1,2,1,1,0,1,3,2,1,2,0,0,2,1,0,2,0,0,0,1,0,0,3,0,2,2,3,1,1,0,0,0,0,1,0,1,0,1,2,1,2,3,2,1,2,1,1,0,1,3,3,1,2,0,0,1,2,2,2,3,0,0,0,1,2,3,0,1,2,2,2,0,1,0,0,1,3,1,0,3,2,3,1,0,1,0,0,0,1,3,0,0,1,2,3,0,1,2,1,3,2,3,0,1,0,1,1,0,0,3,3,0,2,1,2,3,1,0,3,2,0,3,0,0,3,1,0,3,2,2,0,2,1,2,1,2,0,2,0,2,3,1,2,0,3,3,3,1,1,2,2,0,3,1,1,3,1,2,0,3,3,0,3,3,2,1,3,0,0,1,0,0,1,1,0,0,1,1,3,3,2,3,1,1,2,2,2,3,1,2,0,2,0,1,0,0,1,2,1,3,3,1,3,1,2,0,3,0,1,0,3,1,0,0,0,1,0,1,0,0,2,3,1,3,2,1,0,1,3,2,1,3,2,3,2,1,3,1,2,2,0,0,0,1,2,2,0,1,1,1,3,0,0,0,2,3,2,3,3,3,2,0,0,3,3,1,0,2,0,0,3,1,2,2,2,2,2,1,1,1,0,3,1,2,0,1,2,0,3,1,2,1,3,1,3,3,2,3,2,3,1,2,2,3,3,1,0,2,1,1,1,0,2,0,3,2,0,3,3,2,1,1,1,0,2,0,3,2,0,0,0,1,0,3,1,1,1,2,1,3,0,0,2,1,0,1,3,2,3,0,2,0,0,1,2,3,2,1,3,0,3,2,2,3,1,2,1,2,2,2,3,1,3,1,2,3,0,1,0,1,3,3,3,1,1,2,0,1,3,0,1,3,3,3,0,2,1,2,3,1,2,2,0,1,3,3,1,3,0,1,1,2,3,2,3,1,3,0,3,2,1,2,3,3,1,1,3,3,0,1,2,2,1,2,0,3,3,3,0,0,0,1,3,3,2,0,1,3,2,1,0,0,1,3,2,0,2,2,1,3,3,2,3,0,1,1,2,3,0,0,2,3,1,2,1,0,1,2,1,0,0,3,1,2,0,2,1,1,2,2,2,3,3,3,2,1,1,2,3,3,2,0,0,2,3,1,2,1,3,3,0,0,2,3,1,3,2,0,3,3,1,3,1,3,0,3,1,0,3,2,2,2,2,0,0,2,3,1,1,3,0,0,0,3,1,0,0,2,3,3,2,1,1,1,0,1,0,0,2,1,1,3,1,0,3,3,3,3,2,3,1,2,0,0,0,3,0,2,0,3,3,0,2,2,0,1,3,1,1,3,2,1,3,0,2,3,2,0,0,2,1,0,2,2,3,2,3,3,2,0,1,2,1,1,0,3,0,2,0,1,1,1,0,0,2,2,1,3,0,3,3,3,0,3,2,1,3,0,2,0,2,0,3,2,2,3,2,0,2,2,0,0,0,2,2,2,0,1,1,0,3,3,0,0,3,3,2,2,2,1,2,3,3,1,0,3,2,2,3,1,0,1,1,2,2,0,2,3,1,1,3,1,2,0,3,0,3,0,0,1,2,1,1,2,0,1,3,0,2,2,0,0,0,0,3,0,0,2,0,2,3,2,2,0,0,1,0,1,2,0,0,0,1,1,2,3,1,2,1,2,0,2,0,2,0,1,1,0,2,3,1,2,2,0,0,3,1,0,0,1,2,0,0,0,0,3,1,3,0,2,3,3,1,2,0,3,2,0,3,0,2,3,1,0,3,0,2,2,2,1,3,0,1,1,1,2,0,1,1,0,2,0,0,0,1,3,0,1,1,3,0,3,2,3,0,1,3,3,2,3,1,0,0,2,2,0,1,2,3,0,1,0,2,3,2,2,0,1,3,2,0,2,2,0,3,3,3,3,1,1,2,1,1,0,2,2,2,3,0,2,1,1,3,0,0,3,3,3,3,2,0];        // census ward index into WNAME
+const EXP=[8671,7173,16080,18485,16158,6695,4496,16348,7885,15000,12881,7165,22886,9542,7355,3936,7472,14395,6827,14447,27239,4674,36872,15358,7041,12834,4928,11157,14500,18291,6220,16571,15358,9386,11743,9811,22784,7602,5252,16781,8971,13208,3662,8005,6419,12961,13438,7955,15402,9333,11890,14518,9548,5220,10659,6605,11638,11194,3341,7985,17838,23486,6615,8007,18298,9297,8050,9931,11197,9793,13137,11651,9753,25749,8951,12100,9045,11223,14182,5912,11716,6976,6441,7530,29320,28318,7916,14220,16243,8039,12934,5299,4006,6074,4873,8690,8403,12822,5308,5292,14548,7579,11421,14289,19310,16031,5853,4083,6290,8983,13955,11050,15091,4604,7278,2534,13800,12276,9931,10278,6542,9794,21294,10622,10380,16613,8036,19294,6527,8015,16763,10179,4630,6992,11350,6275,8451,11978,8513,12908,9033,4692,8655,7564,9130,14382,19272,11180,7090,13986,13849,10967,6983,6126,10484,10702,9828,13326,9111,12210,9626,26625,22977,6592,8026,3361,8656,9993,9157,10164,15826,4824,24772,11117,26231,8815,6689,20013,6692,11581,10390,12412,12211,7223,9789,5922,8924,10603,22315,9127,7259,23393,7243,4738,10225,7307,4421,25380,9461,6354,8673,4798,4079,9099,15028,13285,19951,11997,13436,15816,10281,6765,9252,11279,13315,9110,12403,8892,9982,25082,5257,21236,4551,19839,17626,17387,16366,2880,20841,15734,15979,17057,5484,8670,6787,6431,8926,4462,14441,4054,4013,9683,20171,3797,9738,22200,6458,6740,9210,18045,20072,18128,7322,7682,8753,10428,12902,20894,7265,12314,6983,12229,17605,17926,7741,7621,10128,14510,27212,8809,14475,4876,12224,27779,24458,20625,4133,22596,10634,6253,8309,9880,9615,8048,2981,10945,7666,8605,13647,7418,7255,16873,9673,3669,8205,19853,15753,32816,23524,4311,9070,6717,5906,7837,6290,7494,10198,7608,5570,10688,6467,7663,6807,7217,6873,29134,11389,9011,15136,5393,7843,9425,15674,9839,11642,12716,13771,8719,30644,12135,11205,11870,8447,14089,12635,12825,12034,9732,11427,7384,13617,14497,15416,5700,7696,5153,8795,8641,14849,19600,4863,6666,8134,7296,9880,13780,6333,12356,10951,15022,16863,10120,7987,6243,10517,13266,10685,5929,14767,15875,13390,4557,3291,4318,2952,15143,7376,14756,9906,12354,6867,5469,9743,11181,15458,5813,9736,16358,10223,12613,8519,18471,6890,8505,13283,11449,21014,8262,7935,7761,8686,10325,13347,8568,6439,18179,14928,9848,11816,5482,4328,7586,7467,13905,6174,14246,13091,2581,12842,18180,10353,13352,13441,5394,8178,8221,11628,14607,7245,7342,14310,12001,11592,8282,11148,15119,20522,13232,13996,13208,9989,7068,12668,9889,8874,6308,9996,8109,8954,8575,16858,12441,26061,18158,8472,19402,9985,10545,5152,4001,23916,12500,21697,14375,6847,8350,8480,6414,11554,8321,12329,14690,13245,15327,17592,10889,7066,4812,14269,6392,5934,16966,8637,17142,14945,18499,19870,18375,13874,16358,11941,7415,8724,10197,6039,7879,13195,12130,10289,2770,6775,13942,19986,7878,10812,2925,18266,19567,7263,27264,10665,9100,10147,12493,19471,17586,13002,13298,12635,11213,3042,10909,13039,13809,9382,16597,8440,7606,12449,9199,7291,5143,7350,9698,15061,8645,8580,5897,4107,7991,10985,12572,14174,11032,14447,5319,6493,12605,12737,6028,10593,13047,11476,6735,14040,9119,10762,8925,8998,5198,12725,5489,15311,10911,9328,6416,16145,4766,6720,8016,17777,8130,10730,11360,10185,14541,9421,8179,11972,16291,4591,8533,25368,11445,22269,25580,8842,10485,12093,13346,7736,6918,32455,26699,17083,16929,8473,8625,20890,5317,10231,20575,12138,14858,10854,6179,9411,4953,10366,3488,9071,13051,10824,31860,6873,10551,8571,9478,8097,15161,6389,9990,12371,4870,8456,11046,18482,8917,7035,9980,7229,8795,2712,7547,6643,4040,5925,14400,13448,5687,11389,13221,11484,8809,9692,3982,4243,17267,4759,3060,10881,8736,9594,9436,17044,5181,17084,12146,7522,12236,9366,11306,10660,22693,6297,13696,17646,15398,12087,9650,6855,36787,4339,6419,5789,11577,6010,9347,13195,16131,14047,23376,22667,8345,6790,11640,10437,14988,17540,5873,12632,9182,13144,7410,4539,13600,16287,11127,5342,8369,9735,25367,10428,7931,10195,2931,15589,13184,12934,10905,4971,9260,10643,8150,5690,5885,11607,11496,7790,14534,7445,7753,9642,23263,6102,6674,5420,11054,6426,7157,14739,11915,8541,18192,7964,9245,3403,5839,4533,11992,8616,11485,8126,8180,14738,5522,5650,6955,9265,11474,6132,7212,14580,9979,17478,8857,7194,6151,12080,12098,4801,10220,17072,8108,18208,11242,10805,7732,15664,15571,9969,6781,8514,6489,24854,3646,17793,16954,7931,14490,11682,6712,14540,6355,3976,12369,19151,29751,8937,12267,16825,8617,8854,5329,3939,5069,15145,10736,8450,9670,20626,6681,6765,5709,15766,7047,6093,6344,16892,9498,2223,12223,16319,7454,5532,19066,15741,11841,7904,6102,8690,9073,5488,14505,5508,6948,4748,7643,8217,9005,6034,15678,7932,16964,12112,16507,11080,6080,11659,8692,9269,11024,6531,9443,13076,19049,9203,12909,7304,14825,9186,12397,12841,5278,13413,16460,5228,9156,7899,15952,9103,9034,32673,8173,12214,10032,12482,8915,10863,9470,7098,12802,10367,6097,6005,8680,3667,14185,28982,11103,11872,13818,3496,7126,5641,13945,7792,10276,30969,7125,12518,18271,12335,3880,6567,9564,9479,10511,8276,4931,8174,18811,13321,12301,9720,8251,5678,12340,4491,13203,12603,6714,10174,12311,19974,3256,26436,6510,11667,17577,6854,23278,12986,14168,3620,9175,9694,11884,20439,6667,10272,23478,7347,5505,6865,5373,23357,6242,5521,11038,6865,7208,17119,5950,13431,19613,3071,5089,6125,7623,4284,7966,21744,12991,10379,13833,11163,14628,12014,6887,6231,16025,9066,7872,7961,11941,2869,5731,3454,12218,4348,15595,13434,8957,9551,21546,11029,6484,16231,4769,7755,6176,18925,10268,7293,7484,15367,10383,14318,4874,8647,6667,11123,8233,19424,5510,7031,11181,19520,8192,5775,8554,7639,19254,3284,15599,11021,8126,17563,22106,12493,8201,5948,12298,6505,12720,18004,7720,7154,9313,9368,25817,4155,8110,4652,12237,9431,15978,13367,9158,25357,7870,15145,7169,7226,8630,10623,7404,11963,14681,4742,5847,5183,9775,12480,16372,5543,11719,9453,42027,10326,22348,6568,4766,2478,7261,9454,7310,16752,10380,8296,7186,10207,6781,11077,7723,6831,5708,24339,15457,15266,11147,9030,9653,14087,11379,8310,9240,6757,10575,19079,27567,10721,5005,4555,10774,3141,3527,13158,9919,15766,3747,8085,6482,8054,7397,6402,19200,9325,12182,6337,9683,10495,12707,5552,20429,5763,9059,7091,6366,38482,6417,15711,10592,15109,10987,4921,14475,15276,5292,6168,5538,10552,12635,7571,17693,10723,13304,13423,6687,6574,9756,9200,11826,15552,8551,4043,17833,15777,18024,20468,8746,13897,11810,5066,11619,16078,8083,6638,7483,6168,8231,1691,9318,14143,8473,13869,13004,7200,7408,5722,11581,6510,22515,17406,5215,9700,7562,10385,4203,6101,10935,5382,11091,13314,6066,14717,7256,11718,5538,19520,7770,14712,4629,5642,6868,8511,10406,9917,3560,10034,10827,7588,9466,41415,7249,18347,10711,17519,11071];          // census monthly expenditure, ₹
+const S_LPCD=[46.5,51.6,46.8,50.1,54.9,40.8,63.3,41.6,38.6,49.0,43.6,50.7,48.7,43.1,34.8,43.7,48.7,33.8,44.4,57.4,52.6,48.8,47.1,88.6,44.8,79.5,37.3,65.1,57.4,55.0,40.6,33.2,45.4,43.1,55.2,35.0,50.6,40.0,43.2,46.8,63.1,39.3,56.2,40.3,68.2,33.4,51.6,21.9,36.6,35.0,64.3,56.2,54.6,61.1,43.8,29.7,51.6,61.6,57.1,40.6,49.8,43.1,59.3,65.5,51.5,49.7,38.2,51.0,56.2,66.7,39.0,63.4,46.6,74.2,74.6,37.3,53.9,78.9,53.2,37.3,61.2,50.7,34.2,76.9,31.3,50.4,53.2,47.7,34.6,66.4,44.0,47.7,55.6,41.5,58.6,78.9,51.5,65.6,63.9,58.9,45.1,56.2,67.2,42.1,38.8,60.0,53.0,41.6,46.7,60.4,40.9,37.7,55.0,37.4,63.6,49.1,31.8,60.8,31.9,51.0];    // the council's sample of 120 (draw order)
+const S_TOILET=[0,1,1,1,1,0,0,0,1,1,0,1,1,0,1,1,1,1,1,1,1,0,0,1,1,0,0,0,0,1,1,0,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1,1,0,1,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,0,1,1,1,0,0,1,1,1,1,0,1,1,0,1,1,1,0,0,0,1,1,0,1,0,1,1,1,0,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1];
+const S_WARD=[1,1,0,0,2,0,2,3,2,1,3,0,3,3,2,0,3,0,3,0,1,1,1,2,0,1,1,3,2,3,1,2,1,0,2,0,3,0,0,0,0,3,3,3,1,1,0,0,2,2,0,3,2,0,1,3,0,3,0,3,2,0,3,2,2,1,0,0,3,1,3,2,0,0,1,1,1,1,0,3,2,0,0,1,3,2,0,2,3,2,1,2,2,2,0,3,2,2,1,1,3,3,1,2,0,0,1,0,2,3,2,0,1,3,3,1,2,0,0,1];
+const S_LAMP=[13.84,11.92,6.97,11.47,9.99,10.93,11.32,11.49,7.72,11.79,10.22,9.32,9.58,10.32,10.06,11.68,7.83,10.83,13.65,11.06,10.55,10.5,11.36,7.95,10.69,9.01,10.4,11.74,9.0,11.83,10.37,9.75,9.32,13.81,7.52,5.74,11.43,9.19,9.07,10.0,9.76,8.08,11.04,11.39,9.12,7.58,9.78,10.54,6.81,8.03,11.34,11.59,10.26,9.99,9.18,8.95,11.21,11.5,10.17,9.02,8.31,11.12,9.53,9.2,9.54,11.83,8.03,10.34,10.85,10.26,9.12,10.09,7.77,11.44,9.42,10.42,10.23,7.7,11.02,5.45,8.51,9.2,10.13,10.3,11.65,7.52,9.65,9.22,12.68,8.98,10.03,10.06,11.98,10.06,12.05,8.71,11.04,7.54,9.51,11.1,9.49,9.17,11.17,8.76,11.11,9.1,7.78,10.96,8.93,9.13,9.66,8.97,11.22,10.44,10.8,7.35,9.22,8.1,10.93,9.49];
+const S_VENDOR=[1,1,0,0,2,1,1,2,0,0,1,1,2,0,2,1,0,2,1,0,2,1,1,0,0,2,2,2,1,2,1,0,2,1,2,2,1,2,0,0,0,0,2,1,2,0,2,1,1,0,1,2,1,1,1,0,1,1,2,0,2,1,2,2,1,1,2,2,2,1,0,1,1,1,2,1,1,2,1,0,1,0,1,0,1,0,2,1,1,1,1,1,1,1,1,1,0,0,2,1,2,2,1,1,2,0,0,2,0,0,0,0,2,0,0,1,2,0,0,2];
+const S_GRIEV=[1,2,0,1,1,0,2,0,0,1,0,0,0,3,2,0,2,3,1,0,0,0,0,2,1,0,1,1,1,0,0,1,2,1,1,2,1,0,1,1,0,0,3,0,1,0,0,0,1,1,0,1,0,1,1,1,1,0,2,0,0,0,1,1,0,1,1,0,0,0,1,0,0,1,1,0,0,0,2,0,1,0,0,1,2,2,0,0,1,1,0,0,1,0,1,0,1,1,1,0,0,0,1,0,1,5,1,0,1,0,2,1,2,0,1,0,0,3,1,1];
+const S_FAM=[3,3,3,2,2,6,3,5,7,3,4,4,5,4,3,5,6,7,2,4,5,7,4,1,6,3,5,3,5,2,2,4,3,5,5,5,3,2,6,4,2,5,5,7,5,5,4,7,5,4,5,7,2,7,3,3,5,1,7,5,4,6,4,2,6,5,2,2,3,1,8,5,5,6,3,4,6,3,4,7,7,4,5,2,6,4,4,4,6,3,2,8,3,4,3,5,4,3,2,4,5,5,4,2,6,3,3,3,7,4,4,2,1,4,5,6,6,4,4,7];
+const S_EXP=[13158,7066,5700,5215,15952,9793,13434,12449,14269,5066,4243,14289,32455,7643,7229,12340,10593,8533,9931,8692,7041,8605,7530,6827,5153,15398,3939,9033,14548,10198,11607,3667,10985,15664,20429,7126,9071,6775,13266,12311,15061,8036,12403,3256,9461,11718,8251,10380,4629,8971,8130,12182,7068,7588,16145,4928,5228,11091,11997,18291,10276,3141,14540,10659,6392,12112,12301,8178,13144,16031,9720,24339,12986,14174,22693,16366,4533,12668,22977,11816,11103,8085,11449,5198,5873,11554,8753,8998,2712,8656,15816,12720,5690,8954,17693,13874,12934,20439,8915,23524,7837,8054,10383,8513,9756,10380,7397,6976,14505,15311,6074,9594,7494,8217,15777,22667,8262,13945,6168,10685];
+const TANK_B=[57.5,50.0,43.7,47.4,57.3,48.9,45.2,69.6,50.6,47.9,65.1,47.8,45.8,42.1,57.4,49.5,43.5,49.5,36.8,40.8,38.8,68.7,40.2,74.9,53.3,31.8,57.8,63.0,55.9,47.2,41.6,30.1,61.0,60.5,32.2,53.8,41.3,31.3,41.4,40.1], TANK_A=[61.8,56.0,49.3,47.3,62.9,44.3,44.9,81.4,51.8,55.1,68.0,56.8,50.2,39.8,55.2,50.2,47.6,53.1,37.0,46.4,38.7,83.5,42.7,76.9,51.9,36.0,59.7,60.9,56.9,52.1,53.4,32.9,71.6,60.9,35.5,61.3,43.9,37.0,37.3,42.2];
+const POWER={"30":[0.8813,0.8576,0.8309,0.8011,0.7683,0.7328,0.6947,0.6543,0.6121,0.5686,0.5242,0.4795,0.435,0.3914,0.3491,0.3087,0.2705,0.235,0.2023,0.1727,0.1463,0.1232,0.1034,0.0868,0.0734,0.0631,0.0558,0.0514,0.05],"60":[0.9948,0.9918,0.9874,0.9811,0.9723,0.9603,0.9444,0.9239,0.898,0.8662,0.8282,0.784,0.7338,0.6783,0.6184,0.5556,0.4914,0.4274,0.3654,0.3067,0.2527,0.2045,0.1626,0.1274,0.099,0.0773,0.062,0.053,0.05],"120":[1.0,1.0,1.0,0.9999,0.9998,0.9996,0.9991,0.998,0.9959,0.9922,0.9856,0.9747,0.9578,0.9326,0.897,0.8495,0.7893,0.7169,0.6344,0.5451,0.4534,0.3643,0.2821,0.2104,0.1515,0.1062,0.0746,0.0561,0.05],"240":[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.9998,0.9995,0.9984,0.9956,0.9891,0.9753,0.9493,0.905,0.8374,0.7443,0.6292,0.5011,0.3729,0.2579,0.1655,0.1003,0.0623,0.05]};      // exact power of the two-sided one-sample t test, true μ = 48 … 55 step 0.25, by n
+const CELL=[[8.914,9.362,9.61,8.682],[11.404,10.683,10.882,9.584],[10.631,9.574,9.58,9.05]];        // sample mean lamp hours, vendor × ward (Purvi, Pashchimi, Uttari, Dakshini)
+const POP={mu:51.7822,sigma:11.7933,toilet:0.66,expMu:11021.0,expSigma:5531.21,expSkew:1.491,wardMu:[47.5297,56.1573,52.3051,51.1521],wardN:[310,307,297,286],vendorMu:[9.5149,10.3809,9.3262]};
+const SMP={mean:50.3342,sd:12.1460,se:1.1088,tcrit:1.9801,lo:48.1387,hi:52.5297,k:78,phat:0.65};
+const TCRIT={30:2.0452,60:2.0010,120:1.9801,240:1.9699};
+const PVALS=[["Tank pilot, paired t",2.082e-5],["Village LPCD below 55, one-sided t",2.511e-5],["Lamp hours by vendor, ANOVA F",7.185e-5],["Family size vs LPCD, correlation",0.001056],["Expenditure vs LPCD, correlation",0.001676],["Toilet share below 0.75, exact binomial",0.009283],["Purvi vs other wards, Welch t",0.1139],["Ward × toilet, chi-square",0.2160],["Nudge A vs B, Fisher exact",0.2398],["Vendor × ward interaction",0.3872],["Grievances vs Poisson, goodness of fit",0.5855],["Equal variances across vendors, Levene",0.6113]];
+
+/* ---------- maths helpers ---------- */
+const normCDF=x=>{const t=1/(1+0.2316419*Math.abs(x));const d=0.3989423*Math.exp(-x*x/2);let p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p;};
+function lgamma(z){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let x=z,y=z,t=x+5.5;t-=(x+0.5)*Math.log(t);let s=1.000000000190015;for(let j=0;j<6;j++)s+=c[j]/++y;return -t+Math.log(2.5066282746310005*s/x);}
+const betaPDF=(x,a,b)=>x<=0||x>=1?0:Math.exp((a-1)*Math.log(x)+(b-1)*Math.log(1-x)+lgamma(a+b)-lgamma(a)-lgamma(b));
+function betaQ(p,a,b){let lo=0,hi=1;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(betaCDF(m,a,b)<p)lo=m;else hi=m;}return (lo+hi)/2;}
+function betaCDF(x,a,b){ // regularized incomplete beta by continued fraction (Numerical Recipes betacf)
+  if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  const cf=(x,a,b)=>{const M=200,EPS=3e-14,FP=1e-300;let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<FP)d=FP;d=1/d;let h=d;for(let m=1;m<=M;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;h*=d*c;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<EPS)break;}return h;};
+  return x<(a+1)/(a+b+2)?bt*cf(x,a,b)/a:1-bt*cf(1-x,b,a)/b;}
+const gauss=r=>{let u=0,v=0;while(u===0)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+function pick(r,n,k){const o=[...Array(n).keys()];for(let i=0;i<k;i++){const j=i+Math.floor(r()*(n-i));[o[i],o[j]]=[o[j],o[i]];}return o.slice(0,k);}
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const sdev=(a,m)=>{const mm=m===undefined?mean(a):m;return Math.sqrt(a.reduce((s,x)=>s+(x-mm)**2,0)/(a.length-1));};
+const MONO="IBM Plex Mono, monospace";
+const COL=()=>({ink:cssVar("--ink"),muted:cssVar("--muted"),line:cssVar("--line"),sunk:cssVar("--sunk"),acc:cssVar("--accent"),accs:cssVar("--accent-soft"),red:cssVar("--fraud"),gold:cssVar("--gold"),ok:cssVar("--ok"),surf:cssVar("--surface")});
+
+/* ---------- the sampling machine (hero and File 1) ---------- */
+function SamplingMachine(root,opts){
+  const o=Object.assign({title:"Live: the sampling machine, one survey at a time",seed:9,autoplay:!REDUCED,n:120,strat:false,controls:false,badge:null},opts);
+  root.classList.add("flow");
+  root.innerHTML=`<div class="flowbar"><span class="eyebrow">${o.title}</span><div class="ctrls">
+      ${o.controls?`<select data-n aria-label="Sample size"><option value="30">n = 30</option><option value="120" selected>n = 120</option><option value="480">n = 480</option></select>
+      <div class="seg" role="group" aria-label="Design"><button type="button" data-d="srs" aria-pressed="true">simple random</button><button type="button" data-d="strat" aria-pressed="false">stratified by ward</button></div>`:""}
+      <button class="btn small" data-play type="button">${o.autoplay?"Pause":"Play"}</button>
+      <div class="seg" role="group" aria-label="Speed"><button type="button" data-sp="1" aria-pressed="true">1×</button><button type="button" data-sp="4" aria-pressed="false">4×</button><button type="button" data-sp="16" aria-pressed="false">16×</button></div>
+      <button class="btn ghost small" data-reset type="button">Reset</button></div></div>
+    <canvas aria-label="Animated grid of 1,200 households; a random sample lights up and its mean drops onto a histogram of sample means"></canvas>
+    <div class="flowstats"><div><span>Surveys run</span><b data-k>0</b></div><div><span>Last sample mean x̄</span><b data-last>—</b></div><div><span>Mean of the x̄s</span><b data-mm>—</b></div><div><span>SD of the x̄s</span><b data-sdm>—</b></div><div><span>σ/√n · FPC</span><b data-th>—</b></div><div><span>Census mean μ</span><b>51.78</b></div></div>`;
+  const W=720,H=300,c=root.querySelector("canvas"),g=canvasSetup(c,W,H);
+  let r=rng(o.seed),n=o.n,strat=o.strat,speed=1,playing=o.autoplay,run=null,phase=0,lit=[],cur=[],means=[],drop=null,sum=0,sum2=0;
+  const GX=14,GY=26,CW=40,RW=30,DX=7.6,DY=7.6;              // 1,200 dots in a 40 × 30 grid
+  const HX=360,HW=340,HY0=250,HH=170,LO=46,HI=58;
+  const theory=()=>POP.sigma/Math.sqrt(n)*Math.sqrt((N-n)/(N-1));
+  const alloc=()=>{const q=POP.wardN.map(w=>w/N*n),a=q.map(Math.floor);let s=a.reduce((x,y)=>x+y,0);const ord=q.map((v,i)=>[v-a[i],i]).sort((u,v)=>v[0]-u[0]);for(let j=0;s<n;j++){a[ord[j%4][1]]++;s++;}return a;};  // largest-remainder rounding: 31 / 31 / 30 / 28 at n = 120
+  function newSample(){if(!strat)cur=pick(r,N,n);else{cur=[];const a=alloc();WNAME.forEach((w,wi)=>{const ids=[];for(let i=0;i<N;i++)if(WARD[i]===wi)ids.push(i);pick(r,ids.length,a[wi]).forEach(j=>cur.push(ids[j]));});}lit=[];phase=1;}
+  function finish(){const m=mean(cur.map(i=>LPCD[i]));means.push(m);sum+=m;sum2+=m*m;drop={m,y:40};phase=2;}
+  function stats(){const k=means.length;root.querySelector("[data-k]").textContent=ind(k);root.querySelector("[data-last]").textContent=k?means[k-1].toFixed(2):"—";
+    root.querySelector("[data-mm]").textContent=k?(sum/k).toFixed(3):"—";root.querySelector("[data-sdm]").textContent=k>1?Math.sqrt(Math.max(0,(sum2-sum*sum/k)/(k-1))).toFixed(3):"—";root.querySelector("[data-th]").textContent=theory().toFixed(3);
+    if(o.badge&&k>=200)award(o.badge);}
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);
+    g.font="11px "+MONO;g.fillStyle=C.muted;g.fillText(`the census: ${ind(N)} households (rows = wards)`,GX,14);
+    const litSet=new Set(lit);
+    for(let i=0;i<N;i++){const x=GX+(i%CW)*DX,y=GY+Math.floor(i/CW)*DY;if(litSet.has(i)){g.fillStyle=C.gold;g.fillRect(x-1,y-1,6,6);}else{g.fillStyle=C.line;g.fillRect(x,y,4,4);}}
+    // ward bands on the left (census is sorted? no: colour the dots' ward by a thin side key)
+    g.fillStyle=C.muted;g.fillText(strat?`stratified: ${alloc().join(" / ")} from ${WNAME.join(" / ")}`:`simple random sample of n = ${n}`,GX,GY+RW*DY+16);
+    // histogram
+    const bins=24,bw=HW/bins,cnt=new Array(bins).fill(0);means.forEach(m=>{const b=Math.min(bins-1,Math.max(0,Math.floor((m-LO)/(HI-LO)*bins)));cnt[b]++;});
+    const k=means.length,th=theory(),peak=Math.max(1,k*normPDF(POP.mu,POP.mu,th)*(HI-LO)/bins*1.15);
+    g.strokeStyle=C.line;g.beginPath();g.moveTo(HX,HY0);g.lineTo(HX+HW,HY0);g.stroke();
+    cnt.forEach((v,b)=>{const h=v/peak*HH;g.fillStyle=C.acc;g.fillRect(HX+b*bw+1,HY0-h,bw-2,h);});
+    g.fillStyle=C.muted;[46,49,52,55,58].forEach(v=>{const x=HX+(v-LO)/(HI-LO)*HW;g.fillText(v,x-6,HY0+14);});
+    g.fillText("sample mean x̄ (LPCD)",HX+HW-130,HY0+28);
+    if(k>=20){g.strokeStyle=C.gold;g.lineWidth=2;g.beginPath();for(let i=0;i<=100;i++){const x=LO+(HI-LO)*i/100,y=HY0-k*normPDF(x,POP.mu,th)*(HI-LO)/bins/peak*HH;i?g.lineTo(HX+i/100*HW,y):g.moveTo(HX+i/100*HW,y);}g.stroke();g.lineWidth=1;
+      g.fillStyle=C.ink;g.fillText("Normal(μ, σ²/n) · Central Limit Theorem",HX,26);}
+    g.strokeStyle=C.red;g.setLineDash([4,3]);const mx=HX+(POP.mu-LO)/(HI-LO)*HW;g.beginPath();g.moveTo(mx,HY0-HH-10);g.lineTo(mx,HY0);g.stroke();g.setLineDash([]);g.fillStyle=C.red;g.fillText("μ = 51.78",mx+4,HY0-HH-2);
+    if(drop){g.fillStyle=C.gold;g.beginPath();g.arc(HX+(drop.m-LO)/(HI-LO)*HW,drop.y,5,0,7);g.fill();g.fillStyle=C.ink;g.fillText("x̄ = "+drop.m.toFixed(2),HX+(drop.m-LO)/(HI-LO)*HW-28,drop.y-9);}
+    g.fillStyle=C.ink;g.fillText(`sampling distribution of x̄ · ${ind(k)} surveys`,HX,14);}
+  function step(){for(let s=0;s<speed;s++){
+      if(phase===0)newSample();
+      else if(phase===1){const per=Math.max(4,Math.ceil(n/15));for(let i=0;i<per&&lit.length<cur.length;i++)lit.push(cur[lit.length]);if(lit.length>=cur.length)finish();}
+      else if(phase===2){drop.y+=9;if(drop.y>=HY0-6){drop=null;phase=0;stats();}}}
+    draw();}
+  function play(v){playing=v;root.querySelector("[data-play]").textContent=v?"Pause":"Play";if(v&&!run)run=loop(step);if(!v&&run){run.stop();run=null;}}
+  function reset(){r=rng(o.seed);means=[];lit=[];cur=[];drop=null;phase=0;sum=sum2=0;draw();stats();}
+  root.querySelector("[data-play]").addEventListener("click",()=>play(!playing));
+  root.querySelector("[data-reset]").addEventListener("click",reset);
+  root.querySelectorAll("[data-sp]").forEach(b=>b.addEventListener("click",()=>{speed=+b.dataset.sp;root.querySelectorAll("[data-sp]").forEach(x=>x.setAttribute("aria-pressed",x===b));}));
+  if(o.controls){root.querySelector("[data-n]").addEventListener("change",e=>{n=+e.target.value;reset();});
+    root.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{strat=b.dataset.d==="strat";root.querySelectorAll("[data-d]").forEach(x=>x.setAttribute("aria-pressed",x===b));reset();}));}
+  reset();if(playing)run=loop(step);
+  if(REDUCED){for(let i=0;i<300;i++){newSample();finish();drop=null;}phase=0;draw();stats();}
+  return {stop(){if(run)run.stop();}};
+}
+
+/* ---------- a generic permutation (shuffle) lab, used in Files 4 and 5 ---------- */
+function PermLab(root,cfg){
+  // cfg: values, labels (ints), k groups, stat(labels)->number, obs, lo, hi, statName, note, total shuffles, badge
+  const left=el("div",{class:"ctrl"});root.appendChild(left);
+  left.innerHTML=`<div class="btnrow"><button class="btn small" data-run type="button">Shuffle ${ind(cfg.total)} times</button><button class="btn ghost small" data-reset type="button">Reset</button><span data-sp></span></div>
+    <div class="svgbox"><canvas aria-label="Labels being shuffled among households; each shuffle's statistic drops onto a histogram"></canvas></div>
+    <div class="readout"><div><span>Shuffles</span><b data-k>0</b></div><div><span>Observed ${cfg.statName}</span><b>${cfg.obs.toFixed(3)}</b></div><div><span>Shuffles at least as extreme</span><b data-x>0</b></div><div><span>Permutation p-value</span><b data-p>—</b></div></div>`;
+  const W=360,H=250,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  const n=cfg.values.length;let r=rng(cfg.seed||5),lab=cfg.labels.slice(),k=0,ext=0,hist=new Array(30).fill(0),speed=1,anim=null,last=null;
+  const bins=30,HX=20,HW=320,HY0=232,HH=100;
+  function shuffle(){for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[lab[i],lab[j]]=[lab[j],lab[i]];}const s=cfg.stat(lab);k++;if(cfg.extreme(s))ext++;const b=Math.min(bins-1,Math.max(0,Math.floor((s-cfg.lo)/(cfg.hi-cfg.lo)*bins)));hist[b]++;last=s;}
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;
+    const cols=[C.acc,C.gold,C.ok];const DX=8.4,DY=8.4,CW=40;
+    for(let i=0;i<n;i++){g.fillStyle=cols[lab[i]];g.fillRect(12+(i%CW)*DX,22+Math.floor(i/CW)*DY,6,6);}
+    g.fillStyle=C.muted;g.fillText(k?`labels after shuffle ${ind(k)}`:"the real labels",12,14);
+    let x=12;cfg.names.forEach((nm,i)=>{g.fillStyle=cols[i];g.fillRect(x,56,8,8);g.fillStyle=C.ink;g.fillText(nm,x+12,64);x+=12+g.measureText(nm).width+14;});
+    const peak=Math.max(1,...hist);const bw=HW/bins;
+    g.strokeStyle=C.line;g.beginPath();g.moveTo(HX,HY0);g.lineTo(HX+HW,HY0);g.stroke();
+    hist.forEach((v,b)=>{const h=v/peak*HH;const mid=cfg.lo+(b+0.5)*(cfg.hi-cfg.lo)/bins;g.fillStyle=cfg.extreme(mid)?C.red:C.acc;g.fillRect(HX+b*bw+1,HY0-h,bw-2,h);});
+    g.fillStyle=C.muted;cfg.ticks.forEach(v=>{const px=HX+(v-cfg.lo)/(cfg.hi-cfg.lo)*HW;g.fillText(v,px-6,HY0+13);});
+    const ox=HX+(Math.min(cfg.hi,Math.max(cfg.lo,cfg.obs))-cfg.lo)/(cfg.hi-cfg.lo)*HW;g.strokeStyle=C.red;g.setLineDash([4,3]);g.beginPath();g.moveTo(ox,HY0-HH-14);g.lineTo(ox,HY0);g.stroke();g.setLineDash([]);
+    g.fillStyle=C.red;g.fillText("observed "+cfg.obs.toFixed(2),Math.min(ox+4,W-110),HY0-HH-16);
+    g.fillStyle=C.ink;g.fillText(cfg.statName+" under shuffling",HX,HY0-HH-30);
+    if(last!=null){g.fillStyle=C.gold;g.beginPath();g.arc(HX+(Math.min(cfg.hi,Math.max(cfg.lo,last))-cfg.lo)/(cfg.hi-cfg.lo)*HW,HY0-HH-4,4,0,7);g.fill();}}
+  function stats(){left.querySelector("[data-k]").textContent=ind(k);left.querySelector("[data-x]").textContent=ind(ext);left.querySelector("[data-p]").textContent=k?(ext/k).toFixed(4):"—";if(k>=cfg.total&&cfg.badge)award(cfg.badge);}
+  function reset(){if(anim)anim.stop();r=rng(cfg.seed||5);lab=cfg.labels.slice();k=0;ext=0;hist.fill(0);last=null;draw();stats();}
+  left.querySelector("[data-run]").addEventListener("click",()=>{if(anim)anim.stop();const target=k+cfg.total;if(REDUCED){while(k<target)shuffle();draw();stats();return;}anim=loop(()=>{for(let i=0;i<speed&&k<target;i++)shuffle();draw();stats();if(k>=target)anim.stop();});});
+  left.querySelector("[data-reset]").addEventListener("click",reset);
+  speedSeg(left.querySelector("[data-sp]"),v=>{speed=v;},[1,4,16]);
+  reset();
+}
+
+/* ---------- levels ---------- */
+const L=[];
+L.push({id:"l1",badge:"Enumerator",code:"File 1",title:"The census and the clipboard",topics:"Parameter vs statistic, simple and stratified random sampling, sampling distribution of the mean, standard error, unbiasedness, the n − 1, finite population correction",
+story:`<b>Your first week as secretary of Kanchanpur council.</b> The old census file lists all 1,200 households, with water use in litres per person per day (LPCD). It is five years old. You can visit 120 households this year, no more. Before spending a single visit, you use the old census as a laboratory: if the truth were this file, what would 120 households tell you, and how often would they mislead you?`,
+brief:`<p>A <span class="term">population</span> is the whole set of units you care about (the 1,200 households); a <span class="term">parameter</span> is a fixed number describing it, such as the mean LPCD μ = 51.78 or the toilet share p = 0.66. A <span class="term">sample</span> is the subset you actually measure, and a <span class="term">statistic</span> is a number computed from it, such as the sample mean x̄. Parameters are fixed and unknown; statistics vary from sample to sample.</p>
+<p>In a <span class="term">simple random sample</span> (SRS) every subset of n households is equally likely. Draw a new sample and x̄ changes; the distribution of x̄ over all possible samples is its <span class="term">sampling distribution</span>. Its mean equals μ, which is what <span class="term">unbiased</span> means, and its standard deviation is the <span class="term">standard error</span> (SE):</p>
+<div class="formula">E[x̄] = μ          SE(x̄) = σ / √n
+finite population:  SE(x̄) = (σ/√n) · √((N − n)/(N − 1))</div>
+<p>The square-root factor is the <span class="term">finite population correction</span> (FPC). With n = 120 of N = 1,200 it is 0.949, a 5% shrink; it is usually ignored when n/N &lt; 5%.</p>
+<p>The <span class="term">sample variance</span> divides by n − 1, not n. The deviations are measured from x̄, which sits closer to the data than μ does, so Σ(xᵢ − x̄)² is on average smaller than Σ(xᵢ − μ)² by the factor (n − 1)/n. Dividing by n − 1 undoes that and makes s² unbiased for σ². The lab lets you watch the biased version fall short.</p>
+<div class="formula">s² = Σ(xᵢ − x̄)² / (n − 1)          E[s²] = σ²</div>
+<p><span class="term">Stratified sampling</span> splits the population into strata (the four wards), draws an SRS inside each, and combines the stratum means with weights Nₕ/N. With <span class="term">proportional allocation</span> (nₕ ∝ Nₕ) the stratified mean is unbiased and its variance drops by the between-stratum part of σ²: only the within-ward spread remains. In Kanchanpur wards explain 7% of LPCD variance, so the gain is real but modest.</p>`,
+refs:"Wasserman, <i>All of Statistics</i> (2004), ch. 6 (models, statistics, sampling distributions) · Rice, <i>Mathematical Statistics and Data Analysis</i> (3rd ed., 2007), ch. 7 (survey sampling: SRS, FPC, stratification) · Casella & Berger, <i>Statistical Inference</i> (2nd ed., 2002), §5.2 · Neyman, <i>J. Royal Statistical Society</i> 97 (1934) on stratified sampling.",
+lab:labSampling,
+qs:[
+{t:"mcq",q:"The census mean LPCD of all 1,200 households is 51.78. Your 120-household mean comes out at 50.33. Which is which?",opts:["51.78 is a parameter (fixed, describes the population); 50.33 is a statistic (varies from sample to sample)","Both are parameters because both are means","50.33 is a parameter because it is the number you actually measured","51.78 is a statistic because it was computed from data"],a:0,
+ hint:"Parameters belong to the population; statistics are computed from a sample.",why:"A parameter describes the whole population and does not change; a statistic is computed from the sample and would come out differently with a different sample. The whole module is about how far a statistic can sit from its parameter."},
+{t:"num",ph:"e.g. 0.8",q:"The census standard deviation of LPCD is σ = 11.79. Ignoring the finite population correction, what is the standard error of the mean of a simple random sample of n = 120?",a:1.0766,tol:0.01,
+ hint:"σ / √n.",why:"11.79 / √120 = 11.79 / 10.95 = 1.077 LPCD. Watch the \"SD of the x̄s\" counter in the lab settle near this value (slightly below, because of the FPC)."},
+{t:"num",ph:"e.g. 0.8",q:"What is the finite population correction factor √((N − n)/(N − 1)) for n = 120 households out of N = 1,200?",a:0.9491,tol:0.003,
+ hint:"√(1080 / 1199).",why:"√(1080/1199) = √0.9008 = 0.949. The SE becomes 1.077 × 0.949 = 1.022. Sampling 10% of a population buys a 5% tighter standard error; sampling 1% buys almost nothing."},
+{t:"num",ph:"e.g. 25",q:"Under proportional allocation of 120 visits across the four wards, how many should go to Purvi, which has 310 of the 1,200 households?",a:31,tol:0.5,
+ hint:"nₕ = n × Nₕ / N.",why:"120 × 310 / 1,200 = 31. The others get 31 (Pashchimi, 307), 30 (Uttari, 297) and 28 (Dakshini, 286) after rounding to a total of 120."},
+{t:"mcq",q:"In the lab, averaging 20,000 samples of n = 5, the variance that divides by n came out near 111 while the census variance is 139. Why?",opts:["Deviations are taken from x̄, which hugs its own sample; Σ(x − x̄)² is too small by a factor (n − 1)/n = 0.8 on average","Small samples miss the extreme households, so the spread is always underestimated whatever you divide by","The census variance uses the population formula and is therefore larger by construction","Random error: with 20,000 samples the average should be exactly 139"],a:0,
+ hint:"111 / 139 ≈ 0.80 = 4/5.",why:"E[Σ(x − x̄)²] = (n − 1)σ², so dividing by n gives (n − 1)/n × σ² = 0.8 × 139 = 111. Dividing by n − 1 instead restores 139 on average. At n = 120 the factor is 119/120, which is why the correction only matters for small samples."},
+{t:"mcq",q:"Switching the machine from simple random to stratified sampling lowered the SD of the x̄s from about 1.02 to about 0.99. Why so little?",opts:["Stratification removes only the between-ward part of the variance, and wards explain just 7% of LPCD variance","Stratified samples are smaller because each ward gets fewer households","The finite population correction cancels the gain","Stratification reduces bias, not variance"],a:0,
+ hint:"What share of the total variance sits between ward means?",why:"The stratified mean's variance is driven by the within-ward variance (129.4) rather than the total (139.1). The gain is the between-ward share, 7%, so the SE falls by about 3.5%. Stratify on a variable that separates the strata strongly, and the gain is large; here it is modest but free."}
+]});
+
+L.push({id:"l2",badge:"Interval Keeper",code:"File 2",title:"How wrong, how often",topics:"Central Limit Theorem at n = 2, 5, 30, 120; z and t intervals; coverage; intervals for a proportion (Wald, Wilson); sample size for a margin; the bootstrap interval",
+story:`<b>The engineer's certificate.</b> "Kanchanpur meets the 55 LPCD norm." Your 120 households average 50.33, with a standard deviation of 12.15. One number is not an argument; you need to say how far from 50.33 the village mean could plausibly be. The district also wants a toilet figure with "a margin of error", and household expenditure, which is badly skewed, is on the same form.`,
+brief:`<p>The <span class="term">Central Limit Theorem</span> (CLT, Module 1 and 2) says the sampling distribution of x̄ is approximately Normal(μ, σ²/n) for large n, whatever the shape of the population. Household expenditure has skewness 1.49; the lab shows means of 2 still skewed, means of 30 nearly bell-shaped, means of 120 indistinguishable from Normal.</p>
+<p>A <span class="term">confidence interval</span> (CI) is a procedure: x̄ ± (critical value) × SE. If σ is known the critical value is z₀.₉₇₅ = 1.960. In practice σ is replaced by s, which adds uncertainty, and the critical value comes from <span class="term">Student's t</span> with n − 1 degrees of freedom (df) (Student, 1908): t₀.₉₇₅,₁₁₉ = 1.980, t₀.₉₇₅,₄ = 2.776.</p>
+<div class="formula">x̄ ± t₀.₉₇₅,ₙ₋₁ · s/√n
+n = 120:  50.33 ± 1.980 × 12.15/√120 = 50.33 ± 2.20 = (48.14, 52.53)</div>
+<p><span class="term">Coverage</span> is what the 95% means: of many intervals built this way, about 95% contain μ. Any one interval either does or does not; the probability belongs to the procedure. Using z with n = 5 drops coverage to about 88%, which is why t exists.</p>
+<p>For a proportion p̂ = k/n the <span class="term">Wald interval</span> is p̂ ± 1.96 √(p̂(1 − p̂)/n). It misbehaves for small n or p̂ near 0 or 1. The <span class="term">Wilson interval</span> (Wilson, 1927) centres on (k + z²/2)/(n + z²) and keeps coverage close to 95%:</p>
+<div class="formula">Wilson:  [p̂ + z²/2n ± z √(p̂(1−p̂)/n + z²/4n²)] / (1 + z²/n)</div>
+<p>Turning the formula around gives a <span class="term">sample size for a margin</span>: n = (z σ / m)² for a mean, n = z² p(1−p) / m² for a proportion (p = 0.5 is the safe worst case). And when no formula fits, the <span class="term">bootstrap</span> (Efron, 1979; Module 2) resamples the 120 values with replacement and takes the 2.5th and 97.5th percentiles of the resampled means: here (48.16, 52.37), almost the t interval.</p>`,
+refs:"Wasserman (2004), §5.4 (CLT), §6.3.2 (confidence sets), ch. 8 (bootstrap) · Rice (2007), §7.3.3, §8.5 · Casella & Berger (2002), ch. 9 · Student, <i>Biometrika</i> 6 (1908) 1–25 · Wilson, <i>J. American Statistical Association</i> 22 (1927) 209–212 · Efron, <i>Annals of Statistics</i> 7 (1979) 1–26 · Efron & Tibshirani, <i>An Introduction to the Bootstrap</i> (1993), ch. 12–13.",
+lab:labCLT,
+qs:[
+{t:"num",ph:"e.g. 1.5",q:"Your sample: x̄ = 50.334, s = 12.146, n = 120. What is the half-width of the 95% t interval for the mean LPCD? (t₀.₉₇₅,₁₁₉ = 1.9801)",a:2.1955,tol:0.02,
+ hint:"t × s / √n.",why:"1.9801 × 12.146 / √120 = 1.9801 × 1.1088 = 2.196. The interval (48.14, 52.53) does not reach 55."},
+{t:"mcq",q:"In the lab, means of 2 expenditures are still visibly right-skewed; means of 120 look Normal. Which statement is the CLT?",opts:["The distribution of the sample mean approaches Normal(μ, σ²/n) as n grows, whatever the population's shape","Household expenditure becomes Normal if you collect enough households","The sample mean converges to μ as n grows","Skewness disappears from any variable once n ≥ 30"],a:0,
+ hint:"The theorem is about the mean's distribution, not the data's.",why:"The CLT concerns the sampling distribution of x̄: its spread shrinks like σ/√n and its shape tends to the bell. The individual expenditures stay skewed however many you collect. Convergence of x̄ to μ is the Law of Large Numbers (Module 1), a different statement."},
+{t:"num",ph:"e.g. 0.5",q:"78 of your 120 households have a toilet, p̂ = 0.65. What is the lower end of the 95% Wald interval for the toilet share?",a:0.5647,tol:0.004,
+ hint:"p̂ − 1.96 √(p̂(1 − p̂)/n).",why:"SE = √(0.65 × 0.35 / 120) = 0.0435, so 0.65 − 1.96 × 0.0435 = 0.565. The interval (0.565, 0.735) does not reach the dashboard's 0.75. Wilson gives (0.561, 0.730)."},
+{t:"mcq",q:"Why does the Wilson interval's centre (0.645) sit slightly below p̂ = 0.65, and why prefer it?",opts:["It adds z²/2 ≈ 2 pseudo-successes and 2 pseudo-failures, pulling towards 0.5; this keeps actual coverage near 95% when n is small or p̂ is near 0 or 1","It corrects for the finite population","It is the Bayesian posterior mean under a uniform prior","It is narrower than Wald, so it is always more precise"],a:0,
+ hint:"(k + z²/2) / (n + z²) with z² ≈ 3.84.",why:"(78 + 1.92) / (120 + 3.84) = 0.645. The Wald interval's SE is estimated from p̂ itself, which collapses to zero at p̂ = 0 or 1 and gives coverage well below 95%; Wilson's shrinkage towards 0.5 fixes that. With k = 78 of 120 the two are close; with k = 2 of 20 they are not."},
+{t:"num",ph:"e.g. 50",q:"The district wants the village mean LPCD within ±2 litres at 95% confidence. Using σ = 11.79, how many households would that need?",a:134,tol:1.5,
+ hint:"n = (1.96 σ / m)².",why:"(1.96 × 11.79 / 2)² = 133.6, so 134 households. For ±3 litres, 60 would do; for ±1 litre, 534. Precision costs n squared."},
+{t:"mcq",q:"The coverage counter settles near 95% after 2,000 intervals. Your single interval is (48.14, 52.53). Which sentence is correct?",opts:["The procedure captures μ in about 95% of samples; this particular interval either contains μ or it does not","There is a 95% probability that μ lies between 48.14 and 52.53","95% of households use between 48.14 and 52.53 litres","95% of future samples will have means between 48.14 and 52.53"],a:0,
+ hint:"Where does the randomness sit: in μ, or in the interval?",why:"μ is a fixed number; the interval is the random object. Confidence is a long-run property of the recipe. The probability-of-μ sentence is a Bayesian credible interval, which is File 8's job and needs a prior."}
+]});
+
+L.push({id:"l3",badge:"Hypothesis Tester",code:"File 3",title:"Not by chance alone",topics:"Null and alternative hypotheses, test statistic, p-value, one- and two-sided tests, α, Type I and II errors, power, effect size, tests for a proportion, test–interval duality",
+story:`<b>Two claims, one sample.</b> The engineer: "the village meets 55 LPCD". The dashboard: "75% toilet coverage". Your 120 households say 50.33 and 65%. Both gaps could be sampling luck; samples of 120 do wander. You need a way to say how surprising 50.33 would be if 55 were true, and how often a survey this size would catch a shortfall of 3 litres if it existed.`,
+brief:`<p>A <span class="term">hypothesis test</span> (Fisher, 1925; Neyman & Pearson, 1933) starts with a <span class="term">null hypothesis</span> H₀, the claim to be stressed (μ = 55), and an <span class="term">alternative</span> H₁ (μ &lt; 55, one-sided, or μ ≠ 55, two-sided). The <span class="term">test statistic</span> measures the distance of the data from H₀ in standard-error units:</p>
+<div class="formula">t = (x̄ − μ₀) / (s/√n) = (50.33 − 55) / 1.109 = −4.21,  df = 119</div>
+<p>The <span class="term">p-value</span> is the probability, if H₀ were true, of a statistic at least this extreme: P(T ≤ −4.21) = 0.000025 one-sided, twice that two-sided. It is not the probability that H₀ is true, and 1 − p is not the probability that H₁ is true. Choosing a <span class="term">significance level</span> α (usually 0.05) in advance and rejecting when p &lt; α fixes the <span class="term">Type I error</span> rate (rejecting a true H₀) at α. A <span class="term">Type II error</span> is failing to reject a false H₀; its probability is β, and <span class="term">power</span> = 1 − β is the chance of detecting a given true effect.</p>
+<div class="formula">power(μ) = P(reject H₀ | true mean is μ)
+n = 120, σ = 11.79, α = 0.05 two-sided:
+  μ = 54 → 0.15     μ = 53 → 0.45     μ = 52 → 0.79     μ = 50 → 0.996</div>
+<p>Power depends on n, α, σ and the size of the true effect. An <span class="term">effect size</span> such as Cohen's d = (x̄ − μ₀)/s expresses the gap in standard deviations (Cohen, 1988): d = −0.38 here, a small-to-medium effect. A p-value can be tiny for a trivial effect if n is huge, and large for an important effect if n is small.</p>
+<p>For a proportion, H₀: p = 0.75 gives the <span class="term">z test</span> z = (p̂ − p₀)/√(p₀(1 − p₀)/n) = −2.53, or the <span class="term">exact binomial test</span>, P(X ≤ 78 | n = 120, p = 0.75) = 0.0093, which needs no Normal approximation.</p>
+<p><span class="term">Duality</span>: a two-sided test at level α rejects μ₀ exactly when μ₀ lies outside the (1 − α) confidence interval. 55 is outside (48.14, 52.53), so the test rejects at 0.05; the interval also says by how much.</p>`,
+refs:"Wasserman (2004), ch. 10 · Casella & Berger (2002), ch. 8 and §9.2 (duality) · Rice (2007), ch. 9 (testing, duality of tests and intervals) · Fisher, <i>Statistical Methods for Research Workers</i> (1925) · Neyman & Pearson, <i>Phil. Trans. Royal Society A</i> 231 (1933) 289–337 · Cohen, <i>Statistical Power Analysis for the Behavioral Sciences</i> (2nd ed., 1988).",
+lab:labPower,
+qs:[
+{t:"num",ph:"e.g. −1.5",q:"x̄ = 50.334, s = 12.146, n = 120. What is the t statistic for H₀: μ = 55?",a:-4.208,tol:0.03,
+ hint:"(x̄ − 55) / (s/√n).",why:"(50.334 − 55) / (12.146/√120) = −4.666 / 1.1088 = −4.21. Under H₀ a t this far out happens about 2.5 times in 100,000 samples. The engineer's certificate does not survive the data."},
+{t:"mcq",q:"The one-sided p-value is 0.000025. What does it mean?",opts:["If the village mean were really 55, a sample mean this low or lower would occur in about 0.0025% of surveys of 120","There is a 0.0025% chance that the village meets the norm","There is a 99.9975% chance that the village mean is below 55","0.0025% of households are below 55 LPCD"],a:0,
+ hint:"A p-value conditions on H₀ being true.",why:"P(data at least this extreme | H₀), nothing more. Probabilities about μ itself need a prior and Bayes' theorem (File 8). The share of households below 55 is a different quantity entirely (61% in the census)."},
+{t:"num",ph:"e.g. 0.2",q:"What is the magnitude of Cohen's d for the gap between x̄ = 50.334 and 55, using s = 12.146?",a:0.384,tol:0.01,
+ hint:"|x̄ − μ₀| / s.",why:"4.666 / 12.146 = 0.38. Cohen's rough labels: 0.2 small, 0.5 medium, 0.8 large. The p-value says the gap is real; d says it is a bit over a third of a standard deviation, which is the size that matters for a water engineer."},
+{t:"num",ph:"e.g. 0.5",q:"If the true village mean were 52 and you sampled 120 households (σ = 11.79, α = 0.05 two-sided), what is the power to reject μ = 55? Read it from the lab's power curve.",a:0.789,tol:0.025,
+ hint:"Set true μ = 52 and n = 120; the curve's marked point is the exact power.",why:"Power = 0.79: about four surveys in five would detect a 3-litre shortfall; one in five would miss it (β = 0.21). To reach 80% power for a 2-litre shortfall you would need about 275 households."},
+{t:"num",ph:"e.g. −1.2",q:"78 of 120 households have a toilet. What is the z statistic for H₀: p = 0.75?",a:-2.53,tol:0.03,
+ hint:"(0.65 − 0.75) / √(0.75 × 0.25 / 120).",why:"SE under H₀ is √(0.1875/120) = 0.0395, so z = −0.10 / 0.0395 = −2.53, one-sided p = 0.0057. The exact binomial gives 0.0093; both reject at 0.05. Note the SE uses p₀, not p̂, because the test lives inside H₀."},
+{t:"mcq",q:"The 95% interval for mean LPCD is (48.14, 52.53). Without any further calculation, what does a two-sided test of H₀: μ = 55 at α = 0.05 conclude?",opts:["Reject: 55 lies outside the 95% interval, and that is exactly the condition for rejection at 0.05","Cannot tell: tests and intervals use different formulas","Do not reject: the interval contains values near 52.5","Reject only if a one-sided test is used"],a:0,
+ hint:"Duality: the interval is the set of μ₀ values that would not be rejected.",why:"A (1 − α) confidence interval is the set of null values the level-α two-sided test would not reject. 55 is outside, so it is rejected. The interval adds what the test cannot: the plausible shortfall is roughly 2.5 to 7 litres."}
+]});
+
+L.push({id:"l4",badge:"Comparator",code:"File 4",title:"Two groups, one question",topics:"Welch and pooled t tests, F test and Levene's idea, paired vs unpaired, two-proportion z test, chi-square test of independence, Fisher's exact test, odds ratio and relative risk",
+story:`<b>The east ward and the water tank.</b> The opposition says Purvi, the east ward, is short of water. Your 36 Purvi households average 47.80 against 51.42 elsewhere. Separately, 40 households got an overhead tank last month and the contractor says "it clearly worked": 49.0 before, 52.4 after. Both are two-group comparisons, but the second has a twist: the same households were measured twice.`,
+brief:`<p>Two independent samples with means x̄₁, x̄₂ and standard deviations s₁, s₂: the <span class="term">Welch t test</span> (Welch, 1947) does not assume equal variances and uses an approximate df; the <span class="term">pooled t test</span> assumes σ₁ = σ₂ and pools the variances with df = n₁ + n₂ − 2.</p>
+<div class="formula">Welch:  t = (x̄₁ − x̄₂) / √(s₁²/n₁ + s₂²/n₂)
+pooled: s²ₚ = [(n₁−1)s₁² + (n₂−1)s₂²]/(n₁+n₂−2),
+        t = (x̄₁ − x̄₂) / √(s²ₚ(1/n₁ + 1/n₂))</div>
+<p>Whether variances are equal can itself be tested: the <span class="term">F test</span> compares s₁²/s₂² with an F(n₁−1, n₂−1) distribution but is fragile to non-normality; <span class="term">Levene's test</span> (1960) runs an ANOVA on absolute deviations from each group's centre and is the usual default. Modern advice: use Welch unless you have a reason not to.</p>
+<p>When the two measurements belong to the same unit, the <span class="term">paired t test</span> works on the differences dᵢ = afterᵢ − beforeᵢ and is a one-sample test on d̄. Pairing removes the household-to-household variation that both measurements share; for the tank pilot, before and after correlate at 0.94, so the paired SE (0.69) is a fraction of the unpaired one (2.62).</p>
+<p>For two proportions the <span class="term">two-proportion z test</span> uses a pooled p̂ under H₀. For a table of counts, the <span class="term">chi-square test of independence</span> compares observed with expected counts Eᵢⱼ = (row total × column total)/n, with df = (rows − 1)(columns − 1). When expected counts are small, <span class="term">Fisher's exact test</span> (1935) computes the exact probability of tables at least as extreme, conditioning on the margins.</p>
+<div class="formula">χ² = Σ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ,  df = (r − 1)(c − 1)
+odds ratio OR = [p₁/(1−p₁)] / [p₂/(1−p₂)]     relative risk RR = p₁/p₂</div>
+<p>The <span class="term">odds ratio</span> and <span class="term">relative risk</span> report the size of an association that the test only says is or is not detectable. They agree when the outcome is rare and part company when it is common.</p>`,
+refs:"Wasserman (2004), ch. 10 (Wald tests, chi-square, permutation test) · Rice (2007), ch. 11 (two samples, paired data), ch. 13 (contingency tables) · Casella & Berger (2002), ch. 8 · Welch, <i>Biometrika</i> 34 (1947) 28–35 · Fisher, <i>J. Royal Statistical Society</i> 98 (1935) 39–82 · Levene, in <i>Contributions to Probability and Statistics</i> (1960).",
+lab:labTwo,
+qs:[
+{t:"num",ph:"e.g. 1.5",q:"Purvi: n = 36, s = 10.82. Other wards: n = 84, s = 12.58. What is the Welch standard error of the difference in means?",a:2.266,tol:0.02,
+ hint:"√(s₁²/n₁ + s₂²/n₂).",why:"√(10.82²/36 + 12.58²/84) = √(3.252 + 1.884) = 2.27. The gap is 3.62 litres, so t = −1.60, p = 0.11. Your 120 households cannot establish that Purvi is worse than the rest, even though Purvi on its own is clearly below 55 (t = −3.99)."},
+{t:"mcq",q:"On the same 40 tank households, the paired t test gives t = 4.84 (p = 0.00002) while an unpaired test on before vs after gives t = 1.27 (p = 0.21). Why the difference?",opts:["Pairing removes the household-level variation shared by both measurements (r = 0.94), leaving only the change itself","The paired test uses twice as many observations","The unpaired test is wrong because the samples have equal size","The paired test is one-sided and the unpaired two-sided"],a:0,
+ hint:"Compare the SD of the differences (4.35) with the SD of the levels (about 11.7).",why:"Households that used a lot before used a lot after. Differences have SD 4.35 and SE 0.69, so a 3.3-litre change is 4.8 SEs. Treating the 80 numbers as two independent groups puts the 11-litre household spread into the SE (2.62) and buries the effect. Design decides the test."},
+{t:"num",ph:"e.g. 0.5",q:"The 40 differences (after − before) have mean 3.3275 and SD 4.3495; t₀.₉₇₅,₃₉ = 2.0227. What is the lower end of the 95% interval for the mean improvement?",a:1.937,tol:0.02,
+ hint:"d̄ − t × s_d/√40.",why:"3.3275 − 2.0227 × 4.3495/√40 = 3.3275 − 1.391 = 1.94 litres. The tank's effect is plausibly between 1.9 and 4.7 LPCD. \"It clearly worked\" is defensible as a statement about these 40 households; whether 3 litres is worth the cost is a different question."},
+{t:"num",ph:"e.g. 15",q:"In the sample's ward × toilet table, Purvi has 36 households and 78 of all 120 have a toilet. What is the expected count of Purvi households with a toilet under independence?",a:23.4,tol:0.1,
+ hint:"row total × column total / n.",why:"36 × 78 / 120 = 23.4; observed is 27. Over the whole table χ² = 4.46 on 3 df, p = 0.22: no detectable ward–toilet association in 120 households. (The census itself has one, χ² = 20.3; the sample is too small to see it.)"},
+{t:"mcq",q:"Module 2's nudge experiment: A 73/198 adopted, B 59/190. Fisher's exact test gives p = 0.24 and OR = 1.30 with 95% interval (0.85, 1.98). What do you conclude?",opts:["No evidence of a difference: the data are compatible with no effect and with odds of adoption under A up to twice those under B, so the experiment was too small to decide","A is better because its rate (36.9%) exceeds B's (31.1%)","B is better because the odds ratio exceeds 1","The two nudges are proven equal"],a:0,
+ hint:"Does the interval include 1?",why:"An interval that includes 1 (no association) and stretches to 1.98 says: not enough data. Absence of evidence is not evidence of absence; \"proven equal\" would need an interval tight around 1. The chi-square test gives p = 0.23, the same verdict."},
+{t:"num",ph:"e.g. 1.5",q:"For the same table, what is the relative risk of adoption for nudge A against nudge B?",a:1.187,tol:0.01,
+ hint:"RR = p_A / p_B = (73/198) / (59/190).",why:"0.3687 / 0.3105 = 1.19: adoption was 19% more likely under A. The odds ratio is 1.30, larger because the outcome is common (about a third adopt); for rare outcomes OR and RR nearly coincide."}
+]});
+
+L.push({id:"l5",badge:"Variance Analyst",code:"File 5",title:"Three vendors, one tender",topics:"Family-wise error and Bonferroni, one-way ANOVA (sum-of-squares decomposition, F, df), Tukey HSD, assumptions, Kruskal–Wallis, LPCD by ward",
+story:`<b>The lamp tender.</b> Dhoop, Kiran and Suryodaya each supplied a third of the solar street lamps, and the contract is up for renewal. Last night's burn hours from your 120 households: Dhoop 9.14 (n = 35), Kiran 10.57 (n = 49), Suryodaya 9.78 (n = 36). The obvious move is three t tests. The obvious move is wrong, or at least undisciplined.`,
+brief:`<p>Each test at α = 0.05 risks a 5% false alarm. Run m independent tests and the <span class="term">family-wise error rate</span> (FWER), the chance of at least one false rejection, is 1 − 0.95ᵐ: 14% for three tests, 26% for six. The <span class="term">Bonferroni correction</span> tests each at α/m and guarantees FWER ≤ α, at the price of power.</p>
+<p><span class="term">One-way analysis of variance</span> (ANOVA; Fisher, 1925) asks one question of all k groups at once: are the group means equal? It splits the total sum of squares into a between-group part and a within-group part:</p>
+<div class="formula">SST = SSB + SSW
+SSB = Σ nⱼ(x̄ⱼ − x̄)²      df = k − 1
+SSW = Σ Σ (xᵢⱼ − x̄ⱼ)²    df = n − k
+F = (SSB/(k−1)) / (SSW/(n−k))      η² = SSB/SST</div>
+<p>Under H₀ the F statistic follows an F(k − 1, n − k) distribution; large F means the group means spread more than the within-group noise allows. For the lamps: SSB = 42.19 on 2 df, SSW = 238.16 on 117 df, F = 10.36, p = 0.00007. η² = 0.15 says vendor explains 15% of the variation in burn hours.</p>
+<p>A significant F says "not all equal", not which pairs differ. <span class="term">Tukey's honestly significant difference</span> (HSD; Tukey, 1949) compares every pair while holding the FWER at 0.05 using the studentized range. Here Kiran beats Dhoop (difference 1.42 h, adjusted p &lt; 0.001) and Suryodaya (0.78 h, p = 0.036); Dhoop and Suryodaya cannot be separated (p = 0.15).</p>
+<p>ANOVA assumes independent observations, roughly equal group variances (Levene p = 0.61: fine) and roughly Normal residuals (Shapiro–Wilk p = 0.27: fine). When the residuals are far from Normal or variances differ badly, the <span class="term">Kruskal–Wallis test</span> (1952) ranks all observations and compares mean ranks; it agrees here, H = 17.7, p = 0.00014.</p>
+<p>The same tool on LPCD by ward gives F = 1.83, p = 0.15 in your sample. A 120-household survey detects the vendor gap but not the ward gap, although the census has both.</p>`,
+refs:"Rice (2007), ch. 12 (one-way ANOVA, multiple comparisons, Kruskal–Wallis) · Casella & Berger (2002), §11.2 · Wasserman (2004), §10.7 (multiple testing) · Fisher (1925) · Tukey, <i>Biometrics</i> 5 (1949) 99–114 · Kruskal & Wallis, <i>J. American Statistical Association</i> 47 (1952) 583–621.",
+lab:labANOVA,
+qs:[
+{t:"num",ph:"e.g. 0.1",q:"You run three independent pairwise tests, each at α = 0.05. What is the family-wise error rate, the probability of at least one false rejection if all three nulls are true?",a:0.1426,tol:0.002,
+ hint:"1 − 0.95³.",why:"1 − 0.95³ = 0.143. One tender decision in seven would be influenced by a false alarm somewhere. Bonferroni would test each pair at 0.05/3 = 0.0167; ANOVA plus Tukey handles the family in one go."},
+{t:"num",ph:"e.g. 5",q:"SSB = 42.19 on 2 df and SSW = 238.16 on 117 df. What is the F statistic?",a:10.36,tol:0.1,
+ hint:"(SSB/2) / (SSW/117).",why:"21.09 / 2.036 = 10.36. The 5% critical value of F(2, 117) is 3.07, so the vendors' means differ far more than within-vendor noise explains. Under H₀ an F this large turns up about 7 times in 100,000 shuffles; the lab's 1,000 shuffles almost never produce one."},
+{t:"mcq",q:"What are the degrees of freedom of that F statistic?",opts:["(2, 117): k − 1 = 2 between, n − k = 120 − 3 = 117 within","(3, 120): one per vendor and one per household","(2, 119): k − 1 and n − 1","(1, 118): as in a two-sample t test"],a:0,
+ hint:"Between: groups minus one. Within: households minus groups.",why:"Three group means spend 2 df (they are free given the grand mean); the residuals lose one df per group mean estimated, 120 − 3 = 117. Check: 2 + 117 = 119 = n − 1, the df of SST."},
+{t:"mcq",q:"Tukey HSD: Kiran − Dhoop = 1.42 h (p < 0.001), Kiran − Suryodaya = 0.78 h (p = 0.036), Suryodaya − Dhoop = 0.64 h (p = 0.15). What can you tell the tender committee?",opts:["Kiran's lamps burn longest, by about 0.8 to 1.4 hours; Dhoop and Suryodaya cannot be ranked against each other with 120 households","Kiran is best, Suryodaya second, Dhoop third, all three separated","Suryodaya and Dhoop are proven identical","Nothing: ANOVA only says that not all three are equal"],a:0,
+ hint:"Which pairs reject, and what does \"not rejected\" mean?",why:"Two pairs reject, one does not. \"Not rejected\" means the 0.64-hour gap is within what noise could produce at this n, not that it is zero. (The census has Dhoop at 9.51 and Suryodaya at 9.33, the opposite order from your sample, which is exactly why the honest answer is \"cannot rank\".)"},
+{t:"num",ph:"e.g. 0.5",q:"SST = 280.34 and SSB = 42.19. What is η², the share of variation in burn hours explained by vendor?",a:0.1505,tol:0.005,
+ hint:"SSB / SST.",why:"42.19 / 280.34 = 0.15. Vendor matters, but 85% of the variation in last night's burn hours is within-vendor: battery age, dust, shade. η² is ANOVA's effect size, the analogue of Cohen's d."},
+{t:"mcq",q:"LPCD by ward in your sample: F = 1.83, p = 0.15. The opposition says Purvi is short of water, and the census (which you cannot see yet) has ward means from 47.5 to 56.2. What is the right statement?",opts:["The sample does not detect ward differences; with about 30 households per ward the power to see a 5-litre gap is low, so this is absence of evidence, not evidence of absence","The wards have equal water supply","The opposition's claim is refuted at the 5% level","ANOVA cannot be used for LPCD because it is skewed"],a:0,
+ hint:"What would the power be with 28 to 36 households per ward and σ ≈ 12?",why:"A non-significant F is a statement about the test's resolution, not about the wards. Purvi on its own is clearly below 55 (File 3), but ranking wards against each other needs more households per ward. The census confirms real differences (F = 30 on all 1,200) that 120 households simply cannot resolve."}
+]});
+
+L.push({id:"l6",badge:"Assumption Checker",code:"File 6",title:"Beyond the basics",topics:"Two-way ANOVA with interaction, chi-square goodness of fit (df lost to estimation), normality tests (Shapiro–Wilk, Jarque–Bera), Mann–Whitney and Wilcoxon, testing a correlation",
+story:`<b>The second-order questions.</b> Do Kiran's lamps outlast the others in every ward, or only in some? Do grievance counts look like independent rare events? Is expenditure Normal enough for the usual tests, and if not, what then? And a councillor's hunch: bigger families get less water per head. Each needs a tool slightly past the standard kit.`,
+brief:`<p><span class="term">Two-way ANOVA</span> models a response by two factors, vendor and ward, plus their <span class="term">interaction</span>: does the vendor effect change from ward to ward? With burn hours: vendor F = 12.4 (p = 0.00001), ward F = 4.3 (p = 0.006), interaction F = 1.07 on (6, 108) df, p = 0.39. No interaction means the vendor gap is roughly the same in each ward, so the main effects can be read directly; parallel lines in the interaction plot say the same thing.</p>
+<p>The <span class="term">chi-square goodness-of-fit test</span> compares observed counts in k bins with those a model predicts. Grievances per household versus a Poisson(λ̂ = 0.75) with bins 0, 1, 2, 3+: χ² = 1.07. The df is k − 1 − (number of parameters estimated from the data) = 4 − 1 − 1 = 2, because λ was estimated; forgetting that inflates the p-value. p = 0.59: Poisson is adequate (variance/mean = 1.04).</p>
+<div class="formula">χ² = Σ (Oᵢ − Eᵢ)² / Eᵢ,   df = k − 1 − (parameters estimated)</div>
+<p>Two <span class="term">normality tests</span>: <span class="term">Shapiro–Wilk</span> (1965) is among the most powerful general tests; <span class="term">Jarque–Bera</span> (1980) builds only on sample skewness S and excess kurtosis K and is popular in econometrics:</p>
+<div class="formula">JB = (n/6) · (S² + K²/4)  ~  χ²(2) under normality</div>
+<p>Expenditure: S = 1.23, K = 2.49, JB = 61.5, p ≈ 10⁻¹⁴; Shapiro–Wilk W = 0.924, p = 0.000004. Not Normal. LPCD: JB = 5.7, p = 0.058. Normality tests are about the data; t tests on means are protected by the CLT at n = 120 anyway, but medians, small samples and prediction intervals are not.</p>
+<p>Rank-based alternatives need no Normality: the <span class="term">Mann–Whitney U test</span> (1947) for two independent groups (Purvi vs others: p = 0.23) and the <span class="term">Wilcoxon signed-rank test</span> (1945) for paired data (tank pilot: p = 0.00005). They test shifts in distribution rather than means.</p>
+<p>A sample <span class="term">correlation</span> r has its own test, t = r √(n − 2) / √(1 − r²) on n − 2 df under H₀: ρ = 0. Family size vs LPCD: r = −0.295, t = −3.36, p = 0.001. Bigger families do get less per head.</p>`,
+refs:"Rice (2007), ch. 9 (goodness of fit, tests for normality), §12.3 (two-way layout), ch. 11 (rank tests), ch. 14 (correlation) · Wasserman (2004), ch. 10 (chi-square and goodness-of-fit tests) · Shapiro & Wilk, <i>Biometrika</i> 52 (1965) 591–611 · Jarque & Bera, <i>Economics Letters</i> 6 (1980) 255–259 · Mann & Whitney, <i>Annals of Mathematical Statistics</i> 18 (1947) 50–60 · Wilcoxon, <i>Biometrics Bulletin</i> 1 (1945) 80–83.",
+lab:labBeyond,
+qs:[
+{t:"num",ph:"e.g. 3",q:"Grievance counts are binned as 0, 1, 2, 3+ and compared with a Poisson whose λ was estimated from the same 120 households. How many degrees of freedom does the goodness-of-fit chi-square have?",a:2,tol:0.01,
+ hint:"k − 1, minus one more for each parameter estimated from the data.",why:"4 − 1 − 1 = 2. With χ² = 1.07, p = 0.59 on 2 df (0.78 if you wrongly used 3). The estimated λ makes the model fit better than a pre-specified one would, and the lost df pays for that."},
+{t:"mcq",q:"The vendor × ward interaction has F = 1.07, p = 0.39. Which reading is right?",opts:["No evidence that the vendor gap differs by ward; the vendor main effect can be reported as one number for the whole village","Vendor and ward are independent of each other","Ward has no effect on burn hours","Kiran is best only in some wards"],a:0,
+ hint:"Interaction is about whether one factor's effect depends on the level of the other.",why:"A non-significant interaction means parallel-ish lines in the interaction plot: Kiran's advantage looks similar everywhere. Ward itself has a main effect (p = 0.006; Uttari's lamps burn shorter). Independence of the factors is a question about the design, not about the response."},
+{t:"num",ph:"e.g. 10",q:"Sample expenditure has skewness 1.2326 and excess kurtosis 2.4937 with n = 120. What is the Jarque–Bera statistic?",a:61.48,tol:0.5,
+ hint:"(n/6)(S² + K²/4).",why:"20 × (1.519 + 6.218/4) = 20 × 3.074 = 61.5, against a χ²(2) whose 5% point is 5.99. Expenditure is nowhere near Normal; even the kurtosis alone would reject."},
+{t:"mcq",q:"Shapiro–Wilk rejects normality for expenditure (p = 0.000004) but not for LPCD (p = 0.06). What follows for the one-sample t test on the mean LPCD you ran in File 3?",opts:["It stands: the t test needs the sampling distribution of x̄ to be Normal, which the CLT delivers at n = 120 even for skewed data, and LPCD is only mildly skewed","It must be redone as a Wilcoxon test","It is invalid because LPCD only narrowly passed","Both tests show the data are fine for any procedure"],a:0,
+ hint:"What has to be Normal: the households, or the mean of 120 of them?",why:"The t test's assumption is on the sampling distribution of x̄. With n = 120 the CLT makes it Normal to a good approximation even for expenditure (File 2 showed it). Normality of the raw data matters for small n, for prediction intervals and for tests on individual values."},
+{t:"num",ph:"e.g. 2",q:"Family size and LPCD correlate at r = −0.2954 in the 120 households. What is the magnitude of the t statistic for H₀: ρ = 0?",a:3.358,tol:0.03,
+ hint:"|r| √(n − 2) / √(1 − r²).",why:"0.2954 × √118 / √(1 − 0.0873) = 3.209 / 0.9554 = 3.36 on 118 df, p = 0.001. Larger families share a fixed supply, so litres per head fall. Correlation, not cause: the next module takes this up with regression."},
+{t:"mcq",q:"Purvi vs others: Welch p = 0.11, Mann–Whitney p = 0.23. What does the Mann–Whitney test actually test, and why might someone prefer it?",opts:["Whether a randomly chosen Purvi household tends to have lower LPCD than one from elsewhere (a shift in distribution); it is robust to outliers and needs no Normality","Whether the two medians are equal, exactly","Whether the two variances are equal","Whether the two means are equal, with more power than Welch"],a:0,
+ hint:"The U statistic counts how often a value from one group exceeds a value from the other.",why:"U counts pairs; its null is P(X > Y) = 0.5. It is not strictly a test of medians, and against Normal data it has slightly less power than t (about 95% efficiency), but it does not care about a few extreme households. Both tests reach the same verdict here: not detectable with 120."}
+]});
+
+L.push({id:"l7",badge:"Honest Reporter",code:"File 7",title:"Twelve tests and a garden of paths",topics:"Family-wise error vs false discovery rate, Bonferroni, Holm, Benjamini–Hochberg; p-hacking and the garden of forking paths; pre-registration; significance vs importance; the five-part report",
+story:`<b>The report is due.</b> Across the files you have run a dozen tests on the same 120 households. Six came out below 0.05. A councillor asks: "If you test enough things, won't something always come out significant?" Yes. The question is what to do about it, and how to write the report so that nobody, including you, can quietly move the goalposts.`,
+brief:`<p>With m tests at level α, the expected number of false rejections under all-null is mα, and the chance of at least one is 1 − (1 − α)ᵐ: 0.64 for m = 20. Two targets exist. The <span class="term">family-wise error rate</span> (FWER) is P(any false rejection). The <span class="term">false discovery rate</span> (FDR; Benjamini & Hochberg, 1995) is the expected share of false rejections among the rejections, a looser and often more useful target when many tests are run.</p>
+<p>Sort the p-values p₍₁₎ ≤ … ≤ p₍ₘ₎. <span class="term">Bonferroni</span> rejects p₍ᵢ₎ &lt; α/m. <span class="term">Holm</span> (1979) is a step-down version that is always at least as powerful and still controls FWER. <span class="term">Benjamini–Hochberg</span> (BH) is a step-up rule controlling FDR:</p>
+<div class="formula">Bonferroni:  reject if p₍ᵢ₎ ≤ α/m
+Holm:        reject p₍₁₎…p₍ₖ₎ for the largest k
+             with p₍ᵢ₎ ≤ α/(m − i + 1) for all i ≤ k
+BH (FDR):    find largest k with p₍ₖ₎ ≤ kα/m;
+             reject p₍₁₎…p₍ₖ₎</div>
+<p>On this module's 12 p-values, Bonferroni and Holm keep 5 rejections and drop the toilet test (p = 0.0093, Holm-adjusted 0.065); BH keeps all 6. Neither is "right"; they answer different questions.</p>
+<p>Corrections only help if the tests are counted. <span class="term">p-hacking</span> is trying analyses until one crosses 0.05 and reporting only that one; the <span class="term">garden of forking paths</span> (Gelman & Loken, 2014) is the subtler version where each data-dependent choice (which ward, which outcome, which cut-off) was reasonable but the path taken was one of many. <span class="term">Pre-registration</span> fixes hypotheses, outcomes and tests before the data arrive, so that the p-value means what it claims.</p>
+<p>Finally, <span class="term">significant is not important</span>. With 1,200 households Kiran's 1.06-hour edge over Suryodaya has p ≈ 10⁻²⁴; whether an hour a night justifies a price difference is an engineering and budget question. The report that answers it has five parts: the <span class="term">estimate</span>, its <span class="term">interval</span>, the <span class="term">test</span> and its p-value, the <span class="term">effect size</span>, and the <span class="term">assumptions</span> checked, with the number of tests run stated.</p>`,
+refs:"Wasserman (2004), §10.7 · Holm, <i>Scandinavian J. Statistics</i> 6 (1979) 65–70 · Benjamini & Hochberg, <i>J. Royal Statistical Society B</i> 57 (1995) 289–300 · Gelman & Loken, <i>American Scientist</i> 102 (2014) 460–465 · Wasserstein & Lazar, <i>The American Statistician</i> 70 (2016) 129–133 (the American Statistical Association statement on p-values) · Cohen (1988).",
+lab:labMultiple,
+qs:[
+{t:"num",ph:"e.g. 0.3",q:"A councillor tests 20 unrelated hypotheses, all of them actually false (null true), each at α = 0.05, independently. What is the probability that at least one comes out \"significant\"?",a:0.6415,tol:0.005,
+ hint:"1 − 0.95²⁰.",why:"1 − 0.95²⁰ = 0.64. The lab's garden of 20 null tests lights up at least one red dot in about two studies out of three, with one false positive per study on average. A finding found this way is worth very little."},
+{t:"num",ph:"e.g. 0.01",q:"You ran 12 tests. What per-test threshold does Bonferroni use to hold the family-wise error rate at 0.05?",a:0.004167,tol:0.0001,
+ hint:"α / m.",why:"0.05 / 12 = 0.00417. Five of the twelve p-values clear it; the toilet test (0.0093) does not. Holm starts at the same threshold for the smallest p-value and relaxes it step by step: 0.05/12, 0.05/11, …"},
+{t:"mcq",q:"The toilet test, p = 0.0093, is the 6th smallest of 12. Holm's adjusted p is 0.065 (not rejected); BH's is 0.019 (rejected). Why do they disagree?",opts:["Holm controls the chance of any false rejection, so its 6th threshold is 0.05/7 = 0.0071; BH controls the expected share of false rejections, with threshold 6 × 0.05/12 = 0.025","BH ignores the other tests","Holm is a one-sided method and BH two-sided","BH adjusts only the six smallest p-values, so it has fewer tests to correct for"],a:0,
+ hint:"Compare the 6th thresholds: α/(m − 6 + 1) versus 6α/m.",why:"Holm's step-down threshold at rank 6 is 0.05/7 = 0.0071 < 0.0093, so it stops there. BH's step-up threshold at rank 6 is 0.025 > 0.0093, so it rejects. FWER protects against a single mistake; FDR tolerates a few among many discoveries. State which one you used before you look."},
+{t:"mcq",q:"A colleague splits the 120 households by ward, by vendor, by family size above and below 4, and by toilet, tests LPCD against 55 in every subgroup, and reports the one subgroup with p = 0.03. What is this?",opts:["The garden of forking paths: many reasonable analyses were possible and only the one that crossed 0.05 was reported, so 0.03 overstates the evidence","A valid stratified analysis, because each subgroup is a legitimate population","Pre-registration, because the splits were chosen before the test","Benjamini–Hochberg in disguise"],a:0,
+ hint:"How many tests were run, and how many were reported?",why:"Each split was defensible, but there were about a dozen of them, and the choice of which to report depended on the data. The fix is to declare the analysis in advance or to adjust for every path taken, and to report all of them."},
+{t:"mcq",q:"On the full census, Kiran's lamps burn 1.06 hours longer than Suryodaya's, p ≈ 10⁻²⁴. Should the tender go to Kiran?",opts:["The p-value only says the difference is not noise; whether an extra hour a night is worth Kiran's price is a cost–benefit question that needs the effect size and the budget, not p","Yes: a p-value that small proves Kiran is overwhelmingly better","No: 1.06 hours is too small to be significant","Yes, but only if Bonferroni is applied"],a:0,
+ hint:"\"Significant\" is a statement about noise, not about value.",why:"With 1,200 households almost any real difference becomes \"significant\". The decision needs the estimate (1.06 h), its interval, the price, and the use case. A statistic can tell you the gap is real and how big; it cannot tell you whether it matters."},
+{t:"mcq",q:"Which set is the five-part report for one finding?",opts:["Estimate, interval, test with p-value, effect size, assumptions checked (and the number of tests run)","p-value, significance stars, sample size, software used, author","Mean, median, mode, range, variance","Hypothesis, p-value, conclusion, recommendation, signature"],a:0,
+ hint:"Each part answers a different question: how big, how sure, how surprising, how important, how trustworthy.",why:"\"LPCD is 50.3 (95% CI 48.1 to 52.5); below 55, t = −4.2, p < 0.0001; d = 0.38; Normality of the mean by CLT, n = 120, one of 12 tests run.\" One sentence that someone else can check."}
+]});
+
+L.push({id:"l8",badge:"Bayesian Enumerator",code:"File 8",title:"Updating and unsealing",topics:"Prior, likelihood, posterior for a proportion with a Beta prior; credible vs confidence intervals; the posterior narrowing with n; Bayes factor intuition; the census unsealed; what a real survey adds",
+story:`<b>Door to door.</b> The dashboard says 75% toilet coverage. Before you knock on a single door you have an opinion about that; after each door you have a slightly different one. Bayes' theorem (Module 1, File 5) makes the updating explicit. And then the laboratory ends: you unseal the census you have been sampling from and see what your 120 households got right, what they got wrong, and what no census can teach about a real survey.`,
+brief:`<p>Treat the toilet share p as uncertain and give it a <span class="term">prior</span> distribution. The <span class="term">Beta(a, b)</span> family on (0, 1) is the natural choice: mean a/(a + b), and a + b behaves like a number of households already seen. Beta(1, 1) is flat; Beta(15, 5) encodes "about 75%, worth 20 households". With k toilets in n households the <span class="term">likelihood</span> is Binomial, and the <span class="term">posterior</span> is again Beta (the prior is <span class="term">conjugate</span>):</p>
+<div class="formula">prior Beta(a, b) + data (k of n)  →  posterior Beta(a + k, b + n − k)
+posterior mean = (a + k)/(a + b + n)
+flat prior, 78 of 120:  Beta(79, 43),  mean 0.648</div>
+<p>A 95% <span class="term">credible interval</span> is a range holding 95% of the posterior: (0.561, 0.730) here. It licenses the sentence File 2 forbade: "the probability that p lies in this range is 0.95", because p now has a distribution. Numerically it almost coincides with the Wilson interval (0.561, 0.730): with 120 households and a flat prior, the data dominate. The posterior narrows roughly like 1/√n; the lab shows it tighten door by door.</p>
+<p>The posterior answers the dashboard directly: P(p ≥ 0.75 | data) = 0.006. A <span class="term">Bayes factor</span> compares two hypotheses by how well each predicted the data: BF₁₀ = P(data | H₁) / P(data | H₀). For H₀: p = 0.75 against H₁: p ~ Beta(1, 1), P(k = 78 | p = 0.75) = 0.0039 and the flat-prior marginal is 1/(n + 1) = 0.0083, so BF₁₀ = 2.1: the data favour "not 0.75" only mildly, because the vague H₁ spreads its bets over the whole (0, 1). The exact binomial p-value was 0.009. The two numbers answer different questions; both are honest.</p>
+<p><span class="term">The unsealing.</span> The census was a laboratory: you knew μ = 51.78 and could watch intervals miss it. Your sample said 50.33 ± 2.20 (contains 51.78), toilet share 0.65 (truth 0.66), Kiran longest (true), Dhoop and Suryodaya unranked (the sample had them in the wrong order), Purvi not distinguishable from the rest (the census gap is 5.7 litres; the sample saw 3.6 with p = 0.11). Every miss was a sampling-error miss, of the size the standard errors predicted.</p>
+<p>A real survey adds errors the laboratory cannot show. <span class="term">Nonresponse</span>: if the 16% of households below 40 LPCD are the ones not at home, the remaining mean is 55.2, and the village "meets the norm". <span class="term">Measurement error</span>: self-reported litres, lamps observed on one night, a toilet that exists but is not used. <span class="term">Coverage error</span>: households not on the list. None of these shrink with n. Sampling theory tells you how far 120 households can be from the truth by chance; fieldwork decides how far they are from it by design.</p>`,
+refs:"Wasserman (2004), ch. 11 (Bayesian inference) · Casella & Berger (2002), §7.2.3, §9.2.4 · Rice (2007), §8.6, §15.3 · Blitzstein & Hwang, <i>Introduction to Probability</i> (2nd ed., 2019), §8.3 (Beta–Binomial conjugacy) · Kass & Raftery, <i>J. American Statistical Association</i> 90 (1995) 773–795 (Bayes factors) · Groves et al., <i>Survey Methodology</i> (2nd ed., 2009), ch. 2 (total survey error).",
+lab:labBayes,
+qs:[
+{t:"num",ph:"e.g. 0.5",q:"With a flat Beta(1, 1) prior and 78 toilets in 120 households, what is the posterior mean of the toilet share?",a:0.6475,tol:0.002,
+ hint:"(a + k) / (a + b + n).",why:"(1 + 78) / (2 + 120) = 79/122 = 0.6475, just below p̂ = 0.65: the flat prior counts as one imaginary toilet and one imaginary no-toilet. The posterior is Beta(79, 43) with SD 0.043."},
+{t:"num",ph:"e.g. 0.5",q:"The district insists on its prior: Beta(15, 5), mean 0.75, worth 20 households. After your 78 of 120, what is the posterior mean?",a:0.6643,tol:0.002,
+ hint:"(15 + 78) / (20 + 120).",why:"93/140 = 0.664. The prior pulls the estimate up by about 1.7 points because it is worth 20 households against your 120. Even so, P(p ≥ 0.75 | data) is only 0.013 under that prior. It would take a prior worth hundreds of households to keep 0.75 alive."},
+{t:"mcq",q:"The 95% credible interval is (0.561, 0.730) and the 95% Wilson confidence interval is (0.561, 0.730). What differs?",opts:["The credible interval is a probability statement about p given the data and a prior; the confidence interval is a long-run property of the procedure; here the numbers agree because the data swamp a flat prior","Nothing: they are the same object under two names","The credible interval is always wider","The confidence interval depends on the prior"],a:0,
+ hint:"Which one is allowed to say \"the probability that p is in here is 95%\"?",why:"Both are ranges for p; only the credible interval attaches probability to p itself, by treating p as a random variable with a prior. With 120 households and a flat prior, the two coincide to three decimals; with 5 households, or a strong prior, they would not."},
+{t:"mcq",q:"P(p ≥ 0.75 | data) = 0.006 under a flat prior. Which sentence can the secretary now say that File 3 could not?",opts:["\"Given the survey, there is about a 0.6% probability that the true coverage is 75% or more\"","\"There is a 0.6% chance the survey is wrong\"","\"If coverage were 75%, there is a 0.6% chance of seeing this survey\"","\"0.6% of households are misreported\""],a:0,
+ hint:"Posterior probability is about the parameter; the p-value is about the data.",why:"The posterior speaks about p directly. The third option is the p-value's logic (and the exact p-value is 0.009, not 0.006). The two are close here because the prior is flat and n is large, which is often but not always the case."},
+{t:"num",ph:"e.g. 5",q:"P(k = 78 | n = 120, p = 0.75) = 0.003908. Under H₁: p ~ Beta(1, 1), the marginal probability of any k is 1/121 = 0.008264. What is the Bayes factor BF₁₀ in favour of H₁?",a:2.115,tol:0.05,
+ hint:"P(data | H₁) / P(data | H₀).",why:"0.008264 / 0.003908 = 2.1, \"barely worth mentioning\" on the Kass–Raftery scale. A vague alternative predicts the data poorly because it predicted everything equally. Against a sharper alternative, say p = 0.65, the factor would be 0.0762/0.0039 = 19.5. A Bayes factor is only as meaningful as the hypotheses it compares."},
+{t:"mcq",q:"The census is unsealed. Your 120 households got the village mean, the toilet share and the best vendor right within their standard errors, but could not separate Purvi from the rest or Dhoop from Suryodaya. Which error would a real survey add that this laboratory could not show?",opts:["Nonresponse and measurement error: if the 16% of households below 40 LPCD are the ones not at home, the remaining mean is 55.2 and the village \"meets the norm\" without any sampling error at all","A larger standard error, because real households vary more","Type I errors, which only occur in the field","None: a correctly drawn sample of 120 is immune to bias"],a:0,
+ hint:"Which errors fail to shrink as n grows?",why:"Everything the laboratory showed was sampling error, which the SE formulas predict and which shrinks with √n. Nonresponse, measurement and coverage errors do not shrink with n; they shift the answer. A survey of 120 visited well beats a survey of 1,200 that skips the households without water."}
+]});
+
+const BOARD=[
+{t:"num",q:"A population has standard deviation 12. You draw a simple random sample of 144 units (ignore the finite population correction). What is the standard error of the sample mean?",a:1,tol:0.01,why:"σ/√n = 12/√144 = 12/12 = 1."},
+{t:"mcq",q:"A test gives p = 0.03. Which statement is correct?",opts:["If the null hypothesis were true, data at least this extreme would occur in about 3% of samples","There is a 3% probability that the null hypothesis is true","There is a 97% probability that the alternative is true","The effect is important"],a:0,why:"The p-value conditions on H₀ and speaks about the data. It says nothing directly about the probability of H₀, and nothing at all about importance."},
+{t:"mcq",q:"Forty households are measured before and after a new tank. Which test matches the design?",opts:["A paired t test on the 40 differences","A Welch t test treating before and after as two independent groups","A chi-square test of independence","A one-way ANOVA with two groups"],a:0,why:"The same households appear twice; the differences remove the shared household-level variation. Treating them as independent groups throws that away and loses most of the power."},
+{t:"num",q:"You run six independent tests at α = 0.05, all nulls true. What is the probability of at least one false rejection?",a:0.2649,tol:0.003,why:"1 − 0.95⁶ = 0.265. Bonferroni would use 0.05/6 = 0.0083 per test."},
+{t:"mcq",q:"Three vendors' lamps, burn hours for 120 households, question: do the mean burn hours differ by vendor? Which is the standard first tool?",opts:["One-way ANOVA (F test), followed by Tukey HSD for the pairs","Three separate t tests at α = 0.05","A chi-square test of independence","A paired t test"],a:0,why:"One factor with three levels and a continuous response is one-way ANOVA. Three uncorrected t tests inflate the family-wise error to about 14%."},
+{t:"num",q:"A sample proportion is p̂ = 0.5 from n = 400. What is the Wald standard error of p̂?",a:0.025,tol:0.0005,why:"√(0.5 × 0.5 / 400) = √0.000625 = 0.025, so the 95% margin is about ±4.9 points. This is where \"margin of error ±5%\" with 400 respondents comes from."},
+{t:"mcq",q:"A flat Beta(1, 1) prior is updated with 30 successes in 50 trials. What is the posterior and its mean?",opts:["Beta(31, 21), mean 31/52 ≈ 0.596","Beta(30, 20), mean 0.600","Beta(31, 51), mean 31/82 ≈ 0.378","Normal(0.6, 0.0048)"],a:0,why:"Beta(a + k, b + n − k) = Beta(1 + 30, 1 + 20) = Beta(31, 21), mean (a + k)/(a + b + n) = 31/52."},
+{t:"mcq",q:"With 1,200 households a 0.2-hour difference in lamp burn time has p = 0.001. Your conclusion for the tender?",opts:["The difference is real but small; whether 12 minutes a night matters is a cost question, so report the estimate and interval and let the budget decide","Switch vendors immediately: p = 0.001 is overwhelming","Ignore it: a p-value that small must be an error","Collect more data until p is smaller"],a:0,why:"Statistical significance measures distance from noise, which large n makes easy. Importance needs the effect size and the decision's stakes. The five-part report carries both."}
+];
+
+/* ---------- labs ---------- */
+function labSampling(root){
+  root.innerHTML=`<p class="note">The machine draws survey after survey from the old census. Switch the design to stratified by ward and compare the "SD of the x̄s" with σ/√n; change n and watch the bell narrow. Running 200 surveys earns a badge. Below: the n − 1 question, settled by brute force.</p>`;
+  const m=el("div");root.appendChild(m);
+  SamplingMachine(m,{title:"The sampling machine",seed:17,autoplay:false,controls:true,badge:"machine"});
+  const grid=el("div",{class:"labgrid",style:"margin-top:14px"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<span class="eyebrow">Why n − 1: 20,000 samples of n households</span>
+    <div class="btnrow"><select id="vn" aria-label="Sample size"><option value="5">n = 5</option><option value="20">n = 20</option><option value="120">n = 120</option></select><button class="btn small" id="vrun" type="button">Run</button></div>
+    <div class="readout"><div><span>Samples averaged</span><b id="vk">0</b></div><div><span>Mean of Σ(x−x̄)²/n</span><b id="vb">—</b></div><div><span>Mean of Σ(x−x̄)²/(n−1)</span><b id="vu">—</b></div><div><span>Census variance σ²</span><b>139.08</b></div><div><span>Theory ratio (n−1)/n</span><b id="vr"></b></div></div>
+    <p class="note" id="vnote"></p>`;
+  let anim=null;
+  function runV(){if(anim)anim.stop();const n=+$("#vn",left).value;$("#vr",left).textContent=((n-1)/n).toFixed(3);const r=rng(31+n);let k=0,sb=0,su=0;const T=20000;
+    const step=()=>{const idx=pick(r,N,n);const xs=idx.map(i=>LPCD[i]);const mu=mean(xs);let ss=0;xs.forEach(x=>ss+=(x-mu)**2);sb+=ss/n;su+=ss/(n-1);k++;};
+    const show=()=>{$("#vk",left).textContent=ind(k);$("#vb",left).textContent=(sb/k).toFixed(2);$("#vu",left).textContent=(su/k).toFixed(2);$("#vnote",left).textContent=`Dividing by n lands near ${((n-1)/n*139.08).toFixed(1)} = (n−1)/n × 139.08. Dividing by n − 1 lands on the census variance (strictly on 139.20 = 139.08 × N/(N − 1), the exact target when sampling without replacement).`;};
+    if(REDUCED){while(k<T)step();show();return;}
+    anim=loop(()=>{for(let i=0;i<400&&k<T;i++)step();show();if(k>=T)anim.stop();});}
+  $("#vrun",left).addEventListener("click",runV);
+  right.innerHTML=`<span class="eyebrow">The four wards in the census</span><div class="tbl"><table><thead><tr><th>Ward</th><th>Nₕ</th><th>nₕ (prop.)</th><th>mean LPCD</th><th>SD</th></tr></thead><tbody>
+    ${WNAME.map((w,i)=>`<tr><td>${w}</td><td class="num">${POP.wardN[i]}</td><td class="num">${[31,31,30,28][i]}</td><td class="num">${POP.wardMu[i].toFixed(2)}</td><td class="num">${[11.54,10.56,11.40,11.99][i].toFixed(2)}</td></tr>`).join("")}
+    <tr><td><b>All</b></td><td class="num">1,200</td><td class="num">120</td><td class="num"><b>51.78</b></td><td class="num">11.79</td></tr></tbody></table></div>
+    <p class="note">Within-ward variance 129.35 of a total 139.08: wards explain 7.0%. Theory: SE(SRS, with FPC) = 1.022; SE(stratified, proportional) = 0.987. Over 5,000 simulated surveys the machine gave 1.021 and 0.976.</p>
+    <p class="note">The council's sample (seed 112) drew 36 Purvi, 28 Pashchimi, 28 Uttari and 28 Dakshini households: x̄ = 50.33, s = 12.15.</p>`;
+}
+
+function labCLT(root){
+  root.innerHTML=`<p class="note">Left: means of n household expenditures, drawn from the census, fill a histogram; the gold curve is Normal(μ, σ²/n). Right: 95% intervals for the mean LPCD drop in one survey at a time; red ones miss μ = 51.78. Try z with n = 5 to see why Student bothered.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="btnrow"><span class="eyebrow">CLT</span><div class="seg" id="cn" role="group" aria-label="Sample size">${[2,5,30,120].map((v,i)=>`<button type="button" data-n="${v}" aria-pressed="${i===0}">n = ${v}</button>`).join("")}</div></div>
+    <div class="svgbox"><canvas aria-label="Histogram of sample means of expenditure filling under a Normal curve"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="crun" type="button">Draw 2,000 samples</button><button class="btn ghost small" id="creset" type="button">Reset</button><span id="csp"></span></div>
+    <div class="readout"><div><span>Samples</span><b id="ck">0</b></div><div><span>SD of the means</span><b id="csd">—</b></div><div><span>σ/√n</span><b id="cth"></b></div><div><span>Skewness of the means</span><b id="csk">—</b></div></div>
+    <p class="note">Expenditure itself: mean ₹11,021, SD ₹5,531, skewness 1.49, 95th percentile ₹21,699.</p>`;
+  const W=360,H=210,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  let n=2,r=rng(41),ms=[],speed=1,anim=null;
+  const range=()=>{const s=POP.expSigma/Math.sqrt(n);return [Math.max(0,POP.expMu-3.5*s),POP.expMu+4*s];};
+  function drawC(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;const [lo,hi]=range();const bins=40,bw=(W-40)/bins,cnt=new Array(bins).fill(0);ms.forEach(m=>{const b=Math.floor((m-lo)/(hi-lo)*bins);if(b>=0&&b<bins)cnt[b]++;});
+    const s=POP.expSigma/Math.sqrt(n),k=ms.length,peak=Math.max(1,k*normPDF(POP.expMu,POP.expMu,s)*(hi-lo)/bins*1.3,Math.max(...cnt)*1.05);
+    cnt.forEach((v,b)=>{const h=v/peak*(H-50);g.fillStyle=C.acc;g.fillRect(20+b*bw+1,H-30-h,bw-2,h);});
+    if(n>2||k>0){g.strokeStyle=C.gold;g.lineWidth=2;g.beginPath();for(let i=0;i<=120;i++){const x=lo+(hi-lo)*i/120,y=H-30-Math.max(k,1)*normPDF(x,POP.expMu,s)*(hi-lo)/bins/peak*(H-50);i?g.lineTo(20+i/120*(W-40),y):g.moveTo(20+i/120*(W-40),y);}g.stroke();g.lineWidth=1;}
+    g.fillStyle=C.muted;[0,0.5,1].forEach(f=>{const t="₹"+ind(Math.round(lo+f*(hi-lo)));g.fillText(t,20+f*(W-40)-g.measureText(t).width*f,H-12);});
+    g.fillStyle=C.ink;g.fillText(`means of ${n} · ${ind(k)} samples · gold: Normal(μ, σ²/${n})`,20,14);}
+  function statsC(){const k=ms.length;$("#ck",left).textContent=ind(k);$("#cth",left).textContent=ind(Math.round(POP.expSigma/Math.sqrt(n)));if(k>2){const m=mean(ms),sd=sdev(ms,m);$("#csd",left).textContent=ind(Math.round(sd));let s3=0;ms.forEach(x=>s3+=((x-m)/sd)**3);$("#csk",left).textContent=(s3/k).toFixed(2);}else{$("#csd",left).textContent="—";$("#csk",left).textContent="—";}}
+  function resetC(){if(anim)anim.stop();r=rng(41);ms=[];drawC();statsC();}
+  $("#crun",left).addEventListener("click",()=>{if(anim)anim.stop();const T=ms.length+2000;const step=()=>{ms.push(mean(pick(r,N,n).map(i=>EXP[i])));};if(REDUCED){while(ms.length<T)step();drawC();statsC();return;}anim=loop(()=>{for(let i=0;i<8*speed&&ms.length<T;i++)step();drawC();statsC();if(ms.length>=T)anim.stop();});});
+  $("#creset",left).addEventListener("click",resetC);
+  left.querySelectorAll("#cn button").forEach(b=>b.addEventListener("click",()=>{n=+b.dataset.n;left.querySelectorAll("#cn button").forEach(x=>x.setAttribute("aria-pressed",x===b));resetC();}));
+  speedSeg($("#csp",left),v=>{speed=v;},[1,4]);resetC();
+  // coverage
+  right.innerHTML=`<div class="btnrow"><span class="eyebrow">Coverage</span><select id="in" aria-label="Sample size"><option value="120">n = 120</option><option value="5">n = 5</option></select><div class="seg" id="iz" role="group" aria-label="Critical value"><button type="button" data-z="t" aria-pressed="true">t</button><button type="button" data-z="z" aria-pressed="false">z = 1.96</button></div></div>
+    <div class="svgbox"><canvas aria-label="Confidence intervals for the mean stacking up; those missing the true mean are red"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="irun" type="button">Run 2,000 surveys</button><button class="btn ghost small" id="ireset" type="button">Reset</button><span id="isp"></span></div>
+    <div class="readout"><div><span>Intervals</span><b id="ik">0</b></div><div><span>Contain μ</span><b id="ihit">0</b></div><div><span>Coverage</span><b id="icov">—</b></div><div><span>Critical value</span><b id="icrit"></b></div></div>
+    <div class="tbl"><table><thead><tr><th>Interval for the council's sample</th><th>Lower</th><th>Upper</th></tr></thead><tbody>
+    <tr><td>t, 95%: 50.33 ± 1.980 × 1.109</td><td class="num">48.14</td><td class="num">52.53</td></tr><tr><td>z, 95%</td><td class="num">48.16</td><td class="num">52.51</td></tr><tr><td>t, 99%</td><td class="num">47.43</td><td class="num">53.24</td></tr><tr><td>Bootstrap percentile, B = 2,000</td><td class="num">48.16</td><td class="num">52.37</td></tr>
+    <tr><td>Toilet share 78/120: Wald</td><td class="num">0.565</td><td class="num">0.735</td></tr><tr><td>Toilet share: Wilson</td><td class="num">0.561</td><td class="num">0.730</td></tr></tbody></table></div>`;
+  const W2=360,H2=260,cv2=right.querySelector("canvas"),g2=canvasSetup(cv2,W2,H2);
+  let n2=120,useT=true,r2=rng(53),ivs=[],k2=0,hit=0,speed2=1,anim2=null;const TC={120:1.9801,5:2.7764};
+  const crit=()=>useT?TC[n2]:1.96;
+  function one(){const xs=pick(r2,N,n2).map(i=>LPCD[i]);const m=mean(xs),se=sdev(xs,m)/Math.sqrt(n2),h=crit()*se;const ok=Math.abs(m-POP.mu)<=h;k2++;if(ok)hit++;ivs.push({m,h,ok});if(ivs.length>44)ivs.shift();}
+  function drawI(){const C=COL();g2.clearRect(0,0,W2,H2);g2.fillStyle=C.sunk;g2.fillRect(0,0,W2,H2);g2.font="11px "+MONO;const lo=n2===5?25:44,hi=n2===5?80:60;const X=v=>20+(v-lo)/(hi-lo)*(W2-40);
+    g2.strokeStyle=C.red;g2.setLineDash([4,3]);g2.beginPath();g2.moveTo(X(POP.mu),20);g2.lineTo(X(POP.mu),H2-22);g2.stroke();g2.setLineDash([]);g2.fillStyle=C.red;g2.fillText("μ = 51.78",X(POP.mu)+4,16);
+    ivs.forEach((iv,i)=>{const y=H2-26-i*5;g2.strokeStyle=iv.ok?C.acc:C.red;g2.lineWidth=iv.ok?1.5:2.5;g2.beginPath();g2.moveTo(X(Math.max(lo,iv.m-iv.h)),y);g2.lineTo(X(Math.min(hi,iv.m+iv.h)),y);g2.stroke();g2.fillStyle=g2.strokeStyle;g2.fillRect(X(iv.m)-1.5,y-2,3,4);});g2.lineWidth=1;
+    g2.fillStyle=C.muted;[lo,(lo+hi)/2,hi].forEach((v,i)=>{const t=String(v);g2.fillText(t,X(v)-g2.measureText(t).width*(i/2),H2-6);});g2.fillStyle=C.ink;g2.fillText(`last ${ivs.length} intervals · n = ${n2} · ${useT?"t":"z"}`,20,H2-32-ivs.length*5<30?30:16);}
+  function statsI(){$("#ik",right).textContent=ind(k2);$("#ihit",right).textContent=ind(hit);$("#icov",right).textContent=k2?pct(hit/k2,1):"—";$("#icrit",right).textContent=crit().toFixed(3);if(k2>=200)award("coverage");}
+  function resetI(){if(anim2)anim2.stop();r2=rng(53);ivs=[];k2=0;hit=0;drawI();statsI();}
+  $("#irun",right).addEventListener("click",()=>{if(anim2)anim2.stop();const T=k2+2000;if(REDUCED){while(k2<T)one();drawI();statsI();return;}anim2=loop(()=>{for(let i=0;i<speed2&&k2<T;i++)one();drawI();statsI();if(k2>=T)anim2.stop();});});
+  $("#ireset",right).addEventListener("click",resetI);
+  $("#in",right).addEventListener("change",e=>{n2=+e.target.value;resetI();});
+  right.querySelectorAll("#iz button").forEach(b=>b.addEventListener("click",()=>{useT=b.dataset.z==="t";right.querySelectorAll("#iz button").forEach(x=>x.setAttribute("aria-pressed",x===b));resetI();}));
+  speedSeg($("#isp",right),v=>{speed2=v;},[1,4,16]);resetI();
+}
+
+function labPower(root){
+  root.innerHTML=`<p class="note">Simulate surveys of n households from a village whose true mean you choose (σ = 11.79), test H₀: μ = 55 at α = 0.05 two-sided, and watch the rejection rate. At μ = 55 it is the Type I error rate; elsewhere it is power. The curve is the exact power from the non-central t distribution; the dot is the simulation.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="svgbox"><canvas aria-label="Simulated t statistics dropping onto an axis with rejection regions shaded"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="prun" type="button">Run 1,000 surveys</button><button class="btn ghost small" id="preset" type="button">Reset</button><span id="psp"></span></div>
+    <div class="readout"><div><span>Surveys</span><b id="pk">0</b></div><div><span>Rejected H₀</span><b id="prej">0</b></div><div><span>Rejection rate</span><b id="prate">—</b></div><div><span>Exact power</span><b id="pth"></b></div></div>`;
+  right.innerHTML=`<label for="pmu">True village mean μ: <output id="pmuo"></output> LPCD</label><input type="range" id="pmu" min="48" max="55" step="0.25" value="52">
+    <label for="pn">Households n</label><select id="pn">${[30,60,120,240].map(v=>`<option value="${v}" ${v===120?"selected":""}>n = ${v}</option>`).join("")}</select>
+    <div class="svgbox" id="pcurve"></div>
+    <div class="tbl"><table><thead><tr><th>The council's sample: tests</th><th>Statistic</th><th>p</th></tr></thead><tbody>
+    <tr><td>Mean LPCD vs 55, one-sided t (df 119)</td><td class="num">−4.21</td><td class="num">0.000025</td></tr><tr><td>Same, two-sided</td><td class="num">−4.21</td><td class="num">0.00005</td></tr><tr><td>Purvi only (n = 36) vs 55, one-sided</td><td class="num">−3.99</td><td class="num">0.00016</td></tr>
+    <tr><td>Toilet share vs 0.75, z (one-sided)</td><td class="num">−2.53</td><td class="num">0.0057</td></tr><tr><td>Toilet share vs 0.75, exact binomial</td><td class="num">k = 78</td><td class="num">0.0093</td></tr></tbody></table></div>`;
+  const W=360,H=200,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  let mu=52,n=120,r=rng(61),ts=[],k=0,rej=0,speed=1,anim=null,last=null;
+  const idx=()=>Math.round((mu-48)/0.25);
+  function one(){let s=0,s2=0;for(let i=0;i<n;i++){const x=mu+POP.sigma*gauss(r);s+=x;s2+=x*x;}const m=s/n,sd=Math.sqrt((s2-s*s/n)/(n-1)),t=(m-55)/(sd/Math.sqrt(n));k++;if(Math.abs(t)>TCRIT[n])rej++;ts.push(t);if(ts.length>400)ts.shift();last=t;}
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;const lo=-8,hi=4,X=v=>20+(Math.min(hi,Math.max(lo,v))-lo)/(hi-lo)*(W-40),tc=TCRIT[n];
+    g.fillStyle=C.accs;g.fillRect(20,30,X(-tc)-20,H-70);g.fillRect(X(tc),30,W-20-X(tc),H-70);
+    const bins=48,cnt=new Array(bins).fill(0);ts.forEach(t=>{const b=Math.floor((Math.min(hi,Math.max(lo,t))-lo)/(hi-lo)*bins);cnt[Math.min(bins-1,b)]++;});const pk=Math.max(1,...cnt),bw=(W-40)/bins;
+    cnt.forEach((v,b)=>{const h=v/pk*(H-80);const mid=lo+(b+0.5)*(hi-lo)/bins;g.fillStyle=Math.abs(mid)>tc?C.red:C.acc;g.fillRect(20+b*bw+1,H-40-h,bw-2,h);});
+    g.strokeStyle=C.line;g.beginPath();g.moveTo(20,H-40);g.lineTo(W-20,H-40);g.stroke();
+    g.fillStyle=C.muted;[-8,-6,-4,-2,0,2,4].forEach(v=>g.fillText(v,X(v)-4,H-26));g.fillText("t statistic · shaded: reject H₀ (|t| > "+tc.toFixed(2)+")",20,H-8);
+    g.strokeStyle=C.gold;g.setLineDash([3,3]);g.beginPath();g.moveTo(X(0),30);g.lineTo(X(0),H-40);g.stroke();g.setLineDash([]);
+    g.fillStyle=C.ink;g.fillText(`true μ = ${mu.toFixed(2)} · n = ${n} · last ${ts.length} of ${ind(k)} surveys`,20,16);
+    if(last!=null){g.fillStyle=C.gold;g.beginPath();g.arc(X(last),26,4,0,7);g.fill();}}
+  function stats(){$("#pk",left).textContent=ind(k);$("#prej",left).textContent=ind(rej);$("#prate",left).textContent=k?(rej/k).toFixed(3):"—";$("#pth",left).textContent=POWER[n][idx()].toFixed(3);$("#pmuo",right).textContent=mu.toFixed(2);curve();}
+  function curve(){const Wc=360,Hc=180,m={l:36,r:12,t:12,b:30},X=v=>m.l+(v-48)/7*(Wc-m.l-m.r),Y=v=>Hc-m.b-v*(Hc-m.t-m.b);const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Power curve against the true mean"});
+    [0,0.25,0.5,0.75,1].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:Wc-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-5,y:Y(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+    [48,50,52,54,55].forEach(v=>{const t=sv("text",{x:X(v),y:Hc-14,"font-size":10,"text-anchor":"middle"});t.textContent=v;s.appendChild(t);});
+    const lab=sv("text",{x:(m.l+Wc-m.r)/2,y:Hc-2,"font-size":10,"text-anchor":"middle"});lab.textContent="true mean μ (H₀: 55)";s.appendChild(lab);
+    s.appendChild(sv("line",{x1:m.l,x2:Wc-m.r,y1:Y(0.05),y2:Y(0.05),style:"stroke:var(--fraud);stroke-dasharray:3 3"}));const a=sv("text",{x:Wc-m.r,y:Y(0.05)-4,"font-size":10,"text-anchor":"end"});a.textContent="α = 0.05";s.appendChild(a);
+    [30,60,120,240].forEach(nn=>{let d="";POWER[nn].forEach((p,i)=>{d+=(i?"L":"M")+X(48+i*0.25).toFixed(1)+","+Y(p).toFixed(1);});s.appendChild(sv("path",{d,style:`fill:none;stroke:var(--accent);stroke-width:${nn===n?2.5:1};opacity:${nn===n?1:0.35}`}));const t=sv("text",{x:X(52.5)-4,y:Y(POWER[nn][18])+3,"font-size":9,"text-anchor":"end"});t.textContent="n="+nn;s.appendChild(t);});
+    s.appendChild(sv("circle",{cx:X(mu),cy:Y(POWER[n][idx()]),r:5,style:"fill:var(--gold)"}));
+    if(k)s.appendChild(sv("circle",{cx:X(mu),cy:Y(rej/k),r:4,style:"fill:none;stroke:var(--fraud);stroke-width:2"}));
+    const t2=sv("text",{x:m.l+4,y:Y(0.12),"font-size":10});t2.textContent="power · gold dot: exact · red ring: simulated";s.appendChild(t2);
+    const pc=$("#pcurve",right);pc.innerHTML="";pc.appendChild(s);}
+  function reset(){if(anim)anim.stop();r=rng(61);ts=[];k=0;rej=0;last=null;draw();stats();}
+  $("#prun",left).addEventListener("click",()=>{if(anim)anim.stop();const T=k+1000;if(REDUCED){while(k<T)one();draw();stats();return;}anim=loop(()=>{for(let i=0;i<2*speed&&k<T;i++)one();draw();stats();if(k>=T)anim.stop();});});
+  $("#preset",left).addEventListener("click",reset);
+  $("#pmu",right).addEventListener("input",e=>{mu=+e.target.value;reset();});$("#pn",right).addEventListener("change",e=>{n=+e.target.value;reset();});
+  speedSeg($("#psp",left),v=>{speed=v;},[1,4,16]);reset();
+}
+
+function labTwo(root){
+  root.innerHTML=`<p class="note">Left: the permutation test (Fisher, 1935), a formula-free cousin of the two-sample t test. If ward made no difference, the labels "Purvi" and "other" could be shuffled among the 120 households without changing anything; shuffle, recompute the difference in means, and see how often chance alone matches the observed 3.62 litres. Right: the tank pilot and the tables.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const pu=[],ot=[];S_WARD.forEach((w,i)=>(w===0?pu:ot).push(S_LPCD[i]));
+  const labels=S_WARD.map(w=>w===0?0:1);const obs=mean(ot)-mean(pu);
+  PermLab(grid,{values:S_LPCD,labels,names:["Purvi (36)","other wards (84)"],seed:11,total:1000,lo:-9,hi:9,ticks:[-8,-4,0,4,8],obs,statName:"difference in means",badge:"shuffler",
+    stat:lab=>{let s0=0,n0=0,s1=0,n1=0;lab.forEach((l,i)=>{if(l===0){s0+=S_LPCD[i];n0++;}else{s1+=S_LPCD[i];n1++;}});return s1/n1-s0/n0;},extreme:v=>Math.abs(v)>=Math.abs(obs)-1e-9});
+  const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  right.innerHTML=`<span class="eyebrow">Purvi vs the other wards (LPCD)</span>
+    <div class="tbl"><table><thead><tr><th>Test</th><th>Statistic</th><th>df</th><th>p</th></tr></thead><tbody>
+    <tr><td>Welch t</td><td class="num">−1.60</td><td class="num">76.4</td><td class="num">0.114</td></tr><tr><td>Pooled t</td><td class="num">−1.51</td><td class="num">118</td><td class="num">0.135</td></tr><tr><td>F test, s₁²/s₂² = 0.741</td><td class="num">0.74</td><td class="num">35, 83</td><td class="num">0.32</td></tr><tr><td>Levene</td><td class="num">0.78</td><td class="num">1, 118</td><td class="num">0.38</td></tr><tr><td>Permutation (5,000 shuffles)</td><td class="num">3.62</td><td class="num">—</td><td class="num">0.135</td></tr></tbody></table></div>
+    <span class="eyebrow" style="margin-top:8px">The tank pilot: same 40 households, two tests</span>
+    <div class="svgbox" id="pairs"></div>
+    <div class="tbl"><table><thead><tr><th></th><th>Paired t</th><th>Unpaired (Welch)</th></tr></thead><tbody>
+    <tr><td>Estimate (after − before)</td><td class="num">3.33</td><td class="num">3.33</td></tr><tr><td>Standard error</td><td class="num">0.69</td><td class="num">2.62</td></tr><tr><td>t</td><td class="num">4.84</td><td class="num">1.27</td></tr><tr><td>p (two-sided)</td><td class="num">0.00002</td><td class="num">0.21</td></tr><tr><td>95% interval</td><td class="num">(1.94, 4.72)</td><td class="num">(−1.9, 8.5)</td></tr></tbody></table></div>
+    <span class="eyebrow" style="margin-top:8px">Tables</span>
+    <div class="tbl"><table><thead><tr><th>Ward × toilet (sample)</th><th>No</th><th>Yes</th><th>Expected yes</th></tr></thead><tbody>
+    <tr><td>Purvi</td><td class="num">9</td><td class="num">27</td><td class="num">23.4</td></tr><tr><td>Pashchimi</td><td class="num">12</td><td class="num">16</td><td class="num">18.2</td></tr><tr><td>Uttari</td><td class="num">8</td><td class="num">20</td><td class="num">18.2</td></tr><tr><td>Dakshini</td><td class="num">13</td><td class="num">15</td><td class="num">18.2</td></tr>
+    <tr><td colspan="4">χ² = 4.46, df = 3, p = 0.22 · two-proportion z, Purvi vs rest: z = 1.50, p = 0.13 · OR 1.94, RR 1.24</td></tr></tbody></table></div>
+    <div class="tbl"><table><thead><tr><th>Nudge (Module 2)</th><th>Adopted</th><th>Did not</th><th>Rate</th></tr></thead><tbody>
+    <tr><td>A</td><td class="num">73</td><td class="num">125</td><td class="num">0.369</td></tr><tr><td>B</td><td class="num">59</td><td class="num">131</td><td class="num">0.311</td></tr>
+    <tr><td colspan="4">Fisher exact p = 0.24 · χ² (no correction) 1.46, p = 0.23 · OR 1.30 (0.85, 1.98) · RR 1.19 (0.90, 1.57)</td></tr></tbody></table></div>`;
+  // paired dot plot
+  const Wp=360,Hp=150,m={l:30,r:12,t:14,b:26},X=v=>m.l+(v-28)/(86-28)*(Wp-m.l-m.r);const s=sv("svg",{viewBox:`0 0 ${Wp} ${Hp}`,role:"img","aria-label":"Before and after LPCD for 40 households joined by lines"});
+  [30,40,50,60,70,80].forEach(v=>{s.appendChild(sv("line",{x1:X(v),x2:X(v),y1:m.t,y2:Hp-m.b,style:"stroke:var(--line)"}));const t=sv("text",{x:X(v),y:Hp-10,"font-size":10,"text-anchor":"middle"});t.textContent=v;s.appendChild(t);});
+  TANK_B.forEach((b,i)=>{const a=TANK_A[i];const y1=m.t+10+i*2.6,y2=y1;s.appendChild(sv("line",{x1:X(b),x2:X(a),y1:y1,y2:y2,style:`stroke:${a>b?"var(--ok)":"var(--fraud)"};stroke-width:1.2;opacity:.8`}));s.appendChild(sv("circle",{cx:X(b),cy:y1,r:1.6,style:"fill:var(--muted)"}));s.appendChild(sv("circle",{cx:X(a),cy:y2,r:1.6,style:"fill:var(--accent)"}));});
+  const t1=sv("text",{x:m.l,y:10,"font-size":10});t1.textContent="each line: one household, before (grey) → after (blue); 31 of 40 rose";s.appendChild(t1);
+  const t2=sv("text",{x:Wp-m.r,y:Hp-1,"font-size":10,"text-anchor":"end"});t2.textContent="LPCD";s.appendChild(t2);$("#pairs",right).appendChild(s);
+}
+
+function labANOVA(root){
+  root.innerHTML=`<p class="note">Left: the sum-of-squares decomposition and the strip plot of the 120 burn hours by vendor. Right: the permutation version of the F test: shuffle the vendor labels, recompute F, and see how far chance gets (the real F is 10.36; under H₀ a shuffled F that large appears about 7 times in 100,000, and in one run of 5,000 shuffles the largest was 8.1).</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);
+  const grp=[[],[],[]];S_VENDOR.forEach((v,i)=>grp[v].push(S_LAMP[i]));const gm=mean(S_LAMP),gms=grp.map(g=>mean(g));
+  let ssb=0,ssw=0,sst=0;grp.forEach((g,j)=>{ssb+=g.length*(gms[j]-gm)**2;g.forEach(x=>ssw+=(x-gms[j])**2);});S_LAMP.forEach(x=>sst+=(x-gm)**2);
+  const F=(ssb/2)/(ssw/117);
+  left.innerHTML=`<div class="svgbox" id="strip"></div>
+    <div class="mixbar"><span class="eyebrow">SST = SSB + SSW</span><div class="mixrow"><span>${sst.toFixed(1)}</span><div class="mixtrack"><i class="n" style="width:${100*ssb/sst}%">SSB ${ssb.toFixed(1)}</i><i class="u" style="width:${100*ssw/sst}%">SSW ${ssw.toFixed(1)}</i></div></div></div>
+    <div class="tbl"><table><thead><tr><th>Source</th><th>SS</th><th>df</th><th>MS = SS/df</th><th>F</th><th>p</th></tr></thead><tbody>
+    <tr><td>Between vendors</td><td class="num">${ssb.toFixed(2)}</td><td class="num">2</td><td class="num">${(ssb/2).toFixed(2)}</td><td class="num">${F.toFixed(2)}</td><td class="num">0.00007</td></tr><tr><td>Within (residual)</td><td class="num">${ssw.toFixed(2)}</td><td class="num">117</td><td class="num">${(ssw/117).toFixed(3)}</td><td></td><td></td></tr><tr><td>Total</td><td class="num">${sst.toFixed(2)}</td><td class="num">119</td><td></td><td class="num">η² = ${(ssb/sst).toFixed(3)}</td><td></td></tr></tbody></table></div>
+    <div class="tbl"><table><thead><tr><th>Tukey HSD</th><th>Difference (h)</th><th>95% interval</th><th>adj. p</th></tr></thead><tbody>
+    <tr><td>Kiran − Dhoop</td><td class="num">1.42</td><td class="num">(0.67, 2.17)</td><td class="num">&lt; 0.001</td></tr><tr><td>Suryodaya − Dhoop</td><td class="num">0.64</td><td class="num">(−0.17, 1.44)</td><td class="num">0.148</td></tr><tr><td>Kiran − Suryodaya</td><td class="num">0.78</td><td class="num">(0.04, 1.53)</td><td class="num">0.036</td></tr></tbody></table></div>
+    <p class="note">Assumptions: Levene W = 0.49, p = 0.61 · Shapiro–Wilk on residuals W = 0.986, p = 0.27 · Kruskal–Wallis H = 17.7, p = 0.00014. Uncorrected pairwise t tests: p = 0.00004, 0.054, 0.014; Bonferroni ×3: 0.0001, 0.16, 0.041.</p>
+    <p class="note">LPCD by ward (sample): F = 1.83 on (3, 116), p = 0.15; no Tukey pair rejects. Ward means 47.8 (Purvi), 54.4, 51.1, 48.7.</p>`;
+  const Ws=360,Hs=200,m={l:36,r:10,t:16,b:30},Y=v=>Hs-m.b-(v-5)/(16-5)*(Hs-m.t-m.b);const s=sv("svg",{viewBox:`0 0 ${Ws} ${Hs}`,role:"img","aria-label":"Strip plot of burn hours by vendor with group means"});
+  [6,8,10,12,14].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:Ws-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-5,y:Y(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+  const rr=rng(3);grp.forEach((g,j)=>{const cx=m.l+(j+0.5)*(Ws-m.l-m.r)/3;g.forEach(x=>s.appendChild(sv("circle",{cx:cx+(rr()-0.5)*56,cy:Y(x),r:2.4,style:"fill:var(--accent);opacity:.6"})));s.appendChild(sv("line",{x1:cx-36,x2:cx+36,y1:Y(gms[j]),y2:Y(gms[j]),style:"stroke:var(--fraud);stroke-width:2.5"}));const t=sv("text",{x:cx,y:Hs-14,"font-size":10,"text-anchor":"middle"});t.textContent=VNAME[j];s.appendChild(t);const t2=sv("text",{x:cx,y:Hs-3,"font-size":9,"text-anchor":"middle"});t2.textContent=`${gms[j].toFixed(2)} · n=${g.length}`;s.appendChild(t2);});
+  s.appendChild(sv("line",{x1:m.l,x2:Ws-m.r,y1:Y(gm),y2:Y(gm),style:"stroke:var(--gold);stroke-dasharray:4 3"}));const tg=sv("text",{x:Ws-m.r,y:Y(gm)-4,"font-size":10,"text-anchor":"end"});tg.textContent="grand mean "+gm.toFixed(2);s.appendChild(tg);
+  const tt=sv("text",{x:m.l,y:10,"font-size":10});tt.textContent="burn hours last night · red: vendor means";s.appendChild(tt);$("#strip",left).appendChild(s);
+  const Fstat=lab=>{const sums=[0,0,0],cnt=[0,0,0];lab.forEach((l,i)=>{sums[l]+=S_LAMP[i];cnt[l]++;});const ms=sums.map((x,j)=>x/cnt[j]);let b=0,w=0;lab.forEach((l,i)=>{w+=(S_LAMP[i]-ms[l])**2;});ms.forEach((x,j)=>b+=cnt[j]*(x-gm)**2);return (b/2)/(w/117);};
+  PermLab(grid,{values:S_LAMP,labels:S_VENDOR,names:VNAME,seed:21,total:1000,lo:0,hi:11,ticks:[0,2,4,6,8,10],obs:F,statName:"F statistic",stat:Fstat,extreme:v=>v>=F-1e-9});
+}
+
+function labBeyond(root){
+  root.innerHTML=`<p class="note">Four small tools: the interaction plot behind the two-way ANOVA, the goodness-of-fit table for grievances, the normality checks, and a correlation tester.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<span class="eyebrow">Interaction plot: mean burn hours, vendor × ward</span><div class="svgbox" id="inter"></div>
+    <div class="tbl"><table><thead><tr><th>Two-way ANOVA (sample)</th><th>SS</th><th>df</th><th>F</th><th>p</th></tr></thead><tbody>
+    <tr><td>Vendor</td><td class="num">46.28</td><td class="num">2</td><td class="num">12.38</td><td class="num">0.00001</td></tr><tr><td>Ward</td><td class="num">24.29</td><td class="num">3</td><td class="num">4.33</td><td class="num">0.006</td></tr><tr><td>Vendor × ward</td><td class="num">11.96</td><td class="num">6</td><td class="num">1.07</td><td class="num">0.387</td></tr><tr><td>Residual</td><td class="num">201.90</td><td class="num">108</td><td></td><td></td></tr></tbody></table></div>
+    <span class="eyebrow" style="margin-top:8px">Goodness of fit: grievances vs Poisson(λ̂ = 0.75)</span>
+    <div class="tbl"><table><thead><tr><th>Grievances</th><th>Observed</th><th>Poisson p</th><th>Expected</th><th>(O−E)²/E</th></tr></thead><tbody id="gof"></tbody></table></div>
+    <p class="note">χ² = 1.07 on 4 − 1 − 1 = 2 df, p = 0.59. Variance/mean = 1.04. The census (λ = 0.795, bins 0 to 4+) gives χ² = 5.65 on 3 df, p = 0.13.</p>`;
+  const Wi=360,Hi=190,m={l:36,r:12,t:16,b:26},Xw=j=>m.l+(j+0.5)*(Wi-m.l-m.r)/4,Yv=v=>Hi-m.b-(v-8)/(12-8)*(Hi-m.t-m.b);
+  const s=sv("svg",{viewBox:`0 0 ${Wi} ${Hi}`,role:"img","aria-label":"Interaction plot of mean burn hours by vendor across wards"});
+  [8,9,10,11,12].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:Wi-m.r,y1:Yv(v),y2:Yv(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-5,y:Yv(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+  WNAME.forEach((w,j)=>{const t=sv("text",{x:Xw(j),y:Hi-10,"font-size":10,"text-anchor":"middle"});t.textContent=w;s.appendChild(t);});
+  const cols=["var(--muted)","var(--accent)","var(--gold)"];
+  CELL.forEach((row,v)=>{let d="";row.forEach((y,j)=>{d+=(j?"L":"M")+Xw(j).toFixed(1)+","+Yv(y).toFixed(1);});s.appendChild(sv("path",{d,style:`fill:none;stroke:${cols[v]};stroke-width:2.2`}));row.forEach((y,j)=>s.appendChild(sv("circle",{cx:Xw(j),cy:Yv(y),r:3.2,style:`fill:${cols[v]}`})));const t=sv("text",{x:Wi-m.r,y:Yv(row[3])+(v===2?12:-5),"font-size":10,"text-anchor":"end"});t.textContent=VNAME[v];s.appendChild(t);});
+  const tt=sv("text",{x:m.l,y:10,"font-size":10});tt.textContent="roughly parallel lines: no interaction (p = 0.39)";s.appendChild(tt);$("#inter",left).appendChild(s);
+  const obs=[55,47,13,5],pr=[0.4724,0.3543,0.1329,0.0405];let gh="",chi=0;obs.forEach((o,i)=>{const e=120*pr[i];const c=(o-e)**2/e;chi+=c;gh+=`<tr><td>${i<3?i:"3+"}</td><td class="num">${o}</td><td class="num">${pr[i].toFixed(4)}</td><td class="num">${e.toFixed(2)}</td><td class="num">${c.toFixed(3)}</td></tr>`;});
+  gh+=`<tr><td><b>Σ</b></td><td class="num">120</td><td class="num">1.000</td><td class="num">120</td><td class="num"><b>${chi.toFixed(2)}</b></td></tr>`;$("#gof",left).innerHTML=gh;
+  right.innerHTML=`<span class="eyebrow">Normality checks (sample, n = 120)</span><div class="svgbox" id="nhist"></div>
+    <div class="tbl"><table><thead><tr><th>Variable</th><th>Skew</th><th>Ex. kurt.</th><th>JB</th><th>JB p</th><th>Shapiro–Wilk p</th></tr></thead><tbody>
+    <tr><td>Expenditure</td><td class="num">1.23</td><td class="num">2.49</td><td class="num">61.5</td><td class="num">≈ 10⁻¹⁴</td><td class="num">0.000004</td></tr><tr><td>LPCD</td><td class="num">0.52</td><td class="num">0.21</td><td class="num">5.71</td><td class="num">0.058</td><td class="num">0.061</td></tr><tr><td>Lamp hours</td><td class="num">−0.18</td><td class="num">0.30</td><td class="num">1.10</td><td class="num">0.58</td><td class="num">0.20</td></tr></tbody></table></div>
+    <span class="eyebrow" style="margin-top:8px">Rank tests</span>
+    <p class="note">Mann–Whitney, Purvi vs others: U = 1,300 (null mean 1,512), p = 0.23 · Wilcoxon signed-rank, tank pilot: W = 107, p = 0.00005 · sign test: 31 of 40 rose, p = 0.0007.</p>
+    <span class="eyebrow" style="margin-top:8px">Test a correlation</span>
+    <select id="cpair" aria-label="Pair"><option value="0">Family size vs LPCD</option><option value="1">Expenditure vs LPCD</option><option value="2">Expenditure vs family size</option></select>
+    <div class="readout"><div><span>r</span><b id="cr"></b></div><div><span>t = r√(n−2)/√(1−r²)</span><b id="ct"></b></div><div><span>p (two-sided, df 118)</span><b id="cp"></b></div></div><div class="svgbox" id="scat"></div>`;
+  // histogram of sample expenditure with normal overlay
+  const Wn=360,Hn=150,bins=[0,9,21,30,24,16,10,2,2,5,0,0,1,0,0,0];const sN=sv("svg",{viewBox:`0 0 ${Wn} ${Hn}`,role:"img","aria-label":"Histogram of sample expenditure with a fitted Normal curve"});
+  const bw=(Wn-40)/16,pk=30;bins.forEach((v,i)=>sN.appendChild(sv("rect",{x:20+i*bw+1,y:Hn-26-v/pk*(Hn-46),width:bw-2,height:v/pk*(Hn-46),style:"fill:var(--accent)"})));
+  let d="";for(let i=0;i<=100;i++){const x=i/100*40000,y=120*normPDF(x,10850,4988)*2500;d+=(i?"L":"M")+(20+i/100*(Wn-40)).toFixed(1)+","+(Hn-26-y/pk*(Hn-46)).toFixed(1);}sN.appendChild(sv("path",{d,style:"fill:none;stroke:var(--gold);stroke-width:2"}));
+  [0,10000,20000,30000,40000].forEach((v,i)=>{const t=sv("text",{x:20+v/40000*(Wn-40),y:Hn-10,"font-size":10,"text-anchor":i===0?"start":i===4?"end":"middle"});t.textContent="₹"+ind(v);sN.appendChild(t);});
+  const tn=sv("text",{x:20,y:10,"font-size":10});tn.textContent="sample expenditure · gold: Normal with the same mean and SD";sN.appendChild(tn);$("#nhist",right).appendChild(sN);
+  const PAIRS=[{r:-0.2954,p:"0.0011",x:S_FAM,y:S_LPCD,xl:"family size",yl:"LPCD"},{r:0.2839,p:"0.0017",x:S_EXP,y:S_LPCD,xl:"expenditure ₹",yl:"LPCD"},{r:0.0036,p:"0.97",x:S_EXP,y:S_FAM,xl:"expenditure ₹",yl:"family size"}];
+  function corr(){const P=PAIRS[+$("#cpair",right).value];const t=P.r*Math.sqrt(118)/Math.sqrt(1-P.r*P.r);$("#cr",right).textContent=P.r.toFixed(4);$("#ct",right).textContent=t.toFixed(3);$("#cp",right).textContent=P.p;
+    const W=360,H=170,m={l:34,r:10,t:10,b:24},xl=Math.min(...P.x),xh=Math.max(...P.x),yl=Math.min(...P.y),yh=Math.max(...P.y),X=v=>m.l+(v-xl)/(xh-xl)*(W-m.l-m.r),Y=v=>H-m.b-(v-yl)/(yh-yl)*(H-m.t-m.b);
+    const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Scatter plot of the chosen pair"});P.x.forEach((x,i)=>s.appendChild(sv("circle",{cx:X(x),cy:Y(P.y[i]),r:2.4,style:"fill:var(--accent);opacity:.6"})));
+    const t1=sv("text",{x:W-m.r,y:H-6,"font-size":10,"text-anchor":"end"});t1.textContent=P.xl;s.appendChild(t1);const t2=sv("text",{x:m.l,y:10,"font-size":10});t2.textContent=P.yl+" · r = "+P.r.toFixed(3);s.appendChild(t2);
+    const sc=$("#scat",right);sc.innerHTML="";sc.appendChild(s);}
+  $("#cpair",right).addEventListener("change",corr);corr();
+}
+
+function labMultiple(root){
+  root.innerHTML=`<p class="note">Left: the garden, simulated. Each "study" runs 20 tests on pure noise (n = 30, H₀ true every time); red dots are p-values below 0.05. Right: the module's twelve p-values with three corrections; pick one and see which findings survive.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="svgbox"><canvas aria-label="Twenty p-values per study appearing on a 0 to 1 axis; those below 0.05 turn red"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="grun" type="button">Run 200 studies</button><button class="btn ghost small" id="greset" type="button">Reset</button><span id="gsp"></span></div>
+    <div class="readout"><div><span>Studies</span><b id="gk">0</b></div><div><span>Studies with ≥ 1 "finding"</span><b id="g1">—</b></div><div><span>Theory 1 − 0.95²⁰</span><b>0.642</b></div><div><span>False positives per study</span><b id="gm">—</b></div></div>`;
+  const W=360,H=150,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  let r=rng(71),k=0,any=0,tot=0,cur=[],speed=1,anim=null;
+  function study(){cur=[];let fp=0;for(let j=0;j<20;j++){let s=0,s2=0;for(let i=0;i<30;i++){const x=gauss(r);s+=x;s2+=x*x;}const m=s/30,sd=Math.sqrt((s2-s*s/30)/29),t=Math.abs(m/(sd/Math.sqrt(30)));
+      const p=betaCDF(29/(29+t*t),14.5,0.5);cur.push(p);if(p<0.05)fp++;} /* exact two-sided p from t(29) */ k++;tot+=fp;if(fp>0)any++;}
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;const X=p=>20+p*(W-40);
+    g.fillStyle=C.accs;g.fillRect(20,30,X(0.05)-20,H-60);g.strokeStyle=C.line;g.beginPath();g.moveTo(20,H-30);g.lineTo(W-20,H-30);g.stroke();
+    g.fillStyle=C.muted;[0,0.05,0.25,0.5,0.75,1].forEach(p=>g.fillText(p,X(p)-6,H-16));g.fillText("p-value of each of the 20 tests",20,H-3);
+    cur.forEach((p,j)=>{g.fillStyle=p<0.05?C.red:C.acc;g.beginPath();g.arc(X(p),40+j*4,p<0.05?4:2.5,0,7);g.fill();});
+    g.fillStyle=C.ink;g.fillText(k?`study ${ind(k)} · ${cur.filter(p=>p<0.05).length} "significant" result(s) from noise`:"press Run",20,16);}
+  function stats(){$("#gk",left).textContent=ind(k);$("#g1",left).textContent=k?(any/k).toFixed(3):"—";$("#gm",left).textContent=k?(tot/k).toFixed(2):"—";}
+  function reset(){if(anim)anim.stop();r=rng(71);k=0;any=0;tot=0;cur=[];draw();stats();}
+  $("#grun",left).addEventListener("click",()=>{if(anim)anim.stop();const T=k+200;if(REDUCED){while(k<T)study();draw();stats();return;}let acc=0;anim=loop(()=>{acc+=0.25*speed;while(acc>=1&&k<T){acc-=1;study();}draw();stats();if(k>=T)anim.stop();});});
+  $("#greset",left).addEventListener("click",reset);speedSeg($("#gsp",left),v=>{speed=v;},[1,4,16]);reset();
+  right.innerHTML=`<div class="btnrow"><span class="eyebrow">Correction</span><div class="seg" id="mm" role="group" aria-label="Method"><button type="button" data-m="none" aria-pressed="true">none</button><button type="button" data-m="bonf" aria-pressed="false">Bonferroni</button><button type="button" data-m="holm" aria-pressed="false">Holm</button><button type="button" data-m="bh" aria-pressed="false">BH (FDR)</button></div></div>
+    <div class="tbl"><table><thead><tr><th>#</th><th>Test</th><th>p</th><th id="mth">threshold</th><th>Reject?</th></tr></thead><tbody id="mtab"></tbody></table></div><p class="note" id="mnote"></p>`;
+  const sorted=PVALS.slice().sort((a,b)=>a[1]-b[1]),m=sorted.length;
+  function thresholds(meth){return sorted.map((_,i)=>meth==="none"?0.05:meth==="bonf"?0.05/m:meth==="holm"?0.05/(m-i):(i+1)*0.05/m);}
+  function rejects(meth){const th=thresholds(meth);const rej=new Array(m).fill(false);
+    if(meth==="holm"){for(let i=0;i<m;i++){if(sorted[i][1]<=th[i])rej[i]=true;else break;}}
+    else if(meth==="bh"){let kk=-1;for(let i=0;i<m;i++)if(sorted[i][1]<=th[i])kk=i;for(let i=0;i<=kk;i++)rej[i]=true;}
+    else for(let i=0;i<m;i++)rej[i]=sorted[i][1]<=th[i];return [th,rej];}
+  function show(meth){const [th,rej]=rejects(meth);let h="";sorted.forEach((p,i)=>{h+=`<tr><td>${i+1}</td><td style="text-align:left">${p[0]}</td><td class="num">${p[1]<0.001?p[1].toExponential(2):p[1].toFixed(4)}</td><td class="num">${th[i].toFixed(4)}</td><td class="${rej[i]?"down":"up"}">${rej[i]?"yes":"no"}</td></tr>`;});$("#mtab",right).innerHTML=h;
+    $("#mth",right).textContent=meth==="none"?"α":meth==="bonf"?"α/m":meth==="holm"?"α/(m−i+1)":"iα/m";
+    $("#mnote",right).textContent={none:"Six of twelve below 0.05. With all nulls true, about 0.6 false rejections would be expected among twelve tests; 46% chance of at least one.",bonf:"Each test at 0.05/12 = 0.0042. Five survive; the toilet test (0.0093) does not. Guarantees FWER ≤ 0.05 but is conservative.",holm:"Step down: the smallest p faces 0.05/12, the next 0.05/11, and so on; stop at the first failure. Here it stops at rank 6 (0.0093 > 0.0071). Same five rejections as Bonferroni, never fewer.",bh:"Step up: find the largest rank k with p ≤ 0.05k/12 and reject everything up to it. Rank 6: 0.0093 ≤ 0.025, so six rejections. Controls the expected share of false discoveries at 5%, not the chance of any."}[meth];
+    right.querySelectorAll("#mm button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===meth));}
+  right.querySelectorAll("#mm button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.m)));show("none");
+}
+
+function labBayes(root){
+  root.innerHTML=`<p class="note">Left: visit the 120 households in the council's sample, in draw order; each door updates the Beta posterior for the toilet share. The dashed line is the dashboard's 0.75. Change the prior and run again. Right: compare, then unseal the census.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="btnrow"><span class="eyebrow">Prior</span><div class="seg" id="bp" role="group" aria-label="Prior"><button type="button" data-a="1" data-b="1" aria-pressed="true">Beta(1,1) flat</button><button type="button" data-a="15" data-b="5" aria-pressed="false">Beta(15,5) dashboard</button><button type="button" data-a="75" data-b="25" aria-pressed="false">Beta(75,25) stubborn</button></div></div>
+    <div class="svgbox"><canvas aria-label="Posterior density of the toilet share tightening as households are visited"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="brun" type="button">Visit the 120 households</button><button class="btn ghost small" id="breset" type="button">Reset</button><span id="bsp"></span></div>
+    <div class="readout"><div><span>Visited · with toilet</span><b id="bk">0 · 0</b></div><div><span>Posterior</span><b id="bpost">—</b></div><div><span>Posterior mean</span><b id="bmean">—</b></div><div><span>95% credible interval</span><b id="bci">—</b></div><div><span>P(p ≥ 0.75 | data)</span><b id="b75">—</b></div></div>`;
+  const W=360,H=200,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  let a0=1,b0=1,n=0,k=0,speed=1,anim=null;
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;const a=a0+k,b=b0+n-k,X=p=>20+p*(W-40);
+    const mode=a>1&&b>1?(a-1)/(a+b-2):0.5,pk=Math.max(betaPDF(mode,a,b),1.2);
+    g.strokeStyle=C.line;g.beginPath();g.moveTo(20,H-28);g.lineTo(W-20,H-28);g.stroke();g.fillStyle=C.muted;[0,0.25,0.5,0.75,1].forEach(p=>g.fillText(p,X(p)-6,H-14));g.fillText("toilet share p",W-110,H-2);
+    // prior, faint
+    const pm=a0>1&&b0>1?(a0-1)/(a0+b0-2):0.5,ppk=Math.max(betaPDF(pm,a0,b0),1.2);g.strokeStyle=C.muted;g.setLineDash([3,3]);g.beginPath();for(let i=1;i<200;i++){const p=i/200,y=H-28-betaPDF(p,a0,b0)/Math.max(pk,ppk)*(H-60);i===1?g.moveTo(X(p),y):g.lineTo(X(p),y);}g.stroke();g.setLineDash([]);
+    g.fillStyle=C.accs;g.strokeStyle=C.acc;g.lineWidth=2;g.beginPath();g.moveTo(X(0),H-28);for(let i=1;i<200;i++){const p=i/200;g.lineTo(X(p),H-28-betaPDF(p,a,b)/Math.max(pk,ppk)*(H-60));}g.lineTo(X(1),H-28);g.closePath();g.fill();g.stroke();g.lineWidth=1;
+    g.strokeStyle=C.red;g.setLineDash([4,3]);g.beginPath();g.moveTo(X(0.75),30);g.lineTo(X(0.75),H-28);g.stroke();g.setLineDash([]);g.fillStyle=C.red;g.fillText("0.75",X(0.75)+4,40);
+    g.strokeStyle=C.gold;g.setLineDash([4,3]);g.beginPath();g.moveTo(X(0.66),30);g.lineTo(X(0.66),H-28);g.stroke();g.setLineDash([]);
+    if(S.unsealed){g.fillStyle=C.gold;g.fillText("census 0.66",X(0.66)-74,56);}
+    g.fillStyle=C.ink;g.fillText(`Beta(${a}, ${b}) after ${n} door${n===1?"":"s"} · dotted: prior`,20,16);}
+  function stats(){const a=a0+k,b=b0+n-k;$("#bk",left).textContent=`${n} · ${k}`;$("#bpost",left).textContent=`Beta(${a}, ${b})`;$("#bmean",left).textContent=(a/(a+b)).toFixed(4);$("#bci",left).textContent=`(${betaQ(0.025,a,b).toFixed(3)}, ${betaQ(0.975,a,b).toFixed(3)})`;$("#b75",left).textContent=(1-betaCDF(0.75,a,b)).toFixed(4);}
+  function reset(){if(anim)anim.stop();n=0;k=0;draw();stats();}
+  function one(){if(n>=120)return;k+=S_TOILET[n];n++;}
+  $("#brun",left).addEventListener("click",()=>{if(anim)anim.stop();reset();if(REDUCED){while(n<120)one();draw();stats();return;}let acc=0;anim=loop(()=>{acc+=0.35*speed;while(acc>=1&&n<120){acc-=1;one();}draw();stats();if(n>=120)anim.stop();});});
+  $("#breset",left).addEventListener("click",reset);
+  left.querySelectorAll("#bp button").forEach(b=>b.addEventListener("click",()=>{a0=+b.dataset.a;b0=+b.dataset.b;left.querySelectorAll("#bp button").forEach(x=>x.setAttribute("aria-pressed",x===b));reset();}));
+  speedSeg($("#bsp",left),v=>{speed=v;},[1,4,16]);reset();
+  right.innerHTML=`<div class="tbl"><table><thead><tr><th>Toilet share, 78 of 120</th><th>Lower</th><th>Upper</th><th>Centre</th></tr></thead><tbody>
+    <tr><td>95% credible, Beta(1,1) prior</td><td class="num">0.561</td><td class="num">0.730</td><td class="num">0.648</td></tr><tr><td>95% credible, Beta(15,5) prior</td><td class="num">0.584</td><td class="num">0.740</td><td class="num">0.664</td></tr><tr><td>95% Wilson confidence</td><td class="num">0.561</td><td class="num">0.730</td><td class="num">0.645</td></tr><tr><td>95% Wald confidence</td><td class="num">0.565</td><td class="num">0.735</td><td class="num">0.650</td></tr></tbody></table></div>
+    <div class="tbl"><table><thead><tr><th>Door by door (flat prior)</th><th>k / n</th><th>Mean</th><th>Credible interval width</th></tr></thead><tbody>
+    <tr><td>5 households</td><td class="num">4 / 5</td><td class="num">0.714</td><td class="num">0.598</td></tr><tr><td>20</td><td class="num">14 / 20</td><td class="num">0.682</td><td class="num">0.376</td></tr><tr><td>40</td><td class="num">26 / 40</td><td class="num">0.643</td><td class="num">0.285</td></tr><tr><td>120</td><td class="num">78 / 120</td><td class="num">0.648</td><td class="num">0.169</td></tr></tbody></table></div>
+    <p class="note">Bayes factor, H₀: p = 0.75 against H₁: p ~ Beta(1,1): P(78 | 0.75) = 0.00391, marginal 1/121 = 0.00826, BF₁₀ = 2.1. Exact one-sided p-value: 0.0093.</p>
+    <div class="btnrow"><button class="btn small" id="unseal" type="button">${S.unsealed?"Census unsealed":"Unseal the census"}</button></div><div id="unsealbox"></div>`;
+  function showUnseal(){$("#unsealbox",right).innerHTML=`<div class="tbl"><table><thead><tr><th>Quantity</th><th>Your 120</th><th>Census truth</th><th>Verdict</th></tr></thead><tbody>
+    <tr><td>Mean LPCD</td><td class="num">50.33 (48.14, 52.53)</td><td class="num">51.78</td><td>inside the interval, 1.3 SE off</td></tr>
+    <tr><td>Toilet share</td><td class="num">0.650 (0.561, 0.730)</td><td class="num">0.660</td><td>inside</td></tr>
+    <tr><td>Purvi mean LPCD</td><td class="num">47.80</td><td class="num">47.53</td><td>close</td></tr>
+    <tr><td>Purvi − rest</td><td class="num">−3.62, p = 0.11</td><td class="num">−5.73</td><td>real gap, undetected</td></tr>
+    <tr><td>Lamp hours: Dhoop · Kiran · Suryodaya</td><td class="num">9.14 · 10.57 · 9.78</td><td class="num">9.51 · 10.38 · 9.33</td><td>Kiran right; the other two swapped</td></tr>
+    <tr><td>Ward × toilet</td><td class="num">χ² = 4.5, p = 0.22</td><td class="num">χ² = 20.3, p = 0.00015</td><td>real, undetected</td></tr>
+    <tr><td>Grievances ~ Poisson</td><td class="num">p = 0.59</td><td class="num">p = 0.13</td><td>adequate in both</td></tr></tbody></table></div>
+    <p class="note">Every miss is of the size the standard errors predicted. Now the part the laboratory cannot show: in the census, 16% of households are below 40 LPCD. If those are the doors nobody answers, the mean of the rest is 55.2, and a perfectly random sample of them "meets the norm".</p>`;}
+  $("#unseal",right).addEventListener("click",()=>{S.unsealed=true;save();award("unsealed");$("#unseal",right).textContent="Census unsealed";showUnseal();draw();});
+  if(S.unsealed)showUnseal();
+}
+
+const COURSE={
+  key:"inference",
+  title:"Kanchanpur Register",
+  eyebrow:"Statistics, played · 3 · Sampling, estimation and testing",
+  lede:"You are the newly posted secretary of Kanchanpur village council. Four headaches wait on the desk: a water norm the engineer says is met and the opposition says is not, a district dashboard claiming 75% toilet coverage, a lamp tender with three vendors, and a water tank that \"clearly worked\". You can visit 120 of the 1,200 households this year. The old census is your laboratory for learning what 120 households can and cannot say. Eight case files: a story, the theory with its equations, a lab you can run, and challenges that earn XP. Clear five and the district will review you.",
+  meta:"For graduate students of statistics, data science, economics and business, or anyone who has to defend a number from a sample. First-try answers earn full XP; hints cost 25. Progress is saved in this browser only.",
+  hero:root=>SamplingMachine(root,{}),
+  heroNote:"This is the whole module in one picture. Grey squares are the 1,200 households of the old census; each survey lights up 120 at random and drops their mean water use (litres per person per day, LPCD) onto the histogram. The pile of means is the sampling distribution; the gold bell is Normal(μ, σ²/n), and its width σ/√n, the standard deviation (SD) of the pile, is the standard error. Every interval, test and p-value in the files is a statement about that pile.",
+  ranks:[[0,"Trainee Clerk"],[600,"Field Enumerator"],[1500,"Survey Officer"],[2600,"Block Statistician"],[3600,"Deputy Statistician"]],
+  topRank:"District Statistician",
+  boardTitle:"The district review", boardCard:"Face the district review",
+  boardPass:7, boardUnlock:5,
+  badges:[["machine","Machine Operator","Ran 200 surveys through the sampling machine"],["coverage","Coverage Counter","Watched 200 confidence intervals land"],["shuffler","Shuffler","Completed a full permutation test"],["unsealed","Unsealed","Opened the census and compared it with the sample"]],
+  freshExtra:()=>({unsealed:false}),
+  settingsNote:"Teaching with this page? Students can play on their own; the files follow the usual order of a first treatment of statistical inference, and every number can be reproduced from the fixed census and the 40-household pilot.",
+  formulas:[
+   ["Sampling","E[x̄] = μ,  SE(x̄) = σ/√n\nFPC = √((N−n)/(N−1))\ns² = Σ(xᵢ−x̄)²/(n−1)\nstratified: x̄ₛₜ = Σ (Nₕ/N) x̄ₕ"],
+   ["Intervals","x̄ ± t₀.₉₇₅,ₙ₋₁ · s/√n\np̂ ± z √(p̂(1−p̂)/n)   (Wald)\nWilson centre (k+z²/2)/(n+z²)\nn = (zσ/m)²,  n = z²p(1−p)/m²"],
+   ["One-sample tests","t = (x̄−μ₀)/(s/√n), df n−1\nz = (p̂−p₀)/√(p₀(1−p₀)/n)\nd = (x̄−μ₀)/s\npower = P(reject | true μ)"],
+   ["Two samples","Welch: t = (x̄₁−x̄₂)/√(s₁²/n₁+s₂²/n₂)\npooled: s²ₚ = Σ(nᵢ−1)sᵢ²/(n₁+n₂−2)\npaired: t = d̄/(s_d/√n)\nχ² = Σ(O−E)²/E, df (r−1)(c−1)"],
+   ["ANOVA","SST = SSB + SSW\nF = [SSB/(k−1)] / [SSW/(n−k)]\nη² = SSB/SST\nFWER = 1 − (1−α)ᵐ"],
+   ["Fit and shape","goodness of fit: χ² = Σ(O−E)²/E,\n  df = k − 1 − (params estimated)\nJarque–Bera JB = (n/6)(S² + K²/4) ~ χ²(2)\nr test: t = r√(n−2)/√(1−r²)"],
+   ["Multiple testing","Bonferroni: p ≤ α/m\nHolm: p₍ᵢ₎ ≤ α/(m−i+1), step down\nBH: largest k with p₍ₖ₎ ≤ kα/m\nodds ratio OR = odds₁/odds₂\nrelative risk RR = p₁/p₂"],
+   ["Bayes for a proportion","Beta(a,b) + k of n\n  → Beta(a+k, b+n−k)\nposterior mean (a+k)/(a+b+n)\nBayes factor BF₁₀ = P(data|H₁)/P(data|H₀)"]],
+  L, BOARD
+};
+
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const el=(tag,attrs={},html)=>{const e=document.createElement(tag);for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),attrs[k]);else e.setAttribute(k,attrs[k]);}if(html!==undefined)e.innerHTML=html;return e;};
+const fmt=(x,d=4)=>Number(x).toFixed(d);
+const pct=(x,d=1)=>(100*x).toFixed(d)+"%";
+const ind=x=>Number(x).toLocaleString("en-US");
+const SVGNS="http://www.w3.org/2000/svg";
+const sv=(tag,attrs={})=>{const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;};
+const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const REDUCED=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function rng(seed){let a=(seed*2654435761)>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function shuffled(n,seed){const o=[...Array(n).keys()];const r=rng(seed);for(let k=n-1;k>0;k--){const j=Math.floor(r()*(k+1));[o[k],o[j]]=[o[j],o[k]];}return o;}
+const lnFact=n=>{let s=0;for(let i=2;i<=n;i++)s+=Math.log(i);return s;};
+const binomPMF=(k,n,p)=>Math.exp(lnFact(n)-lnFact(k)-lnFact(n-k)+k*Math.log(p)+(n-k)*Math.log(1-p));
+const poisPMF=(k,l)=>Math.exp(k*Math.log(l)-l-lnFact(k));
+const normPDF=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
+function sampleAmount(r){const u=r()*100;let lo=0,hi=AMTK.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(AMTK[m]<=u)lo=m;else hi=m;}const t=(u-AMTK[lo])/(AMTK[hi]-AMTK[lo]);return AMTV[lo]+(AMTV[hi]-AMTV[lo])*t;}
+function sampleDaily(r){const u=r()*90;let c=0;for(const x of Object.keys(DAILY)){c+=DAILY[x];if(u<c)return +x;}return 17;}
+function canvasSetup(c,w,h){const dpr=Math.min(2,window.devicePixelRatio||1);c.width=w*dpr;c.height=h*dpr;c.style.aspectRatio=`${w} / ${h}`;const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);return g;}
+const runners=new Set(); // active animation loops, stopped on navigation
+function loop(fn){let id,on=true;const step=()=>{if(!on)return;fn();id=requestAnimationFrame(step);};id=requestAnimationFrame(step);const h={stop(){on=false;cancelAnimationFrame(id);runners.delete(h);}};runners.add(h);return h;}
+function stopAll(){[...runners].forEach(r=>r.stop());}
+
+/* ---------- state ---------- */
+const KEY="stats-play-"+COURSE.key;
+const fresh=()=>Object.assign({xp:0,streak:0,best:0,badges:[],ans:{},board:null,unlockAll:false,lab:{}},COURSE.freshExtra?COURSE.freshExtra():{});
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.parse(raw));}catch(e){}
+const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+
+const RANKS=COURSE.ranks;
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+
+function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
+function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}
+function award(id){if(S.badges.includes(id))return;S.badges.push(id);save();const b=BADGES.find(x=>x[0]===id);toast(`Badge earned: <b>${b[1]}</b>`);renderStrip();}
+function rankOf(){if(S.badges.includes("board"))return [COURSE.topRank,null];let r=RANKS[0],nx=null;for(let i=0;i<RANKS.length;i++){if(S.xp>=RANKS[i][0]){r=RANKS[i];nx=RANKS[i+1]||null;}}return [r[1],nx];}
+function renderStrip(){const [r,nx]=rankOf();$("#rank").textContent=r;$("#xptext").textContent=ind(S.xp)+" XP";
+  if(nx){const lo=RANKS.find(x=>x[1]===r)[0];$("#xpfill").style.width=Math.min(100,100*(S.xp-lo)/(nx[0]-lo))+"%";$("#xpnext").textContent=ind(nx[0]-S.xp)+" XP to "+nx[1];}
+  else{$("#xpfill").style.width="100%";$("#xpnext").textContent=S.badges.includes("board")?"Top rank reached":"Pass the board meeting for "+COURSE.topRank;}
+  $("#streak").textContent=S.streak;$("#streakchip").classList.toggle("hot",S.streak>=3);$("#badgecount").textContent=S.badges.length+" / "+BADGES.length;}
+
+function speedSeg(root,onchange,opts=[1,4,16]){const s=el("div",{class:"seg",role:"group","aria-label":"Speed"});opts.forEach((v,i)=>{const b=el("button",{type:"button","aria-pressed":i===0},v+"×");b.addEventListener("click",()=>{s.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));onchange(v);});s.appendChild(b);});root.appendChild(s);return s;}
+
+/* ---------- unlocking and progress ---------- */
+function qstate(lid,i){S.ans[lid]=S.ans[lid]||{};S.ans[lid][i]=S.ans[lid][i]||{tries:0,done:false,first:false,hint:false,got:0};return S.ans[lid][i];}
+function levelDone(lv){return lv.qs.every((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].done);}
+function levelStars(lv){if(!levelDone(lv))return 0;const f=lv.qs.filter((q,i)=>S.ans[lv.id][i].first).length;return f===lv.qs.length?3:(f>=lv.qs.length/2?2:1);}
+function attempted(lv){return lv.qs.every((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].tries>0);}
+function unlocked(idx){if(S.unlockAll||idx===0)return true;const prev=L[idx-1];return levelDone(prev)||attempted(prev);}
+function boardUnlocked(){return S.unlockAll||L.filter(levelDone).length>=COURSE.boardUnlock;}
+
+/* ---------- views ---------- */
+function home(){
+  stopAll();const app=$("#app");app.innerHTML="";
+  const cleared=L.filter(levelDone).length;
+  const hero=el("section",{class:"hero"});
+  hero.innerHTML=`<div class="herotop"><div><p class="eyebrow">${COURSE.eyebrow}</p>
+    <h1>${COURSE.title}</h1>
+    <p class="lede">${COURSE.lede}</p>
+    <p class="meta">${COURSE.meta||"First-try answers earn full XP; hints cost 25. Progress is saved in this browser only."}</p></div>
+    <div class="ticket" aria-label="Your desk">
+      <div class="row"><span>Case files cleared</span><span>${cleared} / ${L.length}</span></div>
+      <div class="row"><span>Stars</span><span>${L.reduce((s,l)=>s+levelStars(l),0)} / ${3*L.length}</span></div>
+      <div class="row"><span>Best streak</span><span>${S.best}</span></div>
+      <div class="row"><span>Board meeting</span><span>${S.board?S.board.score+" / "+BOARD.length:(boardUnlocked()?"Ready":"Locked")}</span></div>
+    </div></div>`;
+  if(COURSE.hero){const hz=el("div");hero.appendChild(hz);app.appendChild(hero);COURSE.hero(hz);if(COURSE.heroNote)hero.appendChild(el("p",{class:"note"},COURSE.heroNote));}
+  else app.appendChild(hero);
+  const g=el("div",{class:"cases"});
+  L.forEach((lv,i)=>{
+    const ok=unlocked(i),done=levelDone(lv),st=levelStars(lv);
+    const b=el("button",{class:"case",type:"button"});if(!ok)b.disabled=true;
+    b.innerHTML=`<div class="top"><span class="tag">CASE FILE ${i+1}</span>
+      <span class="stamp ${done?"ok":ok?"open":"lock"}">${done?"CLEARED":ok?"OPEN":"LOCKED"}</span></div>
+      <h3>${lv.title}</h3><div class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}<span class="off">${"★".repeat(3-st)}</span></div>
+      <p class="topics">${lv.topics}</p>`;
+    b.addEventListener("click",()=>{location.hash=lv.id;});
+    g.appendChild(b);
+  });
+  const bb=el("button",{class:"case boss",type:"button"});if(!boardUnlocked())bb.disabled=true;
+  bb.innerHTML=`<div class="top"><span class="tag">FINAL · ${(COURSE.boardTitle||"The board meeting").toUpperCase()}</span><span class="stamp">${S.board?S.board.score+" / 8":boardUnlocked()?"READY":"LOCKED"}</span></div>
+    <h3>${COURSE.boardCard||"Face the board"}</h3><p class="nick">${BOARD.length} questions, one attempt each. Score ${COURSE.boardPass} or more to become ${COURSE.topRank}.</p>
+    <p class="topics">Unlocks after ${COURSE.boardUnlock} case files are cleared.</p>`;
+  bb.addEventListener("click",()=>{location.hash="board";});
+  g.appendChild(bb);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Case files</h2><span class="note">Each file unlocks when you have answered every question in the one before.</span>`));
+  app.appendChild(g);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Badges</h2><span class="note">${S.badges.length} of ${BADGES.length} earned</span>`));
+  const bg=el("div",{class:"badges"});
+  BADGES.forEach(([id,name,desc])=>{const got=S.badges.includes(id);bg.appendChild(el("div",{class:"badge"+(got?" got":"")},`<span class="seal">${got?"EARNED":"NOT YET"}</span><b>${name}</b><span>${desc}</span>`));});
+  app.appendChild(bg);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Formula sheet</h2><span class="note">Everything the ${L.length} files use, on one card.</span>`));
+  app.appendChild(formulaSheet());
+  app.appendChild(el("div",{class:"section-h"},`<h2>Desk settings</h2>`));
+  const t=el("div",{class:"panel"});
+  t.innerHTML=`<label class="confirm"><input type="checkbox" id="unlockall" ${S.unlockAll?"checked":""}> Open every case file now (for revision; XP still counts)</label>
+    <div class="confirm" id="resetbox"><button class="btn ghost small" id="reset" type="button">Reset my progress</button></div>
+    <p class="note">${COURSE.settingsNote||"Teaching with this page? Students can play on their own, and every number can be reproduced from the fixed data set."}</p>`;
+  app.appendChild(t);
+  $("#unlockall").addEventListener("change",e=>{S.unlockAll=e.target.checked;save();home();});
+  $("#reset").addEventListener("click",()=>{const box=$("#resetbox");box.innerHTML=`<span>Erase all XP, badges and answers?</span>`;
+    const y=el("button",{class:"btn small",type:"button"},"Yes, reset");const n=el("button",{class:"btn ghost small",type:"button"},"Keep my progress");
+    y.addEventListener("click",()=>{S=fresh();save();renderStrip();home();toast("Progress reset");});n.addEventListener("click",home);box.append(y,n);});
+  window.scrollTo(0,0);
+}
+
+function formulaSheet(){
+  const s=el("div",{class:"sheet"});
+  COURSE.formulas.forEach(([h,f])=>{const d=el("div",{class:"panel"});d.innerHTML=`<h3>${h}</h3><div class="formula">${f}</div>`;s.appendChild(d);});
+  return s;
+}
+function level(lv){
+  stopAll();const idx=L.indexOf(lv);
+  if(!unlocked(idx)){location.hash="";return;}
+  const app=$("#app");app.innerHTML="";
+  const d=el("div",{class:"dossier"});
+  const back=el("button",{class:"back",type:"button"},"← Back to the desk");back.addEventListener("click",()=>{location.hash="";});
+  d.appendChild(back);
+  d.appendChild(el("div",{},`<p class="eyebrow">Case file ${idx+1} of ${L.length}</p><h1 style="margin-top:8px">${lv.title}</h1><p class="note" style="margin-top:8px">${lv.topics}</p>`));
+  const p0=el("section",{class:"panel"});p0.innerHTML=`<h3><span class="eyebrow">The case</span></h3><p class="story">${lv.story}</p>`;d.appendChild(p0);
+  const p1=el("section",{class:"panel"});p1.innerHTML=`<h3><span class="eyebrow">Theory, briefly</span></h3><div class="brief">${lv.brief}</div><p class="refs">Further reading: ${lv.refs}</p>`;d.appendChild(p1);
+  const p2=el("section",{class:"panel"});p2.innerHTML=`<h3><span class="eyebrow">Lab</span></h3>`;const lb=el("div");p2.appendChild(lb);d.appendChild(p2);
+  const p3=el("section",{class:"panel"});p3.innerHTML=`<h3><span class="eyebrow">Challenges</span> <span class="note" id="qprog"></span></h3>`;
+  lv.qs.forEach((q,i)=>p3.appendChild(question(lv,q,i)));
+  d.appendChild(p3);
+  const nx=el("div",{class:"btnrow"});
+  if(idx<L.length-1){const b=el("button",{class:"btn",type:"button"},"Next case file →");b.addEventListener("click",()=>{if(unlocked(idx+1))location.hash=L[idx+1].id;else toast("Answer every question here to unlock the next file");});nx.appendChild(b);}
+  else{const b=el("button",{class:"btn",type:"button"},"Go to the board meeting →");b.addEventListener("click",()=>{if(boardUnlocked())location.hash="board";else toast("Clear "+COURSE.boardUnlock+" case files to unlock the board");});nx.appendChild(b);}
+  d.appendChild(nx);
+  app.appendChild(d);
+  lv.lab(lb);
+  updProg(lv);
+  window.scrollTo(0,0);
+}
+function updProg(lv){const n=lv.qs.filter((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].done).length;const e=$("#qprog");if(e)e.textContent=`${n} of ${lv.qs.length} solved`;}
+
+function parseNum(s){if(s==null)return NaN;s=String(s).trim().replace(/[₹,\s]/g,"");let isPct=false;if(s.endsWith("%")){isPct=true;s=s.slice(0,-1);}let v=parseFloat(s);if(isPct)v/=100;return v;}
+function numOK(v,q){if(Number.isNaN(v))return false;if(Math.abs(v-q.a)<=q.tol)return true;if(q.a<1&&v>1&&Math.abs(v/100-q.a)<=q.tol)return true;return false;}
+
+function question(lv,q,i){
+  const st=qstate(lv.id,i);
+  const box=el("div",{class:"q"});
+  box.innerHTML=`<div class="qhead"><span class="eyebrow">Challenge ${i+1}</span><span class="eyebrow" data-x></span></div><p class="qtext">${q.q}</p>`;
+  const fb=el("div");
+  const tag=box.querySelector("[data-x]");
+  const setTag=()=>{tag.textContent=st.done?`+${st.got} XP`:(st.hint?"hint used · 75 XP":"100 XP");};
+  setTag();
+  const solve=(correct)=>{
+    st.tries++;
+    if(correct){
+      st.done=true;st.first=(st.tries===1&&!st.hint);
+      let gain=st.tries===1?100:st.tries===2?50:20; if(st.hint)gain=Math.max(0,gain-25); st.got=gain;
+      if(st.tries===1){S.streak++;S.best=Math.max(S.best,S.streak);if(S.streak>=5)award("streak5");}
+      save(); addXP(gain,"Challenge "+(i+1));
+      fb.innerHTML=`<div class="fb ok"><b>Correct.</b><span>${q.why}</span></div>`;
+      setTag(); updProg(lv); checkLevel(lv); const hbx=box.querySelector("[data-hint]"); if(hbx)hbx.hidden=true;
+    } else {
+      S.streak=0;save();renderStrip();
+      fb.innerHTML=`<div class="fb no"><b>Not yet.</b><span>${st.tries>=2?"Look at the hint, or rework it in the lab, then try again.":"Try again; the lab above has what you need."}</span></div>`;
+    }
+  };
+  if(q.t==="mcq"){
+    const order=shuffled(q.opts.length,lv.id.charCodeAt(1)*31+i*17);
+    const opts=el("div",{class:"opts"});
+    order.forEach(k=>{const b=el("button",{class:"opt",type:"button"},q.opts[k]);
+      if(st.done){b.disabled=true;if(k===q.a)b.classList.add("right");}
+      b.addEventListener("click",()=>{if(st.done)return;const c=(k===q.a);b.classList.add(c?"right":"wrong");if(c)opts.querySelectorAll("button").forEach(x=>x.disabled=true);else b.disabled=true;solve(c);});
+      opts.appendChild(b);});
+    box.appendChild(opts);
+  } else {
+    const row=el("div",{class:"numrow"});
+    const inp=el("input",{type:"text",inputmode:"decimal",id:`in-${lv.id}-${i}`,"aria-label":"Your answer",placeholder:q.ph||"e.g. 0.123"});
+    const go=el("button",{class:"btn small",type:"button"},"Check");
+    if(st.done){inp.disabled=true;go.disabled=true;inp.value=String(+q.a.toFixed(4));}
+    const check=()=>{if(st.done)return;const v=parseNum(inp.value);if(Number.isNaN(v)){fb.innerHTML=`<div class="fb no"><b>Enter a number.</b><span>Decimals (0.25) and percentages (25%) both work.</span></div>`;return;}const c=numOK(v,q);if(c){inp.disabled=true;go.disabled=true;}solve(c);};
+    go.addEventListener("click",check);inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+    row.append(inp,go);box.appendChild(row);
+  }
+  if(q.hint){const hb=el("button",{class:"btn ghost small",type:"button","data-hint":"1"},"Show hint (−25 XP)");
+    if(st.done)hb.hidden=true;
+    hb.addEventListener("click",()=>{st.hint=true;save();setTag();hb.hidden=true;fb.innerHTML=`<div class="fb hint"><b>Hint.</b><span>${q.hint}</span></div>`;});
+    const r=el("div",{class:"btnrow"});r.appendChild(hb);box.appendChild(r);
+    if(st.hint&&!st.done){hb.hidden=true;fb.innerHTML=`<div class="fb hint"><b>Hint.</b><span>${q.hint}</span></div>`;}
+  }
+  if(st.done)fb.innerHTML=`<div class="fb ok"><b>Solved.</b><span>${q.why}</span></div>`;
+  box.appendChild(fb);
+  return box;
+}
+function checkLevel(lv){if(!levelDone(lv))return;const was=S.badges.includes(lv.id);award(lv.id);
+  if(lv.qs.every((q,i)=>S.ans[lv.id][i].first))award("clean");
+  if(!was){addXP(150,"Case file cleared");}}
+
+function board(){
+  stopAll();if(!boardUnlocked()){location.hash="";return;}
+  const app=$("#app");app.innerHTML="";
+  const d=el("div",{class:"dossier"});
+  const back=el("button",{class:"back",type:"button"},"← Back to the desk");back.addEventListener("click",()=>{location.hash="";});d.appendChild(back);
+  d.appendChild(el("div",{},`<p class="eyebrow">Final</p><h1 style="margin-top:8px">${COURSE.boardTitle||"The board meeting"}</h1><p class="note" style="margin-top:8px">${BOARD.length} questions from across the files. One attempt each, no hints. Score ${COURSE.boardPass} or more to earn ${COURSE.topRank}. XP is awarded on your first sitting only.</p>`));
+  const p=el("section",{class:"panel"});d.appendChild(p);app.appendChild(d);
+  const run={i:0,score:0,first:!S.board};
+  const show=()=>{
+    if(run.i>=BOARD.length){
+      const pass=run.score>=COURSE.boardPass;
+      S.board={score:Math.max(run.score,S.board?S.board.score:0)};save();
+      if(run.first)addXP(run.score*100,"Board meeting");
+      if(pass)award("board");
+      p.innerHTML=`<h2>${pass?"The board is satisfied.":"The board wants another look."}</h2><p>You scored <b class="mono">${run.score} / ${BOARD.length}</b>. ${pass?"You are now "+COURSE.topRank+".":"Revisit the case files, then reconvene."}</p>`;
+      const r=el("div",{class:"btnrow"});const a=el("button",{class:"btn",type:"button"},"Reconvene");a.addEventListener("click",board);const b=el("button",{class:"btn ghost",type:"button"},"Back to the desk");b.addEventListener("click",()=>{location.hash="";});r.append(a,b);p.appendChild(r);renderStrip();return;}
+    const q=BOARD[run.i];p.innerHTML=`<div class="qhead"><span class="eyebrow">Question ${run.i+1} of ${BOARD.length}</span><span class="eyebrow">Score ${run.score}</span></div><p class="qtext">${q.q}</p>`;
+    const fb=el("div");const next=el("button",{class:"btn",type:"button"},run.i<BOARD.length-1?"Next question →":"See the verdict");next.hidden=true;next.addEventListener("click",()=>{run.i++;show();});
+    const done=(c)=>{if(c)run.score++;fb.innerHTML=`<div class="fb ${c?"ok":"no"}"><b>${c?"Correct.":"Not quite."}</b><span>${q.why}</span></div>`;next.hidden=false;};
+    if(q.t==="mcq"){const o=el("div",{class:"opts"});const order=shuffled(q.opts.length,run.i*7+3);
+      order.forEach(k=>{const b=el("button",{class:"opt",type:"button"},q.opts[k]);b.addEventListener("click",()=>{o.querySelectorAll("button").forEach((x,ix)=>{x.disabled=true;if(order[ix]===q.a)x.classList.add("right");});if(k!==q.a)b.classList.add("wrong");done(k===q.a);});o.appendChild(b);});p.appendChild(o);}
+    else{const r=el("div",{class:"numrow"});const inp=el("input",{type:"text",inputmode:"decimal",id:"board-in-"+run.i,"aria-label":"Your answer",placeholder:"e.g. 0.5"});const g=el("button",{class:"btn small",type:"button"},"Submit");
+      const sub=()=>{const v=parseNum(inp.value);if(Number.isNaN(v))return;inp.disabled=true;g.disabled=true;done(numOK(v,q));};g.addEventListener("click",sub);inp.addEventListener("keydown",e=>{if(e.key==="Enter")sub();});r.append(inp,g);p.appendChild(r);}
+    p.appendChild(fb);p.appendChild(next);
+  };
+  show();window.scrollTo(0,0);
+}
+/* ---------- router ---------- */
+function route(){const h=location.hash.replace("#","");const lv=L.find(x=>x.id===h);if(lv)level(lv);else if(h==="board")board();else home();}
+window.addEventListener("hashchange",route);
+renderStrip();route();
+
+})();
+</script>
+</body>
+</html>

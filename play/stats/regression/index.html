@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>NimbusRide Pricing Lab</title>
+<meta name="description" content="Learn simple and multiple regression, diagnostics, logistic regression and prediction by pricing a ride-hailing service: case files with theory, live labs, challenges and XP.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: an analyst's case desk. Sticky status strip (rank, XP, streak); a live transaction-flow
+   simulation as the hero; case files as a grid; an opened file is a single-column dossier:
+   story, theory, lab, challenges. */
+:root{
+  --bg:#EAEFF4; --surface:#FFFFFF; --sunk:#F3F6F9; --ink:#13233A; --muted:#566880; --line:#C9D3DF;
+  --accent:#1F5FA8; --accent-soft:#DCE7F5; --gold:#A86E06; --gold-soft:#F6E7C8;
+  --fraud:#B3263E; --fraud-soft:#F7DCE1; --ok:#1B7349; --ok-soft:#D7EFE2;
+  --display:"IBM Plex Sans Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1722; --surface:#172232; --sunk:#121C29; --ink:#E3E9F1; --muted:#97A7BB; --line:#2B3B51;
+  --accent:#73AAE9; --accent-soft:#1C3150; --gold:#E3AA3E; --gold-soft:#3A2C12;
+  --fraud:#F06D82; --fraud-soft:#3D1A22; --ok:#52C78E; --ok-soft:#14352A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1722; --surface:#172232; --sunk:#121C29; --ink:#E3E9F1; --muted:#97A7BB; --line:#2B3B51;
+  --accent:#73AAE9; --accent-soft:#1C3150; --gold:#E3AA3E; --gold-soft:#3A2C12;
+  --fraud:#F06D82; --fraud-soft:#3D1A22; --ok:#52C78E; --ok-soft:#14352A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1000px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:700}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font:600 .75rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+.note{font-size:.88rem;color:var(--muted)}
+
+/* status strip */
+.strip{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
+  padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.strip .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+.strip .rank{font:700 1.05rem/1.1 var(--display)}
+.xpbox{flex:1 1 220px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.xpbar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.xpbar>i{display:block;height:100%;background:var(--gold);width:0;transition:width .5s ease}
+.xpmeta{display:flex;justify-content:space-between;font:400 .8rem/1 var(--mono);color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:4px 11px;font:600 .82rem/1.2 var(--mono);white-space:nowrap}
+a.chip{text-decoration:none;color:var(--accent)}
+.chip.hot{border-color:var(--gold);background:var(--gold-soft)}
+
+/* hero */
+.hero{display:grid;gap:18px;padding-block:30px 10px}
+.hero p.lede{font-size:1.08rem;max-width:62ch;margin-top:12px}
+.hero .meta{color:var(--muted);font-size:.9rem;margin-top:8px;max-width:62ch}
+.herotop{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;align-items:end}
+@media (max-width:720px){.herotop{grid-template-columns:1fr}}
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;gap:8px;font-size:.92rem}
+.ticket .row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.ticket .row:last-child{border-bottom:0;padding-bottom:0}
+.ticket .row span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* flow simulation */
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;min-width:0}
+.flow canvas{width:100%;height:auto;display:block;max-width:100%;border-radius:6px}
+.flowbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.flowbar .ctrls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flowstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.flowstats div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:grid;gap:1px}
+.flowstats span{font-size:.72rem;color:var(--muted)}
+.flowstats b{font:600 1.05rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:4px 10px;font:600 .8rem/1.2 var(--mono)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+
+/* case grid */
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.case{position:relative;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;min-height:176px;transition:transform .15s,border-color .15s}
+.case:hover:not([disabled]){transform:translateY(-2px);border-color:var(--accent)}
+.case[disabled]{cursor:not-allowed;opacity:.55}
+.case .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.case .tag{font:600 .72rem/1 var(--mono);letter-spacing:.1em;color:var(--accent)}
+.case h3{font-size:1.25rem}
+.case .nick{font-size:.9rem;color:var(--muted)}
+.case .topics{font-size:.85rem;color:var(--muted);margin-top:auto}
+.stars{font-size:1rem;letter-spacing:2px;color:var(--gold)}
+.stars .off{color:var(--line)}
+.stamp{font:700 .7rem/1 var(--mono);letter-spacing:.1em;padding:4px 7px;border-radius:4px;border:1.5px solid currentColor}
+.stamp.ok{color:var(--ok)} .stamp.lock{color:var(--muted)} .stamp.open{color:var(--accent)}
+.case.boss{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.case.boss .tag,.case.boss .nick,.case.boss .topics{color:var(--bg);opacity:.8}
+
+.section-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:34px 0 12px;flex-wrap:wrap}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.badge{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.badge b{font:600 .95rem/1.2 var(--display);color:var(--muted)}
+.badge.got{border-style:solid;border-color:var(--gold);background:var(--gold-soft);color:var(--ink)}
+.badge.got b{color:var(--ink)}
+.badge .seal{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em}
+
+/* dossier */
+.dossier{display:grid;gap:22px;padding-block:24px}
+.back{justify-self:start;background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px clamp(16px,3vw,26px);display:grid;gap:14px;min-width:0}
+.panel>h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel>h3 .eyebrow{color:var(--accent)}
+.brief{display:grid;gap:12px;max-width:70ch}
+.brief .term{font-weight:600}
+.story{border-left:3px solid var(--gold);padding-left:14px;font-style:italic;max-width:70ch}
+.story b{font-style:normal}
+.formula{font-family:var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:.92rem;white-space:pre;line-height:1.5}
+.refs{font-size:.84rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+
+/* labs */
+.labgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:760px){.labgrid{grid-template-columns:1fr}}
+svg text{fill:var(--ink);font-family:var(--mono)}
+.svgbox{width:100%;overflow-x:auto}
+.svgbox svg{display:block;width:100%;height:auto;max-width:100%}
+.svgbox canvas{display:block;width:100%;height:auto;max-width:100%;border-radius:6px}
+.ctrl{display:grid;gap:6px}
+.ctrl label{font-size:.88rem;color:var(--muted)}
+.ctrl output{font-family:var(--mono);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select,input[type=text],input[type=number]{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:8px;padding:8px 14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:5px 10px;font-size:.85rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.readout div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.readout span{font-size:.76rem;color:var(--muted)}
+.readout b{font:600 1.15rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{font:600 .75rem/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--mono)}
+.up{color:var(--fraud);font-weight:600}.down{color:var(--ok);font-weight:600}
+.target{font:700 1.6rem/1.1 var(--mono);color:var(--accent)}
+.regbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.regbtn{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:7px 8px;font-size:.86rem}
+.regbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.door{width:30%;aspect-ratio:3/4;max-width:120px;border:2px solid var(--line);background:var(--sunk);border-radius:8px 8px 2px 2px;
+  font:700 1.4rem/1 var(--display);display:grid;place-items:center}
+.door.pick{border-color:var(--accent);background:var(--accent-soft)}
+.door.open{background:var(--bg);color:var(--muted);border-style:dashed}
+.door.prize{border-color:var(--gold);background:var(--gold-soft)}
+.doors{display:flex;gap:10px;justify-content:flex-start}
+.mixbar{display:grid;gap:6px}
+.mixrow{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.mixtrack{display:flex;height:30px;border-radius:6px;overflow:hidden;background:var(--sunk)}
+.mixtrack i{display:block;height:100%;transition:width .8s ease;font:600 .72rem/30px var(--mono);text-align:center;overflow:hidden;white-space:nowrap;color:var(--ink)}
+.mixtrack i.u{background:var(--accent-soft)}.mixtrack i.c{background:var(--line)}.mixtrack i.n{background:var(--fraud);color:var(--surface)}
+
+/* challenges */
+.q{border-top:1px solid var(--line);padding-top:14px;display:grid;gap:10px}
+.q:first-of-type{border-top:0;padding-top:0}
+.qhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.qhead .eyebrow{white-space:nowrap}
+.qtext{font-weight:500;max-width:70ch}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:9px 12px}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--fraud);background:var(--fraud-soft)}
+.opt[disabled]{cursor:default}
+.numrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.numrow input{width:12em}
+.fb{border-radius:8px;padding:10px 12px;font-size:.93rem;display:grid;gap:4px}
+.fb.ok{background:var(--ok-soft);border:1px solid var(--ok)}
+.fb.no{background:var(--fraud-soft);border:1px solid var(--fraud)}
+.fb.hint{background:var(--gold-soft);border:1px solid var(--gold)}
+.fb b{font-family:var(--display);font-size:1rem}
+
+.toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;z-index:20;max-width:min(320px,calc(100vw - 32px))}
+.toast{background:var(--ink);color:var(--bg);border-radius:8px;padding:10px 14px;font-size:.9rem;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:pop .25s ease}
+.toast b{color:var(--gold-soft)}
+@keyframes pop{from{transform:translateY(10px);opacity:.3}to{transform:none;opacity:1}}
+.foot{margin-top:40px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:6px;font-size:.86rem;color:var(--muted)}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.sheet .formula{font-size:.84rem}
+.sheet h3{font-size:1rem;margin-bottom:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="strip" id="strip">
+    <div class="who"><span class="eyebrow">Analyst rank</span><span class="rank" id="rank">Trainee Analyst</span></div>
+    <div class="xpbox"><div class="xpbar" aria-hidden="true"><i id="xpfill"></i></div>
+      <div class="xpmeta"><span id="xptext">0 XP</span><span id="xpnext"></span></div></div>
+    <span class="chip" id="streakchip" title="Correct first-try answers in a row">Streak <b id="streak">0</b></span>
+    <span class="chip" title="Badges earned">Badges <b id="badgecount">0</b></span>
+    <a class="chip" href="../" id="hublink">All modules</a>
+  </div>
+  <main id="app"></main>
+  <div class="foot">
+    <span>NimbusRide Pricing Lab · part of <a href="../">Statistics, played</a>, a free course you play. Built by <a href="https://aritra.ai" target="_blank" rel="noopener">Aritra Pan</a>. Free to use in teaching.</span>
+    <span>NimbusRide is a fictional ride-hailing company. Every number comes from one fixed file of fictional trips, so every answer can be checked.</span>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script>
+(function(){
+"use strict";
+/* ===== Regression and prediction: NimbusRide Pricing Lab ===== */
+/* ---------- data (all computed with statsmodels from the fixed NimbusRide file: 6,000 trips, 4,197 completed) ---------- */
+const NT=6000, NC=4197;
+const SUB300=[[6.6,188.0,2,13.2,2.3,4.6,16],[4.8,77.0,0,20.5,5.4,4.2,16],[6.4,95.0,0,16.5,6.7,4.2,7],[0.8,32.0,1,8.3,7.0,4.5,10],[6.7,171.0,1,22.6,13.4,4.5,11],[12.2,220.0,0,29.0,6.9,4.0,13],[3.9,62.0,0,7.8,2.9,4.7,14],[27.6,373.0,0,73.3,1.9,5.0,12],[4.6,137.0,1,29.3,6.7,4.2,19],[15.9,247.0,1,44.4,2.4,4.4,23],[1.1,54.0,0,8.2,2.8,4.7,8],[0.8,62.0,1,9.7,5.1,4.4,7],[21.5,453.0,2,62.5,0.8,3.8,16],[9.0,270.0,2,22.4,6.1,4.2,23],[1.2,55.0,1,10.3,3.0,4.3,13],[28.9,445.0,0,76.6,3.2,4.2,19],[11.7,163.0,0,34.6,1.6,4.5,7],[1.7,62.0,1,4.9,4.1,3.7,13],[1.8,114.0,2,14.1,7.3,4.6,6],[14.6,218.0,0,44.0,2.0,4.7,17],[5.5,108.0,1,19.9,7.1,4.7,7],[8.0,189.0,1,27.0,7.8,4.0,16],[26.7,436.0,1,68.7,1.1,5.0,11],[1.9,46.0,0,5.5,3.5,4.5,14],[10.6,183.0,0,31.9,6.8,4.4,14],[1.6,55.0,0,7.6,5.7,4.6,18],[6.0,88.0,0,12.0,5.2,4.5,22],[4.8,97.0,0,14.6,6.0,4.4,9],[2.8,113.0,2,19.5,4.3,4.1,9],[1.8,54.0,0,7.4,3.3,3.8,13],[12.6,165.0,0,35.6,2.9,4.0,9],[4.8,108.0,0,21.0,3.1,4.6,11],[2.6,61.0,0,14.3,7.5,4.5,11],[4.2,72.0,0,16.2,2.6,4.4,6],[3.3,140.0,2,15.5,2.9,3.9,19],[1.4,56.0,0,6.7,7.1,4.4,8],[15.4,408.0,2,42.5,9.1,4.0,20],[8.7,172.0,1,34.5,2.9,4.6,15],[19.5,431.0,2,54.6,1.3,5.0,21],[2.4,70.0,0,14.7,8.4,4.1,13],[6.2,135.0,1,18.9,6.9,4.6,15],[3.9,159.0,2,24.6,4.1,4.1,17],[3.6,154.0,1,18.7,8.0,4.9,18],[24.2,381.0,0,71.8,5.8,4.4,18],[8.4,169.0,1,37.0,3.5,4.8,19],[23.1,376.0,1,65.5,3.8,4.4,15],[3.0,87.0,1,21.4,3.0,3.8,9],[9.2,177.0,1,26.0,1.3,4.5,16],[20.4,337.0,1,63.2,3.2,4.4,17],[11.2,215.0,1,28.7,3.8,5.0,14],[22.5,353.0,1,56.4,4.0,4.6,16],[12.4,224.0,1,30.7,1.2,4.5,21],[2.0,82.0,1,7.4,0.8,4.6,14],[5.2,181.0,2,18.3,6.0,4.5,8],[0.8,69.0,0,12.9,9.3,4.5,18],[8.2,186.0,1,29.2,1.5,5.0,16],[5.3,95.0,0,21.3,9.1,4.1,12],[3.3,63.0,0,24.8,4.4,5.0,17],[10.3,256.0,2,37.5,0.6,4.8,9],[4.7,108.0,1,21.9,1.0,4.7,17],[17.6,290.0,1,49.2,10.6,4.4,9],[12.5,292.0,1,43.8,3.2,4.8,17],[24.5,503.0,2,68.6,6.1,4.6,18],[10.6,179.0,1,26.1,3.3,4.2,16],[7.8,197.0,1,27.4,7.8,4.0,19],[10.1,241.0,1,27.7,4.9,4.9,20],[16.1,241.0,0,50.0,6.9,3.8,16],[9.3,173.0,1,28.9,4.0,4.2,16],[9.2,131.0,0,29.7,5.0,4.7,22],[8.2,169.0,0,33.3,5.1,4.3,9],[1.8,99.0,1,17.0,4.6,4.2,19],[0.8,53.0,0,13.3,9.8,4.7,17],[5.4,133.0,1,18.8,4.3,4.3,15],[9.2,177.0,1,32.9,3.9,4.8,16],[8.0,159.0,1,26.4,2.5,4.6,15],[3.3,37.0,0,8.7,3.7,4.1,21],[6.4,122.0,1,28.7,5.1,4.7,18],[7.5,223.0,2,27.3,4.5,3.8,17],[16.0,333.0,2,46.9,10.2,4.3,10],[4.1,91.0,1,9.6,3.7,4.6,15],[5.5,126.0,0,23.6,0.5,4.7,15],[16.1,261.0,1,40.4,2.7,5.0,15],[4.6,175.0,2,25.7,6.4,4.0,17],[5.2,123.0,1,24.0,8.1,3.4,17],[3.4,81.0,0,24.5,7.2,4.2,19],[8.4,266.0,2,30.1,7.9,4.3,23],[5.7,141.0,0,20.0,4.6,4.7,19],[19.8,271.0,0,57.9,1.3,4.5,7],[9.6,160.0,0,31.1,5.9,3.8,16],[3.6,115.0,1,10.0,3.2,4.2,22],[1.0,79.0,0,11.8,4.2,4.5,17],[3.8,119.0,2,13.3,8.3,4.3,17],[0.8,50.0,1,16.6,2.3,4.5,11],[4.5,113.0,1,23.2,7.6,4.5,9],[3.9,114.0,1,15.4,12.8,4.1,22],[6.7,118.0,0,29.1,3.5,4.2,20],[3.1,117.0,1,23.1,8.8,3.9,9],[3.3,79.0,1,19.1,0.8,5.0,7],[2.1,53.0,0,10.4,2.4,4.2,16],[1.1,63.0,1,15.8,2.1,4.7,10],[4.8,140.0,2,18.4,10.1,4.5,16],[11.0,208.0,1,33.1,3.7,5.0,15],[4.7,153.0,2,20.4,3.0,4.0,9],[2.0,72.0,1,19.6,5.1,4.5,17],[0.8,33.0,1,6.9,1.1,4.4,14],[5.0,96.0,1,15.6,2.5,4.6,13],[7.9,220.0,2,28.1,1.0,5.0,11],[5.3,120.0,1,21.6,3.6,4.0,17],[9.4,169.0,0,40.5,4.8,4.2,9],[5.8,123.0,1,11.2,5.2,4.4,16],[5.2,137.0,1,15.8,1.7,5.0,23],[4.2,93.0,0,18.2,12.4,3.9,7],[7.4,139.0,0,31.2,8.1,4.9,8],[14.8,262.0,1,43.0,8.0,4.7,20],[8.6,259.0,2,27.6,5.7,4.6,17],[5.6,71.0,0,22.4,5.7,4.5,15],[5.4,119.0,1,23.2,2.6,4.5,17],[7.0,150.0,0,29.5,1.6,4.5,9],[6.3,101.0,0,20.4,2.4,4.3,14],[20.3,432.0,2,54.8,8.3,4.1,8],[9.4,135.0,0,30.5,6.7,4.3,11],[2.5,78.0,1,8.0,0.9,4.5,11],[10.2,150.0,0,36.0,4.6,4.2,10],[2.7,127.0,2,20.1,0.9,5.0,19],[9.8,178.0,1,28.5,2.5,4.6,15],[14.3,262.0,1,39.9,1.7,4.5,15],[14.3,203.0,0,45.4,5.8,4.6,19],[17.7,228.0,0,47.2,3.1,4.7,13],[4.8,150.0,2,21.9,2.9,4.6,13],[5.7,91.0,0,22.6,5.3,3.9,10],[4.9,168.0,2,16.2,2.9,4.5,10],[1.5,73.0,1,10.1,16.6,3.5,12],[24.7,302.0,0,69.6,0.5,4.5,12],[16.3,354.0,2,53.4,1.5,4.3,8],[3.5,121.0,2,4.5,2.1,5.0,13],[3.2,58.0,0,11.0,6.7,5.0,14],[7.5,111.0,0,18.8,3.2,4.7,15],[7.0,167.0,1,25.6,5.0,4.8,8],[1.1,47.0,1,10.1,5.7,3.8,7],[13.1,312.0,2,36.7,2.5,4.9,14],[10.7,171.0,0,35.3,6.1,4.2,8],[12.6,159.0,0,34.8,8.3,4.1,7],[7.4,152.0,1,26.1,11.3,4.9,10],[12.8,172.0,0,45.0,11.2,4.8,18],[7.0,175.0,2,18.6,2.2,4.8,16],[6.7,99.0,0,29.9,1.7,5.0,17],[6.6,98.0,0,32.1,4.5,4.3,20],[6.3,105.0,0,16.1,9.1,4.8,21],[12.0,373.0,2,44.7,10.6,4.0,17],[1.5,65.0,1,13.6,9.4,3.8,16],[2.2,69.0,0,16.4,19.0,4.5,10],[2.2,114.0,2,5.7,3.0,4.4,16],[5.7,154.0,1,24.4,2.4,4.8,9],[6.5,170.0,1,30.9,1.6,4.2,19],[3.8,105.0,1,25.0,6.9,4.5,8],[15.3,261.0,0,46.7,8.6,3.7,22],[33.1,492.0,0,92.1,5.2,4.3,8],[5.9,171.0,1,38.0,9.1,4.1,20],[7.5,112.0,0,22.1,2.7,4.3,14],[11.2,216.0,1,24.7,6.3,4.8,23],[2.1,43.0,0,13.7,2.5,4.0,20],[13.0,290.0,2,41.3,3.3,4.4,18],[13.2,225.0,1,33.2,4.1,4.2,22],[10.1,147.0,0,31.2,5.4,4.1,21],[25.0,358.0,0,72.7,0.9,5.0,10],[3.0,84.0,1,11.2,1.2,4.6,21],[9.6,248.0,2,36.2,5.1,4.1,10],[2.1,44.0,1,7.3,0.5,4.3,7],[7.2,197.0,2,14.9,0.9,5.0,15],[3.2,83.0,0,21.7,8.1,4.4,13],[4.7,125.0,0,21.2,7.1,4.4,10],[8.0,120.0,0,19.9,4.5,4.4,13],[2.3,117.0,1,19.8,4.5,4.1,8],[13.3,205.0,0,44.0,5.6,4.7,8],[5.2,55.0,0,14.7,1.4,4.7,8],[2.3,102.0,2,17.7,4.6,4.2,18],[9.2,137.0,0,29.3,5.1,4.8,9],[3.4,85.0,1,10.3,4.4,4.3,20],[3.2,30.0,0,9.9,2.3,4.3,14],[0.8,50.0,0,9.1,3.4,4.7,8],[10.0,159.0,0,31.2,1.0,5.0,16],[4.0,123.0,1,17.8,4.6,4.6,17],[21.1,433.0,2,56.0,5.4,4.6,13],[3.7,89.0,0,16.6,8.1,4.6,19],[16.7,238.0,0,55.6,16.3,4.4,17],[10.3,230.0,1,25.0,7.2,4.5,12],[12.7,227.0,1,37.2,0.5,4.5,12],[23.7,391.0,1,66.3,6.5,4.5,11],[15.9,235.0,0,52.4,1.7,4.7,18],[6.7,123.0,1,28.2,1.6,4.7,18],[17.3,212.0,0,56.2,9.6,4.0,17],[2.5,120.0,2,12.4,6.9,4.1,20],[16.5,332.0,1,46.1,11.3,4.4,21],[11.6,171.0,1,32.8,4.1,4.3,14],[2.2,87.0,1,6.0,1.7,4.8,21],[17.2,257.0,0,43.3,6.1,3.9,9],[32.2,497.0,1,78.1,9.2,5.0,16],[5.3,54.0,0,16.9,2.3,4.5,21],[5.5,131.0,1,15.1,7.0,4.5,21],[10.8,194.0,0,36.9,1.9,4.6,14],[4.6,152.0,2,22.1,5.5,4.0,8],[1.4,35.0,0,3.0,1.4,4.8,13],[2.1,56.0,0,16.0,3.2,4.7,9],[13.0,237.0,0,42.9,3.6,4.1,20],[3.2,96.0,1,14.1,5.2,4.1,10],[3.9,76.0,0,17.7,6.8,4.5,23],[4.7,121.0,1,13.2,3.6,4.9,11],[10.3,198.0,1,29.4,14.6,4.4,17],[5.8,195.0,2,21.1,2.5,4.6,11],[4.1,108.0,1,20.1,2.5,5.0,9],[1.7,63.0,0,13.9,4.8,3.9,16],[8.6,212.0,2,29.9,2.7,4.6,20],[13.2,234.0,1,37.3,1.8,4.7,15],[17.6,306.0,0,52.7,4.0,3.7,18],[22.6,469.0,1,58.6,8.7,4.1,12],[4.6,101.0,1,15.5,2.6,3.9,18],[8.4,220.0,2,24.2,6.9,4.2,7],[9.5,131.0,0,22.0,1.1,4.5,6],[26.1,532.0,2,70.9,7.8,4.3,13],[9.5,162.0,0,34.5,5.7,4.3,10],[0.8,70.0,1,16.8,3.7,4.9,10],[7.7,204.0,2,27.5,6.5,5.0,19],[2.4,88.0,1,19.9,4.3,4.7,17],[2.2,86.0,1,16.4,12.9,4.5,9],[5.8,136.0,0,28.0,5.7,4.6,18],[8.7,167.0,0,24.1,1.2,4.9,13],[1.8,35.0,0,19.4,0.5,4.5,19],[0.8,85.0,2,3.0,1.0,4.6,11],[6.7,217.0,2,22.5,9.0,4.8,10],[36.9,453.0,0,91.6,2.9,4.0,9],[6.9,144.0,0,35.9,6.1,5.0,9],[4.8,91.0,0,22.2,6.3,4.8,17],[8.1,108.0,0,25.8,1.7,4.5,11],[9.3,171.0,1,22.6,4.9,4.8,16],[4.3,104.0,0,22.8,6.7,4.4,8],[5.4,161.0,2,22.9,0.6,4.1,21],[0.8,68.0,1,5.7,7.1,4.4,15],[0.8,63.0,1,5.4,6.7,4.6,8],[12.6,148.0,0,33.7,6.9,4.0,11],[6.0,124.0,1,25.2,0.9,4.6,18],[7.0,165.0,1,19.3,2.3,4.4,22],[9.0,143.0,1,32.8,4.7,5.0,9],[9.6,190.0,0,41.1,4.8,4.7,10],[12.5,211.0,0,47.2,2.8,4.6,18],[2.0,65.0,0,15.3,1.2,4.7,17],[4.4,104.0,1,5.2,7.3,4.0,7],[8.5,127.0,0,29.2,6.1,4.8,18],[4.9,95.0,0,20.3,1.7,4.7,8],[3.2,89.0,0,17.9,8.1,4.3,14],[0.8,46.0,0,15.3,1.2,4.1,17],[3.4,95.0,1,10.3,4.7,4.3,11],[9.1,143.0,0,27.5,7.7,4.4,11],[13.4,233.0,1,42.7,3.1,4.4,17],[13.5,187.0,0,32.6,0.9,5.0,21],[4.3,113.0,1,16.6,5.0,4.5,10],[11.2,165.0,0,36.7,3.6,5.0,22],[2.2,72.0,1,9.7,2.4,4.6,12],[10.7,165.0,0,34.1,1.1,5.0,16],[3.7,93.0,1,14.4,11.5,4.8,13],[9.6,144.0,0,34.0,0.5,4.8,18],[7.2,143.0,1,16.5,5.8,3.7,23],[2.5,80.0,1,14.3,2.7,4.5,16],[1.6,84.0,2,10.4,8.2,4.2,17],[7.1,150.0,0,21.9,11.9,4.2,15],[6.1,184.0,2,16.7,3.1,4.8,6],[8.9,196.0,1,30.1,10.5,4.2,8],[2.9,85.0,1,16.7,4.5,4.7,15],[6.6,90.0,1,18.9,2.4,4.5,13],[3.8,103.0,0,23.5,19.2,4.3,9],[6.6,125.0,0,32.0,9.9,4.6,17],[1.1,45.0,1,9.9,1.4,5.0,18],[5.3,87.0,0,22.4,0.5,4.4,21],[1.9,90.0,1,15.1,3.8,4.7,10],[9.2,240.0,2,33.5,1.1,4.5,17],[4.5,186.0,2,11.2,1.5,5.0,23],[5.2,85.0,0,18.0,1.6,5.0,13],[10.1,195.0,1,34.3,3.2,5.0,18],[2.9,86.0,1,12.1,2.6,4.7,6],[14.9,314.0,1,43.5,3.6,3.9,9],[8.1,128.0,0,27.9,0.9,5.0,12],[2.3,78.0,1,13.9,2.5,4.8,15],[6.1,128.0,0,25.3,5.0,4.1,8],[8.1,160.0,1,22.7,3.0,4.9,15],[37.3,927.0,2,108.6,4.2,4.0,19],[8.3,116.0,0,20.8,2.9,4.7,13],[2.7,55.0,0,21.1,3.1,4.7,21],[9.5,188.0,0,25.6,4.6,3.9,10],[2.7,127.0,2,9.6,7.1,4.3,11],[2.9,74.0,0,15.4,7.7,4.9,9],[13.4,236.0,1,34.6,7.7,4.5,15],[2.2,97.0,1,14.9,4.8,4.6,17],[1.4,75.0,1,12.7,12.3,4.3,17],[3.8,102.0,1,17.3,4.7,4.8,19],[6.7,122.0,0,28.4,8.6,4.6,20],[3.8,74.0,0,22.7,2.4,3.9,17],[9.1,180.0,1,29.8,4.8,4.6,19],[0.8,43.0,0,18.3,10.0,4.4,9],[4.1,90.0,0,20.5,4.6,4.8,17],[1.0,82.0,1,10.1,6.6,4.3,18],[2.7,63.0,1,12.8,1.3,4.2,14]];
+const CV400=[[20.9,56.2,256.0],[4.0,21.6,110.0],[1.6,7.6,55.0],[3.4,19.7,159.0],[2.3,15.2,105.0],[2.5,4.1,49.0],[19.3,52.0,318.0],[24.7,69.4,383.0],[2.5,4.6,65.0],[0.8,6.4,30.0],[3.2,6.6,51.0],[38.8,97.4,465.0],[9.2,29.3,137.0],[7.2,36.3,183.0],[5.8,26.4,130.0],[3.0,18.5,82.0],[6.1,16.7,184.0],[0.8,5.3,64.0],[4.5,18.6,110.0],[9.9,26.3,104.0],[6.4,28.7,122.0],[2.8,23.7,71.0],[9.1,26.6,137.0],[5.1,19.0,106.0],[9.5,28.3,258.0],[3.1,5.0,124.0],[2.0,12.1,37.0],[5.5,28.8,190.0],[4.5,26.4,161.0],[4.5,22.5,91.0],[6.4,26.4,121.0],[4.4,18.5,107.0],[27.5,67.1,564.0],[5.9,22.5,126.0],[4.1,19.1,70.0],[10.0,30.6,227.0],[4.0,16.7,100.0],[15.2,38.9,260.0],[2.7,12.8,50.0],[1.3,9.8,37.0],[11.5,29.7,272.0],[26.1,77.3,439.0],[11.2,24.7,216.0],[2.1,6.4,79.0],[2.1,12.1,76.0],[4.8,16.8,178.0],[1.8,7.5,44.0],[0.8,12.1,90.0],[2.6,25.0,58.0],[10.1,33.0,192.0],[5.7,12.6,91.0],[9.7,35.1,296.0],[15.1,30.4,243.0],[2.9,10.8,105.0],[12.6,43.8,243.0],[10.0,38.6,173.0],[3.2,17.0,72.0],[5.3,20.6,174.0],[6.9,23.6,115.0],[12.7,37.2,227.0],[10.3,31.0,167.0],[2.2,10.4,69.0],[31.4,80.5,508.0],[7.7,30.0,127.0],[22.5,56.4,353.0],[3.9,20.8,83.0],[4.8,28.7,96.0],[1.7,12.7,62.0],[1.7,9.2,78.0],[1.9,10.7,77.0],[14.3,34.9,201.0],[7.3,19.5,87.0],[9.3,28.9,173.0],[7.2,18.1,127.0],[9.2,28.8,170.0],[2.1,7.7,81.0],[5.7,22.8,134.0],[1.7,8.1,30.0],[10.0,27.8,233.0],[9.9,33.2,157.0],[4.8,11.9,108.0],[28.9,76.6,445.0],[1.7,14.8,84.0],[3.4,5.1,92.0],[5.7,14.0,81.0],[11.3,31.6,188.0],[6.3,17.5,182.0],[5.9,19.9,133.0],[6.4,22.3,124.0],[7.7,28.8,164.0],[2.8,10.4,99.0],[12.7,40.4,230.0],[2.9,12.6,32.0],[4.5,13.5,97.0],[13.0,34.0,217.0],[12.7,48.3,291.0],[2.7,10.9,144.0],[1.8,5.6,30.0],[4.0,13.3,42.0],[9.0,34.1,234.0],[10.7,31.1,184.0],[7.2,26.2,125.0],[8.6,18.3,172.0],[1.9,12.5,77.0],[2.4,5.5,73.0],[24.5,59.9,386.0],[1.3,4.7,34.0],[0.8,16.8,70.0],[18.2,56.3,387.0],[0.9,16.4,30.0],[4.9,18.0,96.0],[7.9,26.9,187.0],[12.0,40.1,207.0],[2.5,17.4,94.0],[2.9,15.9,144.0],[1.0,9.6,57.0],[13.2,33.8,204.0],[1.1,4.1,61.0],[14.1,50.2,426.0],[3.2,17.8,72.0],[12.5,38.6,182.0],[5.1,14.0,69.0],[27.4,71.5,364.0],[8.4,21.5,135.0],[6.1,18.3,122.0],[1.8,17.9,66.0],[2.8,9.9,81.0],[2.2,14.4,74.0],[2.5,8.0,78.0],[35.4,82.4,551.0],[3.4,11.1,68.0],[5.9,18.8,117.0],[10.0,26.9,269.0],[9.6,24.3,160.0],[26.1,70.9,532.0],[17.1,57.4,318.0],[1.9,15.6,102.0],[0.8,11.3,30.0],[3.6,14.6,92.0],[10.8,25.5,175.0],[8.8,23.6,122.0],[5.5,21.7,124.0],[28.7,80.1,474.0],[4.7,14.0,107.0],[1.1,5.4,49.0],[2.3,16.8,88.0],[4.1,17.4,77.0],[2.5,14.0,63.0],[4.0,13.3,139.0],[3.7,23.5,125.0],[2.3,14.2,73.0],[3.9,26.5,129.0],[10.5,32.7,212.0],[6.0,22.8,152.0],[6.3,16.1,105.0],[1.2,9.4,56.0],[4.7,21.9,108.0],[21.4,59.8,354.0],[11.9,38.9,289.0],[7.4,29.6,199.0],[3.8,19.8,112.0],[5.8,19.6,153.0],[13.5,40.3,310.0],[6.6,21.0,159.0],[7.4,27.5,137.0],[4.2,9.6,121.0],[0.8,16.4,74.0],[8.4,30.0,109.0],[22.8,56.6,468.0],[13.1,37.2,162.0],[3.6,20.2,83.0],[5.9,38.0,171.0],[0.9,3.0,35.0],[6.7,29.1,118.0],[0.8,13.8,57.0],[11.8,32.9,198.0],[1.4,14.6,121.0],[4.0,17.8,123.0],[2.7,25.7,90.0],[10.7,32.7,157.0],[3.3,16.3,83.0],[1.3,7.5,43.0],[9.1,35.5,204.0],[3.6,14.4,100.0],[6.0,11.5,125.0],[8.3,20.5,125.0],[2.8,9.0,89.0],[4.2,23.4,156.0],[4.4,17.7,124.0],[22.6,59.9,461.0],[5.9,27.7,214.0],[14.0,39.8,182.0],[7.4,23.3,98.0],[5.0,13.4,105.0],[9.5,31.0,247.0],[8.7,30.8,175.0],[18.7,46.4,249.0],[5.1,23.5,98.0],[1.2,17.7,53.0],[22.1,54.2,361.0],[5.1,15.7,73.0],[12.5,43.8,292.0],[7.1,23.5,115.0],[7.8,31.1,184.0],[23.1,54.7,508.0],[10.2,32.0,267.0],[5.0,25.6,116.0],[8.6,34.2,185.0],[3.8,12.2,98.0],[7.3,23.3,105.0],[4.5,22.4,125.0],[2.8,18.2,75.0],[9.7,31.4,254.0],[4.3,14.2,81.0],[5.7,24.3,162.0],[3.5,18.3,30.0],[8.1,23.9,201.0],[10.7,29.9,185.0],[4.3,16.0,51.0],[6.4,27.2,139.0],[5.8,23.2,139.0],[3.1,17.8,111.0],[18.7,43.4,328.0],[3.0,20.9,97.0],[5.0,17.6,157.0],[3.8,18.0,152.0],[3.5,7.9,96.0],[6.5,26.6,192.0],[1.0,14.1,56.0],[7.0,27.9,150.0],[12.9,40.1,170.0],[2.1,10.4,53.0],[13.9,48.8,407.0],[8.6,23.1,141.0],[16.6,41.4,296.0],[19.5,55.1,320.0],[4.8,23.4,118.0],[0.8,9.7,33.0],[1.5,17.7,31.0],[4.1,12.6,68.0],[9.8,36.1,174.0],[7.1,21.4,194.0],[1.9,11.3,81.0],[13.7,39.6,273.0],[1.1,3.0,85.0],[1.7,3.3,45.0],[5.4,14.6,134.0],[2.9,24.2,130.0],[13.4,42.7,233.0],[1.6,16.3,52.0],[3.3,14.8,92.0],[5.7,27.6,139.0],[7.8,26.0,145.0],[6.4,17.4,156.0],[5.3,12.1,99.0],[3.0,13.5,92.0],[6.9,24.2,221.0],[2.2,9.7,72.0],[8.3,40.8,220.0],[7.1,32.6,149.0],[5.0,31.4,175.0],[4.8,16.0,79.0],[0.8,3.0,42.0],[8.0,19.9,120.0],[1.7,22.1,118.0],[2.9,9.7,103.0],[4.6,19.5,159.0],[8.4,23.5,147.0],[5.5,27.7,117.0],[13.6,40.5,305.0],[2.4,15.7,118.0],[4.5,15.0,162.0],[8.2,30.5,167.0],[3.1,11.0,61.0],[5.1,24.6,113.0],[2.9,24.6,75.0],[16.3,45.1,211.0],[7.8,25.8,149.0],[4.1,20.4,51.0],[3.2,15.1,136.0],[2.7,15.8,92.0],[2.4,6.9,80.0],[4.8,27.2,144.0],[4.7,13.8,110.0],[5.5,24.6,154.0],[7.7,27.5,204.0],[2.5,15.1,90.0],[4.0,14.8,79.0],[4.1,12.1,89.0],[29.2,72.3,410.0],[7.6,24.9,152.0],[8.3,24.9,132.0],[8.1,34.5,203.0],[31.9,81.3,606.0],[6.0,13.4,115.0],[5.2,19.8,110.0],[1.1,6.9,59.0],[5.1,27.4,118.0],[1.2,17.1,91.0],[3.4,10.9,97.0],[1.7,13.7,56.0],[3.0,15.3,156.0],[5.1,25.0,104.0],[19.3,52.0,318.0],[7.8,28.6,158.0],[2.4,5.4,85.0],[3.5,13.4,73.0],[3.6,21.8,126.0],[2.1,11.0,42.0],[19.6,55.3,321.0],[4.3,18.5,95.0],[0.8,6.5,30.0],[8.5,20.7,111.0],[11.0,31.4,205.0],[10.1,34.4,172.0],[7.5,21.2,213.0],[6.2,28.7,115.0],[3.5,20.4,79.0],[4.1,16.4,61.0],[3.9,22.0,124.0],[9.2,31.4,163.0],[5.5,19.9,108.0],[5.5,30.8,143.0],[5.3,20.8,87.0],[23.0,56.4,370.0],[7.1,26.1,123.0],[9.9,35.7,233.0],[3.2,7.6,65.0],[8.2,16.6,108.0],[2.4,10.0,75.0],[23.4,63.5,395.0],[1.7,14.5,79.0],[6.1,21.4,197.0],[6.0,17.8,125.0],[7.2,22.2,111.0],[1.2,4.3,30.0],[6.5,30.9,170.0],[7.8,23.6,168.0],[3.5,15.8,136.0],[13.0,40.3,229.0],[6.1,20.8,136.0],[1.8,18.1,67.0],[11.7,38.0,338.0],[17.2,43.3,280.0],[30.9,81.3,394.0],[11.1,31.8,187.0],[1.7,10.7,75.0],[4.6,22.1,152.0],[3.4,12.0,98.0],[14.8,45.1,206.0],[29.1,77.9,559.0],[1.6,11.0,55.0],[14.8,48.6,363.0],[0.8,12.7,104.0],[3.4,10.3,85.0],[5.0,16.2,124.0],[11.2,42.1,247.0],[20.9,66.0,353.0],[3.6,9.9,103.0],[1.8,18.8,57.0],[6.8,32.4,233.0],[0.9,6.2,30.0],[6.1,12.9,80.0],[14.0,37.1,261.0],[5.0,27.8,151.0],[9.2,27.7,192.0],[24.7,69.6,302.0],[8.3,26.4,221.0],[12.9,42.5,277.0],[0.9,19.2,61.0],[3.9,15.4,86.0],[4.1,10.2,90.0],[7.7,26.4,92.0],[4.9,21.4,89.0],[7.1,26.5,132.0],[3.0,16.4,84.0],[13.4,47.5,252.0],[3.4,18.1,105.0],[18.9,62.0,256.0],[6.8,13.7,113.0],[1.7,3.0,37.0],[7.0,33.1,193.0],[3.6,19.6,72.0],[3.9,15.4,114.0],[2.4,16.0,60.0],[4.0,24.1,142.0],[7.8,17.7,168.0],[5.3,23.0,116.0],[5.5,27.3,125.0],[7.4,33.2,182.0],[7.4,24.8,187.0],[6.8,24.2,183.0],[7.8,27.9,159.0],[6.2,24.1,77.0],[12.6,41.0,225.0],[3.5,21.7,87.0],[7.1,28.0,162.0],[14.3,39.9,262.0],[3.8,8.5,104.0],[2.1,14.8,53.0]];
+const QUARTET={"A":{"x":[2,3,4,5,6,7,8,9,10,11,12],"y":[4.1,5.3,5.9,7.2,7.1,8.4,9.6,9.2,10.8,11.9,12.3],"r":0.99,"b1":0.805,"b0":2.707},"B":{"x":[2,3,4,5,6,7,8,9,10,11,12],"y":[2.0,4.4,6.3,7.8,8.9,9.6,9.9,9.8,9.3,8.4,7.1],"r":0.667,"b1":0.505,"b0":4.059},"C":{"x":[2,3,4,5,6,7,8,9,10,11,12],"y":[6.0,6.1,6.3,6.2,6.4,6.5,6.4,6.6,6.7,6.8,14.5],"r":0.581,"b1":0.43,"b0":4.126},"D":{"x":[5,5,5,5,5,5,5,5,5,5,15],"y":[4.0,5.2,6.1,7.3,8.0,8.8,9.5,10.4,11.2,12.0,16.0],"r":0.684,"b1":0.775,"b0":4.375}};
+const LG={"coef":{"Intercept":-1.993,"wait_min":0.1763,"surge":0.9829,"rain":0.5066,"distance_km":-0.0457},"se":{"Intercept":0.0759,"wait_min":0.011,"surge":0.0701,"rain":0.0785,"distance_km":0.0056},"orr":{"Intercept":0.136,"wait_min":1.193,"surge":2.672,"rain":1.66,"distance_km":0.955},"h0":[2,38,99,290,589,598,448,338,229,187,170,124,104,94,100,79,98,90,63,63,38,58,39,45,35,43,29,28,22,17,13,11,5,4,3,2,2,0,0,0],"h1":[0,2,12,25,61,102,91,87,57,55,48,59,45,45,51,62,64,73,55,60,50,54,66,67,64,65,61,44,50,58,42,41,22,20,19,10,12,3,1,0],"roc":[[0.0,0.0],[0.006,0.068],[0.012,0.119],[0.019,0.155],[0.028,0.187],[0.034,0.222],[0.042,0.246],[0.05,0.275],[0.058,0.31],[0.066,0.334],[0.076,0.37],[0.086,0.391],[0.094,0.418],[0.104,0.439],[0.114,0.459],[0.124,0.478],[0.136,0.5],[0.146,0.52],[0.157,0.541],[0.171,0.557],[0.18,0.576],[0.194,0.596],[0.204,0.612],[0.22,0.627],[0.236,0.644],[0.253,0.659],[0.264,0.676],[0.28,0.694],[0.3,0.709],[0.314,0.722],[0.335,0.73],[0.348,0.741],[0.371,0.755],[0.389,0.766],[0.405,0.778],[0.425,0.786],[0.446,0.798],[0.463,0.81],[0.48,0.824],[0.5,0.833],[0.515,0.843],[0.535,0.852],[0.554,0.862],[0.576,0.874],[0.599,0.882],[0.62,0.891],[0.642,0.9],[0.669,0.908],[0.686,0.915],[0.706,0.926],[0.728,0.935],[0.755,0.942],[0.779,0.95],[0.803,0.957],[0.826,0.966],[0.858,0.971],[0.882,0.977],[0.917,0.982],[0.951,0.99],[1.0,1.0]],"auc":0.7653,"waitbins":[[0.0,2.0,0.12,1047],[2.0,4.0,0.159,1451],[4.0,6.0,0.27,1372],[6.0,8.0,0.426,994],[8.0,10.0,0.492,577],[10.0,15.0,0.641,488],[15.0,30.0,0.789,71]]};
+const RESBINS=[[0.0,2.0,0.8],[2.0,4.0,0.1],[4.0,6.0,-1.8],[6.0,8.0,0.0],[8.0,10.0,1.6],[10.0,15.0,0.6],[15.0,20.0,-1.7],[20.0,30.0,8.3],[30.0,50.0,-22.7]];
+const VNAME=["auto","mini","sedan"];
+// Simple linear regression, fare on distance, completed trips
+const M1={b0:46.232,b1:14.4703,se0:1.0773,se1:0.10374,r2:0.8226,rse:44.485,sse:8301462.7,sst:46806511.0,Sxx:183891.29,Sxy:2660966.55,t1:139.49,F:19457.9,aic:43769.0,bic:43781.7};
+const STAT={mx:8.002,my:162.027,sx:6.62,sy:105.617,cov:634.167,r:0.907};
+const PRED10={fit:190.94,cil:189.53,ciu:192.34,pil:103.71,piu:278.16};
+// Multiple regression models (reference vehicle = auto)
+const M2={b0:11.8131,mini:39.9168,sedan:94.2067,dist:14.5177,se:{b0:0.8779,mini:0.9795,sedan:1.2326,dist:0.0667},r2:0.9268,adj:0.9267,rse:28.589,aic:40059.7,bic:40085.1,sse:3426972.4};
+const M3={b0:-1.8845,mini:39.7787,sedan:94.4518,dist:10.2466,dur:1.7932,se:{b0:1.0396,mini:0.9277,sedan:1.1675,dist:0.2046,dur:0.0817},r2:0.9343,adj:0.9343,rse:27.078,aic:39605.1,bic:39636.8,sse:3073675.2};
+const M4={b0:11.4847,mini:40.0109,sedan:93.3486,dist:13.7831,surge:-0.1647,ds:3.9957,se:{b0:0.7679,mini:0.8044,sedan:1.013,dist:0.0605,surge:1.4637,ds:0.1421},r2:0.9506,adj:0.9506,rse:23.479,aic:38409.0,bic:38447.1,sse:2310409.0};
+const M5={r2:0.9533,adj:0.9532,rse:22.846,aic:38180.4,bic:38224.8};
+const MV={b0:128.5588,mini:39.7225,sedan:91.5856,r2:0.0988,adj:0.0984,rse:100.286};
+const VEH={auto:{n:1691,md:8.042,mf:128.56,pk:20.01},mini:{n:1717,md:8.028,mf:168.28,pk:26.81},sedan:{n:789,md:7.861,mf:220.14,pk:36.77}};
+const VEHLINE={auto:[33.536,11.8163],mini:[47.585,15.0339],sedan:[67.94,19.3617]};   // separate lines per vehicle, full data
+const OVB={short:5.662,longDur:1.7408,longDist:10.3238,delta:0.3798};     // fare~duration vs fare~distance+duration; distance~duration slope
+const MW={b0:148.76,b1:2.978,se:0.569,t:5.23,r2:0.0065};                  // fare ~ wait
+const DIAG={bpLM:829.7,hc1:0.1933,olsSE:0.1037,rsd:[25.64,35.12,63.88],loglog:{b0:3.8163,b1:0.6214,r2:0.7618},cook:{trip:"NR04086",D:0.1446,dist:37.3,fare:927,r:9.92,thr:0.00095,nOver:262},lev:{trip:"NR05645",h:0.0080,dist:45.0,mean:0.00095},vif:10.49,rdd:0.9512,dw:2.019};
+const CVFULL={M1:44.48,M2:28.57,M3:27.07,M4:23.51,M5:22.88};            // 5-fold CV RMSE, full completed data
+const OVERFIT={1:[38.01,47.45],2:[36.49,44.44],3:[36.48,44.56],4:[35.29,44.36],5:[35.27,44.09],6:[35.23,47.42],7:[32.89,467.94],8:[32.06,1496.45],9:[31.57,10476.77]}; // train 25 / test 375
+const LPM={neg:86,over:2,mn:-0.158,mx:1.022,wait:0.0323,surge:0.2072};
+const CONF={0.3:[1204,1085,599,3112],0.4:[1001,708,802,3489],0.5:[749,394,1054,3803],0.6:[512,214,1291,3983]}; // TP,FP,FN,TN
+const AB={p0:0.3005,nArm27:3433,nArm25:1224,peak0:0.2343,peak1:0.3615,peakAlone:0.6155,peakAdj:-0.0944,waitS0:4.19,waitS1:7.79};
+const SUBFIT={b0:41.651,b1:15.0624,sse:572358.7,r2:0.8372,rse:43.825,xbar:7.9683,ybar:161.673,Sxx:12974.73,Sxy:195430.3,sst:3516004.0};
+
+/* ---------- small numerical helpers ---------- */
+function ols(xs,ys){const n=xs.length;let sx=0,sy=0;for(let i=0;i<n;i++){sx+=xs[i];sy+=ys[i];}const mx=sx/n,my=sy/n;let sxx=0,sxy=0,syy=0;for(let i=0;i<n;i++){const dx=xs[i]-mx,dy=ys[i]-my;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy;}
+  const b1=sxx>0?sxy/sxx:0,b0=my-b1*mx;let sse=0;for(let i=0;i<n;i++){const e=ys[i]-b0-b1*xs[i];sse+=e*e;}return {n,mx,my,sxx,sxy,syy,b0,b1,sse,r2:syy>0?1-sse/syy:0,rse:n>2?Math.sqrt(sse/(n-2)):NaN,r:(sxx>0&&syy>0)?sxy/Math.sqrt(sxx*syy):0};}
+function solve(A,b){const n=b.length,M=A.map((r,i)=>[...r,b[i]]);for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c]||1e-12;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c]/d;for(let k=c;k<=n;k++)M[r][k]-=f*M[c][k];}}return M.map((r,i)=>r[n]/(r[i]||1e-12));}
+function lstsq(X,y){const p=X[0].length,A=Array.from({length:p},()=>new Array(p).fill(0)),b=new Array(p).fill(0);for(let i=0;i<X.length;i++){const r=X[i];for(let a=0;a<p;a++){b[a]+=r[a]*y[i];for(let c=0;c<p;c++)A[a][c]+=r[a]*r[c];}}return solve(A,b);}
+const logistic=z=>1/(1+Math.exp(-z));
+function normCDF(z){const t=1/(1+0.2316419*Math.abs(z));const d=0.3989423*Math.exp(-z*z/2);let p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p;}
+const FONT="11px IBM Plex Mono, monospace";
+function axes(g,W,H,m,xr,yr,xt,yt,xl,yl){const C={line:cssVar("--line"),muted:cssVar("--muted"),ink:cssVar("--ink")};const X=v=>m.l+(v-xr[0])/(xr[1]-xr[0])*(W-m.l-m.r),Y=v=>H-m.b-(v-yr[0])/(yr[1]-yr[0])*(H-m.t-m.b);
+  g.strokeStyle=C.line;g.fillStyle=C.muted;g.font="10px IBM Plex Mono, monospace";g.lineWidth=1;
+  yt.forEach(v=>{g.beginPath();g.moveTo(m.l,Y(v));g.lineTo(W-m.r,Y(v));g.stroke();g.textAlign="right";g.fillText(ind(v),m.l-4,Y(v)+3);});
+  xt.forEach(v=>{g.textAlign="center";g.fillText(ind(v),X(v),H-m.b+13);});
+  g.textAlign="left";g.fillStyle=C.ink;g.font=FONT;if(xl)g.fillText(xl,W-m.r-g.measureText(xl).width,H-3);if(yl)g.fillText(yl,m.l,m.t-4);
+  return {X,Y,C};}
+
+/* ---------- the hero: trips rain in, the least-squares line refits live ---------- */
+function HeroSim(root){
+  root.classList.add("flow");
+  root.innerHTML=`<div class="flowbar"><span class="eyebrow">Live: fare against distance, one completed trip at a time</span><div class="ctrls">
+      <button class="btn small" data-play type="button">${REDUCED?"Play":"Pause"}</button>
+      <div class="seg" role="group" aria-label="Speed"><button type="button" data-sp="1" aria-pressed="true">1×</button><button type="button" data-sp="4" aria-pressed="false">4×</button><button type="button" data-sp="16" aria-pressed="false">16×</button></div>
+      <button class="btn ghost small" data-veh type="button" aria-pressed="false">Colour by vehicle</button>
+      <button class="btn ghost small" data-reset type="button">Reset</button></div></div>
+    <canvas aria-label="Animated scatter of fare against distance; the least-squares line refits as trips arrive"></canvas>
+    <div class="flowstats"><div><span>Trips plotted</span><b data-n>0</b></div><div><span>Intercept β̂₀ (₹)</span><b data-b0>—</b></div><div><span>Slope β̂₁ (₹ per km)</span><b data-b1>—</b></div><div><span>R²</span><b data-r2>—</b></div><div><span>Residual SD (₹)</span><b data-rse>—</b></div></div>`;
+  const W=720,H=300,c=root.querySelector("canvas"),g=canvasSetup(c,W,H);
+  const order=shuffled(SUB300.length,7);let k=0,speed=1,playing=!REDUCED,run=null,byVeh=false,acc=0;
+  const m={l:52,r:16,t:22,b:34};
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);
+    const ax=axes(g,W,H,m,[0,46],[0,950],[0,10,20,30,40],[0,200,400,600,800],"distance (km)","fare (₹)");
+    const pts=order.slice(0,k).map(i=>SUB300[i]);const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+    const cols=[cssVar("--accent"),cssVar("--gold"),cssVar("--fraud")];
+    if(k>=3){const f=ols(xs,ys);
+      if(!byVeh){g.fillStyle=cssVar("--accent-soft");g.globalAlpha=0.7;g.beginPath();g.moveTo(ax.X(0),ax.Y(f.b0-f.rse));g.lineTo(ax.X(46),ax.Y(f.b0+46*f.b1-f.rse));g.lineTo(ax.X(46),ax.Y(f.b0+46*f.b1+f.rse));g.lineTo(ax.X(0),ax.Y(f.b0+f.rse));g.closePath();g.fill();g.globalAlpha=1;}
+      root.querySelector("[data-b0]").textContent=f.b0.toFixed(1);root.querySelector("[data-b1]").textContent=f.b1.toFixed(2);root.querySelector("[data-r2]").textContent=f.r2.toFixed(3);root.querySelector("[data-rse]").textContent=isNaN(f.rse)?"—":f.rse.toFixed(1);
+      if(!byVeh){g.strokeStyle=cssVar("--accent");g.lineWidth=2.5;g.beginPath();g.moveTo(ax.X(0),ax.Y(f.b0));g.lineTo(ax.X(46),ax.Y(f.b0+46*f.b1));g.stroke();}
+      else{for(let v=0;v<3;v++){const sel=pts.filter(p=>p[2]===v);if(sel.length<3)continue;const fv=ols(sel.map(p=>p[0]),sel.map(p=>p[1]));g.strokeStyle=cols[v];g.lineWidth=2.5;g.beginPath();g.moveTo(ax.X(0),ax.Y(fv.b0));g.lineTo(ax.X(46),ax.Y(fv.b0+46*fv.b1));g.stroke();}}
+      g.lineWidth=1;}
+    pts.forEach((p,i)=>{const last=i===pts.length-1&&playing;g.beginPath();g.arc(ax.X(p[0]),ax.Y(p[1]),last?5:3.2,0,7);g.fillStyle=byVeh?cols[p[2]]:cssVar("--accent");g.globalAlpha=byVeh?0.85:0.55;g.fill();g.globalAlpha=1;});
+    g.fillStyle=cssVar("--ink");g.font=FONT;g.textAlign="left";
+    if(byVeh){let x=m.l+120;VNAME.forEach((v,i)=>{g.fillStyle=cols[i];g.fillRect(x,m.t-12,10,10);g.fillStyle=cssVar("--ink");g.fillText(v,x+14,m.t-3);x+=14+g.measureText(v).width+16;});}
+    else{g.fillStyle=cssVar("--muted");g.fillText("band: fitted line ± residual SD",m.l+120,m.t-4);}
+    root.querySelector("[data-n]").textContent=k;}
+  function step(){acc+=0.35*speed;while(acc>=1&&k<SUB300.length){acc-=1;k++;}draw();if(k>=SUB300.length)play(false);}
+  function play(v){playing=v;root.querySelector("[data-play]").textContent=v?"Pause":"Play";if(v&&!run)run=loop(step);if(!v&&run){run.stop();run=null;}}
+  function reset(){k=REDUCED?SUB300.length:0;acc=0;draw();if(!REDUCED&&!playing)play(true);}
+  root.querySelector("[data-play]").addEventListener("click",()=>{if(k>=SUB300.length&&!playing){k=0;}play(!playing);});
+  root.querySelector("[data-reset]").addEventListener("click",reset);
+  root.querySelector("[data-veh]").addEventListener("click",e=>{byVeh=!byVeh;e.currentTarget.setAttribute("aria-pressed",byVeh);draw();});
+  root.querySelectorAll("[data-sp]").forEach(b=>b.addEventListener("click",()=>{speed=+b.dataset.sp;root.querySelectorAll("[data-sp]").forEach(x=>x.setAttribute("aria-pressed",x===b));}));
+  if(REDUCED){k=SUB300.length;draw();}else{draw();run=loop(step);}
+}
+
+/* ---------- levels ---------- */
+const L=[];
+L.push({id:"l1",badge:"Scatter Reader",code:"File 1",title:"Two columns, one picture",topics:"Scatter plots, covariance, Pearson's r, r² as shared variance, same r but different pictures, regression to the mean, correlation is not causation",
+story:`<b>Day 1 at NimbusRide.</b> The Head of Pricing drops a file of 6,000 trips on your desk. "Riders say fares are unpredictable. Operations says cancellations are out of control. A journalist says sedans overcharge. Before anyone builds a formula, tell me which columns move together, and how much." You open the scatter plots.`,
+brief:`<p>A <span class="term">scatter plot</span> puts one variable on each axis and one dot per trip. It is the first and last diagnostic in regression: look before you compute, and look again after.</p>
+<p>The <span class="term">covariance</span> measures whether two variables move together, in the product of their units (₹·km here). Dividing by both standard deviations (SDs) gives <span class="term">Pearson's correlation coefficient</span> r, a unit-free number between −1 and +1 that measures <em>linear</em> association:</p>
+<div class="formula">cov(x, y) = Σ (xᵢ − x̄)(yᵢ − ȳ) / (n − 1)
+r = cov(x, y) / (sₓ s_y)          −1 ≤ r ≤ 1</div>
+<p>For the 4,197 completed trips, r(distance, fare) = 0.907. Its square, <span class="term">r² = 0.823</span>, is the share of the variance of fare that a straight line in distance accounts for (File 2 makes that exact). Correlations of 0.08 (wait and fare) are not "small positives": they are near zero.</p>
+<p>Three warnings. First, r summarises a straight line; Anscombe (1973) showed that four very different scatters can share one r. Second, <span class="term">regression to the mean</span> (Galton, 1886): when two measurements correlate r &lt; 1, an extreme value on the first is expected to be less extreme on the second, by the factor r, in standardised units:</p>
+<div class="formula">E[z_y | z_x] = r · z_x</div>
+<p>Third, <span class="term">correlation is not causation</span>: a third variable (rain lengthens waits <em>and</em> sours moods) can create an association between two others without either causing the other.</p>`,
+refs:"Rice, <i>Mathematical Statistics and Data Analysis</i> (3rd ed., 2007), §14.1–14.2 · Wooldridge, <i>Introductory Econometrics</i> (7th ed., 2020), Appendix B · Galton, <i>J. Anthropological Institute</i> 15 (1886) 246–263 · Anscombe, <i>The American Statistician</i> 27 (1973) 17–21.",
+lab:labScatter,
+qs:[
+{t:"num",ph:"e.g. 0.42",q:"Over the 4,197 completed trips, the standard deviation of distance is 6.62 km, the standard deviation of fare is ₹105.62, and their covariance is 634.17 ₹·km. What is Pearson's r?",a:0.907,tol:0.004,
+ hint:"r = cov / (sₓ · s_y).",why:"634.17 / (6.62 × 105.62) = 0.907. A strong, positive, nearly linear association, which the scatter confirms."},
+{t:"num",ph:"e.g. 0.5",q:"What share of the variance of fare is accounted for by a straight line in distance? Give r².",a:0.8226,tol:0.004,
+ hint:"Square the correlation.",why:"0.907² = 0.823. About 82% of the variance of fare goes with distance; the remaining 18% is vehicle, surge and noise, as later files show."},
+{t:"mcq",q:"In the lab's four illustrative sets, set B is a clean curve yet its r is only 0.67, lower than set A's 0.99. What does that tell you about r?",opts:["r measures linear association only; a curved but perfect relationship is understated","Set B has more measurement error than set A","r cannot be computed for curved data","Set B's correlation is negative in disguise"],a:0,
+ hint:"What kind of relationship does the formula for r reward?",why:"r rewards points lying on a straight line. Set B's points lie on a parabola, so a straight line fits them poorly and r is moderate, even though y is perfectly predictable from x. Always plot."},
+{t:"num",ph:"e.g. 2.5",q:"Illustrative: driver ratings in two consecutive weeks correlate with r = 0.5. A driver sits 2 standard deviations above the mean in week 1. In standardised units, what is the expected week-2 rating?",a:1,tol:0.02,
+ hint:"E[z_y | z_x] = r · z_x.",why:"0.5 × 2 = 1.0 standard deviation above the mean. Half of the week-1 excess was luck that does not repeat. Praising this driver and then seeing the score fall is regression to the mean, not a reaction to the praise."},
+{t:"mcq",q:"Across completed trips r(wait, rating) = −0.22, and that correlation is far from zero by any test (t = −14.7). A columnist writes: \"waiting causes bad ratings.\" What is the careful reading?",opts:["There is a real association; causation is not established, because rain lengthens waits and also spoils rides, and other such variables may exist","The sign is negative, so waiting cannot cause anything","With n = 4,197 the correlation proves causation","r = −0.22 is too small to be real"],a:0,
+ hint:"Is there a third variable that moves both?",why:"Rain correlates with wait (r = 0.30 among completed trips, 0.37 over all requests) and plausibly with rating on its own. An association survives any test when n is large, but a test says nothing about direction or confounding. Only a design that breaks the link (File 8) can."}
+]});
+
+L.push({id:"l2",badge:"Line Fitter",code:"File 2",title:"The fare formula, first draft",topics:"Least squares, deriving β̂₁ = Sxy/Sxx, fitted values and residuals, slope and intercept, R², residual standard error",
+story:`<b>The Chief Financial Officer's (CFO's) one-liner.</b> "Give me a formula: fare equals something plus something per kilometre. Riders should be able to do it in their heads." Every line you could draw through the scatter has a set of misses. You need the line with the smallest misses, and a rule that defines "smallest".`,
+brief:`<p>The <span class="term">simple linear regression</span> model says the fare of trip i is a line in distance plus an error term:</p>
+<div class="formula">yᵢ = β₀ + β₁ xᵢ + εᵢ          (i = 1 … n)</div>
+<p>The <span class="term">method of least squares</span> (Legendre 1805; Gauss 1809) picks the intercept and slope that minimise the <span class="term">sum of squared errors</span>, SSE = Σ (yᵢ − β₀ − β₁xᵢ)². Setting the two partial derivatives to zero gives the normal equations, whose solution is:</p>
+<div class="formula">β̂₁ = Sxy / Sxx = Σ(xᵢ − x̄)(yᵢ − ȳ) / Σ(xᵢ − x̄)²
+β̂₀ = ȳ − β̂₁ x̄
+so the line always passes through (x̄, ȳ)</div>
+<p>The <span class="term">fitted value</span> ŷᵢ = β̂₀ + β̂₁xᵢ is the line's prediction for trip i; the <span class="term">residual</span> eᵢ = yᵢ − ŷᵢ is what the line misses. Residuals sum to zero. Two summaries of fit: the <span class="term">coefficient of determination</span> R² splits the total sum of squares (SST) into the regression sum of squares (SSR) and the sum of squared errors (SSE), and the <span class="term">residual standard error</span> (RSE) is the typical size of a miss, in rupees:</p>
+<div class="formula">SST = Σ(yᵢ − ȳ)² = SSR + SSE
+R² = SSR / SST = 1 − SSE / SST = r²  (one predictor)
+RSE = √( SSE / (n − 2) )</div>
+<p>Interpretation: β̂₁ is the average change in fare per extra kilometre; β̂₀ is the fitted fare at zero kilometres, which is meaningful only if zero is inside the data (a 0.8 km trip exists, so here it roughly is).</p>`,
+refs:"Rice (2007), ch. 14 · Wooldridge (2020), ch. 2 · James, Witten, Hastie & Tibshirani, <i>An Introduction to Statistical Learning</i> (2nd ed., 2021), §3.1 · Legendre, <i>Nouvelles méthodes pour la détermination des orbites des comètes</i> (1805).",
+lab:labHandFit,
+qs:[
+{t:"num",ph:"e.g. 9.5",q:"Over the 4,197 completed trips, Sxy = 2,660,966.55 and Sxx = 183,891.29. What is the least-squares slope β̂₁ (₹ per km)?",a:14.4703,tol:0.01,
+ hint:"β̂₁ = Sxy / Sxx.",why:"2,660,966.55 / 183,891.29 = 14.47. Each extra kilometre adds about ₹14.47 to the fare on average, across all vehicles."},
+{t:"num",ph:"e.g. 20",q:"Mean distance is 8.002 km and mean fare ₹162.03. What is the intercept β̂₀?",a:46.23,tol:0.15,
+ hint:"β̂₀ = ȳ − β̂₁ x̄; the line passes through the means.",why:"162.03 − 14.4703 × 8.002 = 46.23. The first draft of the formula: fare ≈ ₹46 + ₹14.47 per km."},
+{t:"num",ph:"e.g. 250",q:"What fare does that line predict for a 10 km trip?",a:190.94,tol:0.4,
+ hint:"ŷ = β̂₀ + β̂₁ · 10.",why:"46.23 + 14.47 × 10 = ₹190.9. The fitted value is the line's estimate of the average fare of 10 km trips."},
+{t:"num",ph:"e.g. 5.5",q:"Trip NR00004 was a 5.6 km auto ride that cost ₹113. What is its residual under the line?",a:-14.27,tol:0.25,
+ hint:"Residual = actual − fitted. Fitted = 46.23 + 14.47 × 5.6.",why:"Fitted 46.23 + 14.47 × 5.6 = 127.27, so the residual is 113 − 127.27 = −14.27. The line overshoots autos, which File 4 fixes with a vehicle term."},
+{t:"mcq",q:"Which is the correct interpretation of β̂₁ = 14.47?",opts:["Across trips, fares are higher by about ₹14.47 on average for each additional kilometre","A 1 km trip costs ₹14.47","Every trip's fare rises by exactly ₹14.47 per kilometre","Distance causes fare to rise by ₹14.47 per kilometre for every rider"],a:0,
+ hint:"A slope describes an average difference, not a fixed rule for each trip.",why:"The slope is an average rate of change in fitted fare per unit of distance. Individual trips scatter around the line (RSE ≈ ₹44), and a 1 km trip is predicted at ₹46 + ₹14.47, not ₹14.47. The word \"causes\" needs File 8."},
+{t:"num",ph:"e.g. 30",q:"The line leaves SSE = 8,301,462.7 across the 4,197 trips. What is the residual standard error, in rupees?",a:44.485,tol:0.1,
+ hint:"RSE = √(SSE / (n − 2)).",why:"√(8,301,462.7 / 4,195) = ₹44.49. The typical miss of the one-variable formula is about ₹44, which is why riders call fares unpredictable."}
+]});
+
+L.push({id:"l3",badge:"Interval Keeper",code:"File 3",title:"How sure is the slope?",topics:"Standard error of coefficients, t tests, confidence interval for the slope, interval for a mean response vs prediction interval, the F test, significance with n = 4,197",
+story:`<b>Legal wants a number with a margin.</b> The CFO likes ₹14.47 per km, but Legal asks what the company may print: "₹14 to ₹15 per km"? And a rider asks the harder question: "If I book a 10 km trip, what will I actually pay?" One of those questions has a narrow answer and the other does not.`,
+brief:`<p>The 4,197 trips are one sample of NimbusRide's trips. A different sample gives a different β̂₁. Under the standard assumptions (errors independent, with mean zero and the same variance σ² at every x; for exact small-sample tests, Normal), β̂₁ is unbiased for β₁ with <span class="term">standard error</span> (SE):</p>
+<div class="formula">SE(β̂₁) = σ̂ / √Sxx,   σ̂ = RSE
+t = (β̂₁ − 0) / SE(β̂₁)  ~  t with n − 2 degrees of freedom
+95% CI: β̂₁ ± t₀.₀₂₅,ₙ₋₂ · SE(β̂₁)</div>
+<p>The <span class="term">t test</span> of H₀: β₁ = 0 asks whether distance tells us anything about fare at all. The <span class="term">F test</span> compares explained to unexplained variance; with one predictor F = t², so it asks the same question.</p>
+<div class="formula">F = (SSR / 1) / (SSE / (n − 2))  =  MSR / MSE   (mean square for regression / mean squared error)</div>
+<p>Two different intervals at a given distance x₀. The <span class="term">confidence interval (CI) for the mean response</span> covers the average fare of all trips of length x₀; it shrinks with n. The <span class="term">prediction interval</span> (PI) covers one new trip, so it must also carry the trip's own error σ², and it does not shrink to zero however large n is:</p>
+<div class="formula">mean:  ŷ₀ ± t · RSE · √( 1/n + (x₀ − x̄)²/Sxx )
+new:   ŷ₀ ± t · RSE · √( 1 + 1/n + (x₀ − x̄)²/Sxx )</div>
+<p>With n = 4,197 almost any slope is "significant": fare on wait time has t = 5.2 and p below 10⁻⁶, yet R² = 0.0065. A p-value measures evidence against zero, not importance. Read the slope's size and its confidence interval.</p>`,
+refs:"Rice (2007), §14.2–14.4 · Wooldridge (2020), ch. 4 and §6.4 · Wasserman, <i>All of Statistics</i> (2004), ch. 13 · James et al. (2021), §3.1.2 · Student, <i>Biometrika</i> 6 (1908) 1–25.",
+lab:labSlopeSampling,
+qs:[
+{t:"num",ph:"e.g. 0.5",q:"RSE = 44.485 and Sxx = 183,891.29. What is SE(β̂₁)?",a:0.10374,tol:0.002,
+ hint:"SE = RSE / √Sxx.",why:"44.485 / √183,891.29 = 44.485 / 428.83 = 0.104. The slope is known to about a tenth of a rupee per km."},
+{t:"num",ph:"e.g. 15.9",q:"The 97.5th percentile of the t distribution with 4,195 degrees of freedom is 1.9605. What is the upper limit of the 95% confidence interval for the slope?",a:14.674,tol:0.01,
+ hint:"β̂₁ + 1.9605 × SE.",why:"14.4703 + 1.9605 × 0.10374 = 14.674; the lower limit is 14.267. Legal can print \"about ₹14.3 to ₹14.7 per km\" and be covered."},
+{t:"mcq",q:"At 10 km the fitted fare is ₹190.94. The 95% interval for the mean response is [189.5, 192.3]; the 95% prediction interval is [103.7, 278.2]. A rider asks \"what will my 10 km trip cost?\" Which interval answers her?",opts:["The prediction interval: her trip carries its own error, so ₹104 to ₹278","The confidence interval: ₹189.5 to ₹192.3","Either, since both are 95%","Neither; only the point estimate ₹190.94 is valid"],a:0,
+ hint:"Which interval includes the single trip's own deviation from the line?",why:"The confidence interval pins down the average fare of 10 km trips, and 4,197 trips pin it very tightly. One trip scatters around that average with SD ≈ ₹44, so its interval is about ±₹87. Fares are unpredictable for a rider even when the formula is precise."},
+{t:"num",ph:"e.g. 500",q:"The t statistic for the slope is 139.49. What is the F statistic of the regression?",a:19458,tol:60,
+ hint:"With one predictor F = t².",why:"139.49² = 19,458. Both statistics test the same hypothesis, β₁ = 0, and both reject it with a p-value that is zero to any printable precision."},
+{t:"mcq",q:"Fare regressed on wait time: slope ₹2.98 per minute, SE 0.57, t = 5.23, p = 1.7 × 10⁻⁷, R² = 0.0065. What should the pricing lab conclude?",opts:["Statistically significant but practically trivial: wait accounts for 0.65% of fare variance; with n = 4,197 even small slopes are significant","Wait time is a key driver of fares, since p is so small","The slope is not real because R² is tiny","Riders are charged ₹2.98 for every minute they wait"],a:0,
+ hint:"p-values grow with n; R² and slope size do not.",why:"The t test asks only whether β₁ is zero. It is not (longer waits happen in surge conditions, which raise fares a little), but the effect explains almost nothing. Judge importance by size and R², not by p."},
+{t:"mcq",q:"In the lab, slopes from samples of 100 trips pile up with a spread of about 1.3, but the textbook formula RSE/√Sxx gives about 0.65 for such samples. Which assumption of the formula does the scatter violate?",opts:["Equal error variance at every distance: fares scatter far more widely on long trips than on short ones","Independence: trips are not independent","Linearity: the relationship is strongly curved","Normality: the formula fails unless errors are Normal"],a:0,
+ hint:"Look at how the vertical scatter changes from left to right in the hero picture.",why:"The classical SE assumes a constant σ at every x. Here the residual SD more than doubles from the shortest third of trips to the longest, so the formula understates the real sampling variability. File 5 names this and gives the fix."}
+]});
+
+L.push({id:"l4",badge:"Dummy Coder",code:"File 4",title:"More than one cause",topics:"Multiple regression, dummy variables and the reference category, holding others fixed, adjusted R², the sedans question, interaction (surge × distance), omitted-variable bias",
+story:`<b>The headline.</b> "Sedans overcharge: average fare ₹220 against ₹129 for autos." The CFO wants a rebuttal by noon; the journalist wants to know whether sedans simply go farther. Meanwhile Product proposes charging by the minute, quoting a regression of fare on duration: ₹5.66 per minute. Both arguments use one variable at a time. Fares depend on several.`,
+brief:`<p><span class="term">Multiple regression</span> fits a plane rather than a line:</p>
+<div class="formula">yᵢ = β₀ + β₁ x₁ᵢ + β₂ x₂ᵢ + … + βₚ xₚᵢ + εᵢ</div>
+<p>Each slope is now a <span class="term">partial effect</span>: βⱼ is the average change in y for a one-unit change in xⱼ <em>holding the other predictors fixed</em>. That phrase is the whole point. The least-squares solution minimises the same SSE; the formulas need matrix algebra, but the logic is unchanged.</p>
+<p>A categorical predictor such as vehicle enters through <span class="term">dummy variables</span> (indicators): mini = 1 for minis, sedan = 1 for sedans. The omitted category, auto, is the <span class="term">reference category</span>; each dummy coefficient is the average fare gap to an auto <em>of the same distance</em>. Including all three dummies alongside an intercept makes the columns perfectly collinear (the dummy variable trap).</p>
+<div class="formula">fare = 11.81 + 14.52·distance + 39.92·mini + 94.21·sedan
+three parallel lines, one per vehicle;  R² = 0.927</div>
+<p>R² never falls when a predictor is added, even a useless one. <span class="term">Adjusted R²</span> charges for each parameter: R̄² = 1 − (SSE/(n−p−1)) / (SST/(n−1)). An <span class="term">interaction</span> term x₁·x₂ lets one slope depend on another variable: with distance × surge in the model, the per-kilometre rate is 13.78 without surge and 13.78 + 4.00 under surge.</p>
+<p><span class="term">Omitted-variable bias</span> (OVB): if a relevant variable x₂ is left out and it correlates with x₁, the short regression's slope on x₁ absorbs part of x₂'s effect:</p>
+<div class="formula">β̃₁ (short) = β₁ (long) + β₂ · δ₁
+δ₁ = slope of x₂ regressed on x₁</div>`,
+refs:"Wooldridge (2020), ch. 3 (§3.3 for omitted-variable bias) and ch. 7 (dummy variables) · James et al. (2021), §3.2–3.3 · Rice (2007), §14.5.",
+lab:labMultiple,
+qs:[
+{t:"num",ph:"e.g. 200",q:"Using the three-line model (intercept 11.81, +14.52 per km, +39.92 for mini, +94.21 for sedan), what fare does it predict for a 12 km sedan trip?",a:280.23,tol:0.6,
+ hint:"Intercept + sedan dummy + 12 × distance slope.",why:"11.81 + 94.21 + 14.52 × 12 = ₹280.2. For a 12 km auto the same model gives ₹186.0: the ₹94 gap is the sedan premium at any distance."},
+{t:"mcq",q:"Sedans average ₹220 against ₹129 for autos (+₹92). After controlling for distance, the sedan coefficient is +₹94. What does this say about the headline \"sedans go farther, so they cost more\"?",opts:["Wrong: sedans travel the same distances as autos (7.9 vs 8.0 km on average), so the gap is a vehicle premium, not longer trips. Whether a published premium is \"overcharging\" is a pricing question, not a statistical one","Right: controlling for distance explains the whole gap","Right: the raw gap of ₹92 is smaller than ₹94, which proves distance confounds it","Cannot say without the journalist's data"],a:0,
+ hint:"Compare the raw gap with the gap holding distance fixed. If distance were the explanation, the second would be much smaller.",why:"Controlling for distance barely moves the gap (₹92 → ₹94) because vehicle and distance are almost uncorrelated here. The premium is real and attached to the vehicle. The data cannot say whether ₹94 is fair; they can say it is not an artefact of trip length."},
+{t:"num",ph:"e.g. 1.5",q:"Fare on duration alone gives ₹5.662 per minute. With distance added, the duration coefficient is ₹1.741 and the distance coefficient ₹10.324 per km; regressing distance on duration gives a slope of 0.3798 km per minute. How large is the omitted-variable bias in the ₹5.662?",a:3.921,tol:0.03,
+ hint:"bias = β_distance × δ, or simply short minus long.",why:"10.324 × 0.3798 = 3.921, and indeed 5.662 − 1.741 = 3.921. A minute of trip \"carried\" 0.38 km of distance in the short regression. Charging ₹5.66 a minute would price distance twice."},
+{t:"num",ph:"e.g. 12",q:"In the model with a distance × surge interaction, the distance slope is 13.783 and the interaction coefficient is 3.996. What is the per-kilometre rate under surge?",a:17.78,tol:0.05,
+ hint:"Slope under surge = main slope + interaction.",why:"13.783 + 3.996 = ₹17.78 per km, about 29% above the non-surge rate. The surge main effect is −0.16 (not distinguishable from zero): surge works as a multiplier on distance, not a flat fee."},
+{t:"mcq",q:"Which statement about R² and adjusted R² is correct?",opts:["Adding any predictor can never lower R², but it lowers adjusted R² when the predictor adds less than its parameter costs","Adjusted R² is always larger than R²","R² falls whenever an irrelevant predictor is added","Both measures always move in the same direction when a predictor is added"],a:0,
+ hint:"Least squares can always use a new column to reduce SSE at least a little.",why:"SSE cannot rise when a column is added, so R² cannot fall. Adjusted R² divides SSE and SST by their degrees of freedom; a useless predictor lowers it. Here adding three zone dummies to the surge model raises R² by 0.00002 and lowers adjusted R²."},
+{t:"mcq",q:"Vehicle has three categories. Why does the model use only two dummy variables?",opts:["The third category is the reference; with an intercept, three dummies would always sum to 1 and be perfectly collinear with it","Autos are not important for pricing","Two dummies are enough for any categorical variable","Sedans and minis are the same category"],a:0,
+ hint:"What is mini + sedan + auto for every trip?",why:"For every trip exactly one of the three indicators is 1, so their sum equals the intercept column. Least squares cannot separate four perfectly collinear columns. Dropping one makes it the baseline that the others are compared with."}
+]});
+
+L.push({id:"l5",badge:"Residual Inspector",code:"File 5",title:"What the residuals know",topics:"Residual plots, heteroskedasticity and the Breusch–Pagan idea, robust standard errors, non-linearity and log transforms, outliers, leverage, Cook's distance, multicollinearity and VIF, Durbin–Watson",
+story:`<b>The ₹927 trip.</b> A 37 km sedan ride at ₹927 lands in the complaints inbox; the File 4 vehicle formula says ₹648. Someone proposes deleting it. Someone else notices the formula's misses are tiny in town and huge on airport runs. Before you trust any standard error from File 3, the residuals have to be interviewed.`,
+brief:`<p>Least-squares estimates are unbiased under weak conditions, but the standard errors, t tests and intervals of File 3 rest on assumptions about the errors. <span class="term">Residual plots</span> (residuals against fitted values or against each predictor) are how you check them. A healthy plot is a shapeless horizontal band.</p>
+<p><span class="term">Heteroskedasticity</span> is unequal error variance. Here the residual SD is ₹26 for short trips and ₹64 for long ones: a fan. The <span class="term">Breusch–Pagan (BP) test</span> (1979) regresses squared residuals on the predictors and rejects constant variance when they explain anything; its Lagrange multiplier (LM) statistic is n times that regression's R² (LM = 830 here). The coefficients remain unbiased; the fix for inference is <span class="term">heteroskedasticity-robust (White) standard errors</span>, which for the distance slope are 0.193 instead of 0.104.</p>
+<p>A curved residual plot means <span class="term">non-linearity</span>. A <span class="term">log transform</span> often straightens it and tames the fan at once; in a log–log model the slope is an elasticity:</p>
+<div class="formula">ln(fare) = α + β ln(distance):  1% more distance → β% more fare
+here β̂ = 0.62</div>
+<p>Single trips can matter. An <span class="term">outlier</span> has a large residual; a <span class="term">high-leverage</span> point has an unusual x (leverage hᵢ, average p/n); <span class="term">Cook's distance</span> (1977) combines both into how much all fitted values move when trip i is dropped. Trip NR04086 has the largest Cook's D (0.145) and a studentized residual of 9.9. Investigate such points; do not delete them because they are inconvenient.</p>
+<p><span class="term">Multicollinearity</span>: predictors that are nearly linear functions of each other make their separate coefficients imprecise. The <span class="term">variance inflation factor</span> VIFⱼ = 1/(1 − R²ⱼ), where R²ⱼ is from regressing xⱼ on the other predictors. Distance and duration correlate 0.95, so VIF = 10.5 for both, and the distance SE triples when duration joins. The <span class="term">Durbin–Watson (DW) statistic</span> (1950) checks first-order correlation of consecutive residuals, which matters for time series; near 2 means none.</p>`,
+refs:"Wooldridge (2020), ch. 8 (§8.2–8.3) and §9.5 · James et al. (2021), §3.3.3 · Breusch & Pagan, <i>Econometrica</i> 47 (1979) 1287–1294 · White, <i>Econometrica</i> 48 (1980) 817–838 · Cook, <i>Technometrics</i> 19 (1977) 15–18 · Durbin & Watson, <i>Biometrika</i> 37 (1950) 409–428.",
+lab:labDiagnostics,
+qs:[
+{t:"num",ph:"e.g. 3.0",q:"Distance and duration correlate r = 0.9512. In a model containing both, what is the variance inflation factor for distance?",a:10.49,tol:0.1,
+ hint:"With two predictors, R²ⱼ = r², so VIF = 1 / (1 − r²).",why:"1 / (1 − 0.9512²) = 1 / 0.0952 = 10.5. The variance of the distance coefficient is 10.5 times what it would be if duration were unrelated; its SE goes from 0.067 to 0.205. The rule of thumb flags VIF above 10."},
+{t:"mcq",q:"The residual SD of the fare–distance line is ₹25.6 for the shortest third of trips, ₹35.1 for the middle third and ₹63.9 for the longest. What follows for the File 3 results?",opts:["The slope estimate stays unbiased, but the classical standard errors and intervals are wrong; use heteroskedasticity-robust SEs","The slope estimate is biased upward","The regression must be discarded","The t statistic should be divided by three"],a:0,
+ hint:"Separate what heteroskedasticity does to the point estimate from what it does to the SE.",why:"Unequal variance does not bias least squares, but the formula σ̂/√Sxx assumes one σ. Robust (White) SEs estimate the sampling variance without that assumption: 0.193 instead of 0.104 for the slope. The sampling lab in File 3 showed exactly this gap."},
+{t:"num",ph:"e.g. 1.2",q:"The robust standard error of the distance slope is 0.1933; the classical one is 0.1037. By what factor was the classical SE too small?",a:1.864,tol:0.03,
+ hint:"Divide robust by classical.",why:"0.1933 / 0.1037 = 1.86. The t statistic falls from 139 to 75; still enormous, so the conclusion survives. The fix matters most for predictors whose classical t is near 2."},
+{t:"mcq",q:"Trip NR04086 (37.3 km, sedan, ₹927) has the largest Cook's distance in the vehicle model, 0.145, and a studentized residual of 9.9. What does Cook's distance measure?",opts:["How much all the fitted values change when this one trip is removed; it combines residual size with leverage","The size of the trip's residual in rupees","How far the trip's distance is from the mean distance","The probability that the trip is a data error"],a:0,
+ hint:"It is about influence on the fit, not just about being far from the line.",why:"Cook's D = Σ (ŷⱼ − ŷⱼ₍ᵢ₎)² / (p · MSE), the shift in every fitted value from dropping trip i, scaled. A big residual at a far-out x moves the line most. The 262 trips above 4/n are mostly long surge rides; the right response is to look at them, not to delete them."},
+{t:"mcq",q:"In the log–log model, ln(fare) = 3.82 + 0.62 ln(distance). How do you read 0.62?",opts:["A 1% longer trip has, on average, a 0.62% higher fare: an elasticity below one, so fare per km falls with distance","Each kilometre adds ₹0.62","The fare rises by 62% per kilometre","The model explains 62% of the variance"],a:0,
+ hint:"Both sides are logs, so both changes are proportional.",why:"In a log–log model the slope is the elasticity. It is below one because of the fixed component in fares (the intercept of ₹46 in levels), which weighs more on short trips. The log–log fit also shrinks the fan, though BP still rejects (LM = 218)."},
+{t:"mcq",q:"Sorting trips by their ID and computing Durbin–Watson on the residuals gives 2.02. What does that tell you?",opts:["Close to 2: no first-order autocorrelation in that ordering; since trips are a cross-section, not a time series, the test carries little weight here anyway","Strong positive autocorrelation","The errors are heteroskedastic","The model is misspecified"],a:0,
+ hint:"DW ≈ 2(1 − ρ̂₁). What is ρ̂₁ when DW = 2?",why:"DW near 2 means consecutive residuals are uncorrelated (values near 0 mean positive, near 4 negative autocorrelation). It is a time-series diagnostic; for independently sampled trips it is almost a formality."}
+]});
+
+L.push({id:"l6",badge:"Cross-Validator",code:"File 6",title:"Will it work tomorrow?",topics:"Train/test split, out-of-sample RMSE, overfitting, k-fold cross-validation, AIC and BIC for nested models, bias–variance intuition",
+story:`<b>The estimated-time-of-arrival (ETA) screen.</b> Product wants a model that predicts fares and durations for trips that have not happened yet. A contractor shows a ninth-degree polynomial with the lowest error anyone has seen. On the trips it was fitted to. You need an error that is measured on trips the model has never met.`,
+brief:`<p>A model's fit on the data that trained it flatters it: least squares can always bend a flexible model towards the noise. <span class="term">Overfitting</span> is learning the noise. The cure is to measure error on data held out of the fit. A <span class="term">train/test split</span> fits on one part and scores on the other, with the <span class="term">root mean squared error</span> as the score:</p>
+<div class="formula">RMSE = √( (1/m) Σ (yᵢ − ŷᵢ)² )  over the m test trips</div>
+<p>One split is noisy. <span class="term">k-fold cross-validation</span> (CV) divides the data into k folds, holds each out in turn, and averages the k test errors; k = 5 or 10 is standard. The model with the lowest cross-validated error is the one expected to do best on new trips. Here the full model with vehicle, surge × distance and duration scores 22.9 against 44.5 for the one-variable line.</p>
+<p>For models fitted by maximum likelihood (nested or not), two <span class="term">information criteria</span>, the Akaike information criterion (AIC) and the Bayesian information criterion (BIC), trade fit against size, using the maximised log-likelihood ln L and the number of parameters k (Akaike 1974; Schwarz 1978):</p>
+<div class="formula">AIC = −2 ln L + 2k
+BIC = −2 ln L + k ln n          (ln 4197 = 8.34)
+lower is better; BIC penalises size more when n is large</div>
+<p>The <span class="term">bias–variance trade-off</span> explains all of this. Expected test error = bias² + variance + irreducible noise. A straight line has bias (it cannot bend) but low variance (it barely changes between samples); a ninth-degree polynomial has little bias but enormous variance. Cross-validation finds the flexibility where the sum is smallest.</p>`,
+refs:"James et al. (2021), §2.2, ch. 5 (§5.1) and §6.1.3 · Wasserman (2004), §13.6 · Efron & Tibshirani, <i>An Introduction to the Bootstrap</i> (1993), ch. 17 · Akaike, <i>IEEE Trans. Automatic Control</i> 19 (1974) 716–723 · Schwarz, <i>Annals of Statistics</i> 6 (1978) 461–464.",
+lab:labCV,
+qs:[
+{t:"num",ph:"e.g. 25",q:"Run the lab's 5-fold cross-validation on the 400-trip sample with the straight line (degree 1). What is the mean test RMSE across the five folds, in rupees?",a:40.05,tol:0.3,
+ hint:"Press Run with degree 1 selected and read the average.",why:"Folds give 35.8, 42.1, 43.7, 39.6, 39.1; the mean is ₹40.05. The in-sample RMSE of the same line is 39.5: a little lower, as training error always is."},
+{t:"mcq",q:"With the degree-8 polynomial, four folds score about 37 to 45 but one scores 82. What happened?",opts:["Overfitting: the high-degree curve swung wildly where the held-out fold had trips beyond the training fold's range","The fold contained a data error","Degree 8 is too simple for this fold","Cross-validation is unreliable with 400 trips"],a:0,
+ hint:"Polynomials behave badly outside the range they were fitted on.",why:"A degree-8 curve fitted on 320 trips is unconstrained beyond the longest training trip. When the held-out fold held the longest trips, the curve had swung far from the data. The mean test RMSE of 49.7 is the right summary; the in-sample 38.6 was the flattering one."},
+{t:"mcq",q:"Illustrative small-sample demo in the lab: on 25 training trips, raising the polynomial degree from 1 to 9 lowers the training RMSE from 38 to 32 while the test RMSE on 375 other trips rises from 47 to over 10,000. Which description fits?",opts:["Variance dominates: the flexible model tracks the noise in 25 points and fails off them","Bias dominates: the model is too simple","The test set is too small","The training RMSE should also rise with degree"],a:0,
+ hint:"Which component of expected test error grows with flexibility?",why:"Training error can only fall as flexibility rises. Test error is bias² + variance + noise; past the right degree the variance term explodes while bias is already near zero. The straight line is the better forecaster here."},
+{t:"num",ph:"e.g. 5",q:"BIC charges k·ln n per parameter. With n = 4,197 completed trips, what is the per-parameter penalty ln n?",a:8.342,tol:0.01,
+ hint:"Natural logarithm of 4,197.",why:"ln 4,197 = 8.34, against AIC's constant 2. With large n, BIC demands more evidence before it admits a parameter. Here both agree on every step: adding duration to the vehicle model lowers AIC by 455 and BIC by 448."},
+{t:"mcq",q:"Five-fold CV RMSE on the full data: line 44.5; + vehicle 28.6; + duration 27.1; vehicle + surge × distance 23.5; all of those together 22.9. Which model should Product ship for fare prediction, and why?",opts:["The last one: it has the lowest cross-validated error, which estimates error on new trips; AIC and BIC agree","The line: it is simplest, and simplicity always wins","The vehicle model: adding more variables risks overfitting","Whichever has the highest R² on the training data"],a:0,
+ hint:"Prediction is judged out of sample.",why:"Cross-validation already charges for overfitting, so the lowest CV RMSE is the model expected to predict best. Here each added variable earns its place; the polynomial in distance, by contrast, did not."},
+{t:"mcq",q:"Which pairing is right?",opts:["Straight line: higher bias, low variance · degree-9 polynomial: low bias, high variance","Straight line: high variance · polynomial: high bias","Both have the same bias; they differ only in noise","Bias and variance both fall as flexibility rises"],a:0,
+ hint:"Bias is what a model cannot bend to; variance is how much it changes from sample to sample.",why:"A line cannot follow a curve (bias) but is almost the same from sample to sample (low variance). A high-degree polynomial can follow anything, including the noise, so it changes wildly between samples. The irreducible noise, RSE ≈ ₹23 even for the best model, is the floor."}
+]});
+
+L.push({id:"l7",badge:"Odds Maker",code:"File 7",title:"Thirty per cent walk away",topics:"Why not ordinary least squares (OLS) for a 0/1 outcome, odds and log-odds, the logistic curve, maximum likelihood, odds ratios, predicted probabilities, thresholds, confusion matrix, precision and recall, ROC and AUC",
+story:`<b>Operations' nightmare.</b> 1,803 of the 6,000 requests, 30%, were cancelled. Operations blames surge; drivers blame rain; riders blame the wait. An analyst tried the File 2 line on the 0/1 column and got predictions below zero for 86 requests. The outcome is a yes or a no, and it needs a model built for that.`,
+brief:`<p>Regressing a 0/1 outcome on predictors with least squares, the <span class="term">linear probability model</span>, gives fitted values that are supposed to be probabilities but can fall outside [0, 1] (here −0.16 to 1.02), and its errors cannot have constant variance. <span class="term">Logistic regression</span> (Berkson, 1944) models the <span class="term">log-odds</span> instead:</p>
+<div class="formula">odds = p / (1 − p)
+ln[ p / (1 − p) ] = β₀ + β₁x₁ + … + βₚxₚ
+p = 1 / (1 + e^−(β₀ + β₁x₁ + …))         the logistic curve</div>
+<p>Coefficients are estimated by <span class="term">maximum likelihood</span> (MLE): choose the β that make the observed cancellations and completions most probable, Π pᵢ^yᵢ (1 − pᵢ)^(1−yᵢ). There is no closed form; software iterates. Each e^βⱼ is an <span class="term">odds ratio</span> (OR): the factor by which the odds of cancelling multiply for a one-unit rise in xⱼ, holding the others fixed.</p>
+<div class="formula">cancel: ln(odds) = −1.99 + 0.176·wait + 0.983·surge
+                   + 0.507·rain − 0.046·distance
+e^0.983 = 2.67:  surge multiplies the odds of cancelling by 2.7</div>
+<p>To act, turn a probability into a decision with a <span class="term">threshold</span> c: predict "will cancel" when p̂ ≥ c. The <span class="term">confusion matrix</span> counts true positives (TP), false positives (FP), false negatives (FN) and true negatives (TN). <span class="term">Accuracy</span> = (TP + TN)/N flatters when one class dominates (always saying "will complete" is 70% accurate); <span class="term">precision</span> = TP/(TP + FP) and <span class="term">recall</span> (sensitivity) = TP/(TP + FN) show the trade-off as c moves. The <span class="term">receiver operating characteristic (ROC) curve</span> traces recall against the false positive rate over every c; the <span class="term">area under the curve</span> (AUC) is the probability that a random cancelled request scores above a random completed one (0.765 here).</p>`,
+refs:"James et al. (2021), §4.3 and §4.4.2 · Wooldridge (2020), §7.5 and §17.1 · Wasserman (2004), §13.7 · Berkson, <i>J. American Statistical Association</i> 39 (1944) 357–365.",
+lab:labLogistic,
+qs:[
+{t:"num",ph:"e.g. 1.5",q:"The surge coefficient in the cancellation logit is 0.9829. What is the odds ratio for surge?",a:2.672,tol:0.01,
+ hint:"Odds ratio = e^β.",why:"e^0.9829 = 2.67. Holding wait, rain and distance fixed, a surge request has 2.7 times the odds of being cancelled. Note: odds, not probability; the probability effect depends on where you start (0.21 → 0.42 for a 6-minute, 8 km request)."},
+{t:"num",ph:"e.g. 0.42",q:"What is the predicted probability of cancellation for a 5 km request with a 10-minute wait, under surge, in rain? (Intercept −1.9930; wait 0.1763; surge 0.9829; rain 0.5066; distance −0.0457.)",a:0.7372,tol:0.005,
+ hint:"Add up the log-odds, then p = 1 / (1 + e^−z).",why:"z = −1.9930 + 1.763 + 0.9829 + 0.5066 − 0.2285 = 1.0315, so p = 1/(1 + e^−1.0315) = 0.737. The same request with a 3-minute wait, no surge, no rain: z = −1.69, p = 0.16."},
+{t:"num",ph:"e.g. 0.5",q:"At threshold 0.5 the model gives TP = 749, FP = 394, FN = 1,054, TN = 3,803. What is its precision?",a:0.6553,tol:0.005,
+ hint:"Precision = TP / (TP + FP).",why:"749 / (749 + 394) = 0.655: two-thirds of flagged requests really cancel. Recall is 749 / 1,803 = 0.415: the model misses most cancellations at this threshold."},
+{t:"mcq",q:"The model's accuracy at threshold 0.5 is 0.759. Predicting \"completed\" for every request has accuracy 0.700. How should Operations read the 0.759?",opts:["As a modest gain over a useless baseline: accuracy is flattered by the 70% majority class; recall of 0.42 shows most cancellations are missed","As a strong model: 76% is a high score","As proof that cancellations are predictable from wait alone","As meaningless: accuracy cannot be computed for logistic regression"],a:0,
+ hint:"Compare with the baseline, then look at recall.",why:"With unbalanced classes, accuracy mostly rewards predicting the majority. Lowering the threshold to 0.3 raises recall to 0.67 at the cost of precision 0.53; which trade is right depends on the cost of a missed cancellation against a wasted intervention."},
+{t:"num",ph:"e.g. 1.2",q:"The wait coefficient is 0.1763 per minute. By what factor do the odds of cancellation multiply when the wait is 5 minutes longer, other things equal?",a:2.415,tol:0.02,
+ hint:"e^(5 × 0.1763).",why:"e^0.8815 = 2.42. Each minute multiplies the odds by 1.19; five minutes compound to 2.4. Among the operational levers, wait is the one Operations can actually move, which is File 8."},
+{t:"mcq",q:"The model's AUC is 0.765. What does that number mean?",opts:["Pick a random cancelled request and a random completed one: with probability 0.765 the model scores the cancelled one higher","76.5% of predictions are correct","The model explains 76.5% of the variance in cancellation","At the best threshold, precision is 0.765"],a:0,
+ hint:"AUC is threshold-free; it is about ranking.",why:"AUC is the area under the ROC curve and equals the probability of ranking a random positive above a random negative. 0.5 is coin-flipping, 1 is perfect ranking. It says nothing about any one threshold's accuracy."}
+]});
+
+L.push({id:"l8",badge:"Experimenter",code:"File 8",title:"From fitting to knowing",topics:"Observational regression vs randomised experiment, confounding, designing an A/B test, difference-in-differences, the limits of controlling for, the report to the CFO",
+story:`<b>The pitch.</b> Product has a new pickup-ETA screen that, they say, cuts cancellations. Their evidence: a logit on last quarter's data shows peak-hour requests cancel 36% of the time against 23% off-peak, and the screen "fixes peak". You know what a regression can say and what it cannot. Before the CFO signs, you design a test that can.`,
+brief:`<p>Every model so far was fitted to <span class="term">observational data</span>: trips happened as the market produced them. Surge was switched on when demand was high; waits were long when drivers were scarce. A coefficient on surge is the association between surge and cancelling <em>given the other variables in the model</em>. It is a causal effect only if nothing left out drives both. That unmet condition is <span class="term">confounding</span>.</p>
+<p>Peak hour shows how controlling works and where it stops. Alone, peak raises the log-odds of cancelling by 0.62. With wait and surge in the model, its coefficient is −0.09: peak acts <em>through</em> long waits and surge. Controlling for an observed confounder can remove its bias. Controlling cannot touch confounders you did not measure, and controlling for a variable that the treatment itself causes blocks part of the effect you want.</p>
+<p>A <span class="term">randomised experiment</span> (Fisher, 1925) breaks confounding by design: assign the treatment by a coin flip, so that treated and control groups differ only by chance, in every variable, measured or not. An <span class="term">A/B test</span> is that experiment on a product:</p>
+<div class="formula">effect = p̂_T − p̂_C
+SE = √( p̂_T(1−p̂_T)/n_T + p̂_C(1−p̂_C)/n_C )
+z = effect / SE;   reject at 5% if |z| > 1.96
+n per arm ≈ (1.96 + 0.84)² [p₀(1−p₀) + p₁(1−p₁)] / (p₀ − p₁)²
+            for 80% power</div>
+<p>Design choices: randomise at the request level (not by city or by day, which would confound the treatment with place or time); fix the primary metric (cancellation rate) and the sample size before looking; do not stop early on a good-looking day. To cut 30.0% to 27.0% you need about 3,400 requests per arm.</p>
+<p>When randomising is impossible, <span class="term">difference-in-differences</span> (DiD) compares the change over time in a treated group with the change in an untreated one, which removes trends that both share; it assumes the two groups would have moved in parallel without the treatment. It is a weaker claim than a randomised result, and should be stated as one.</p>`,
+refs:"Wooldridge (2020), §13.2 (difference-in-differences) and ch. 1 (ceteris paribus) · James et al. (2021), §3.3.2 (interactions) · Casella & Berger, <i>Statistical Inference</i> (2nd ed., 2002), ch. 10 (large-sample tests, including proportions) · Fisher, <i>Statistical Methods for Research Workers</i> (1925) · Neyman & Pearson, <i>Phil. Trans. Royal Society A</i> 231 (1933) 289–337.",
+lab:labAB,
+qs:[
+{t:"num",ph:"e.g. 1500",q:"Baseline cancellation is 30.05%. Using the sample-size formula with 1.96 + 0.84, how many requests per arm are needed to detect a fall to 27.0% with 80% power at the 5% level?",a:3433,tol:70,
+ hint:"(2.80)² × [0.3005 × 0.6995 + 0.27 × 0.73] / 0.0305².",why:"7.84 × (0.2102 + 0.1971) / 0.000930 ≈ 3,433 per arm (3,437 with the unrounded 0.8416 for 80% power), about 6,900 requests in all. Halving the detectable effect quadruples the sample; detecting a 5-point fall needs about 1,220 per arm."},
+{t:"mcq",q:"Peak requests cancel 36% of the time against 23% off-peak, and peak alone has a logit coefficient of +0.62. With wait time and surge in the model, peak's coefficient is −0.09. What does this say about Product's claim that the ETA screen \"fixes peak\"?",opts:["Peak raises cancellations through longer waits and surge; given those, peak itself adds nothing. The screen can only help if it changes what riders do while waiting, which only an experiment can show","The screen is proven to work because peak is significant","Peak hours cause cancellations directly, so the screen must target peak","The two models contradict each other, so the data are unusable"],a:0,
+ hint:"What happens to a coefficient when the variables it works through are added?",why:"Peak is a proxy for conditions (scarce drivers, surge) that drive cancellations. A regression can show that; it cannot show what a new screen will do to riders' behaviour, because no rider in the file ever saw the screen."},
+{t:"mcq",q:"What does randomising requests to the new screen buy that controlling for wait, surge, rain and distance cannot?",opts:["Balance, in expectation, on every confounder, including the ones nobody measured","A larger sample size","A higher R²","Exact equality of the two groups on every variable"],a:0,
+ hint:"Which confounders can a regression adjust for?",why:"Regression adjusts for the variables you have. Randomisation makes the treated and control groups alike on everything, measured or not, up to chance that the standard error accounts for. Exact equality is not promised; balance in expectation is."},
+{t:"num",ph:"e.g. 0.05",q:"Illustrative: the screen is switched on in one city only. Its cancellation rate moves from 0.32 before to 0.26 after; a comparison city moves from 0.30 to 0.28 over the same weeks. What is the difference-in-differences estimate of the effect?",a:-0.04,tol:0.002,
+ hint:"(after − before) in the treated city minus (after − before) in the comparison city.",why:"(0.26 − 0.32) − (0.28 − 0.30) = −0.06 − (−0.02) = −0.04. The comparison city removes the 2-point fall that both cities shared. The result rests on the parallel-trends assumption, which cannot be tested on these four numbers."},
+{t:"mcq",q:"Illustrative A/B result: control 900 cancellations in 3,000 requests (0.300), treatment 810 in 3,000 (0.270), z = 2.57, p = 0.010. How should the report put it?",opts:["The screen cut cancellations by 3.0 points (95% CI about 0.7 to 5.3 points), significant at the 5% level; the interval is wide, so plan the rollout on a range of effects","The screen cuts cancellations by exactly 3 points","The result is not significant because 3 points is small","p = 0.010 means a 1% chance the screen does nothing"],a:0,
+ hint:"SE = √(0.3 × 0.7/3000 + 0.27 × 0.73/3000) ≈ 0.0117.",why:"3.0 ± 1.96 × 1.17 points gives roughly 0.7 to 5.3 points. The p-value is the chance of a gap this large if the screen did nothing, not the chance that it does nothing. Report the estimate with its interval."},
+{t:"mcq",q:"Finishing the CFO report, you want to add that the ETA screen's effect is \"after controlling for surge\", using surge recorded after the screen was shown. Why is that a mistake?",opts:["Surge measured after treatment may itself be affected by the screen (fewer cancellations change supply), so controlling for it blocks part of the effect being measured","Surge is never a valid control variable","Controlling for more variables always improves a causal estimate","Because surge is a dummy variable"],a:0,
+ hint:"Is surge a cause of the treatment or a consequence of it?",why:"Control for variables fixed before the treatment (pre-treatment covariates). A variable on the path from treatment to outcome is a mediator; conditioning on it removes the part of the effect that runs through it. In a randomised test no controls are needed for validity; pre-treatment covariates only sharpen precision."}
+]});
+
+const BOARD=[
+{t:"mcq",q:"A fare regression gives a slope of ₹14.47 per km with a 95% confidence interval of [14.27, 14.67]. Which statement is right?",opts:["Across trips, fares differ by about ₹14.47 per extra km on average; the interval covers the true average rate with 95% confidence","Every trip's fare rises by exactly ₹14.47 per km","95% of trips have a per-km rate between 14.27 and 14.67","The interval is for one new trip's fare"],a:0,why:"A slope is an average rate; the confidence interval is about that parameter, not about individual trips or their fares."},
+{t:"num",q:"For a small data set, Σ(xᵢ − x̄)(yᵢ − ȳ) = 200 and Σ(xᵢ − x̄)² = 50. What is the least-squares slope?",a:4,tol:0.01,why:"β̂₁ = Sxy / Sxx = 200 / 50 = 4."},
+{t:"mcq",q:"Which interval is wider at the same x₀, and why?",opts:["The prediction interval, because it adds the new observation's own error variance to the uncertainty in the fitted mean","The confidence interval for the mean response, because it uses more data","They are the same width when n is large","The confidence interval, because t is larger"],a:0,why:"PI uses √(1 + 1/n + …), CI uses √(1/n + …). The extra 1 is the trip's own scatter, which never shrinks with n."},
+{t:"num",q:"In a logistic regression the coefficient on \"rain\" is 0.5066. What is the odds ratio for rain?",a:1.66,tol:0.01,why:"e^0.5066 = 1.66: rain multiplies the odds of cancelling by about 1.66, other predictors fixed."},
+{t:"mcq",q:"Two predictors have a variance inflation factor of 10. What does that mean?",opts:["Each coefficient's variance is 10 times what it would be if the predictors were uncorrelated; R² of one on the other is 0.9","The model explains 10 times more variance","Ten predictors are collinear","The coefficients are biased by a factor of 10"],a:0,why:"VIF = 1/(1 − R²ⱼ) = 10 means R²ⱼ = 0.9. Collinearity inflates variances; it does not bias the estimates."},
+{t:"mcq",q:"You add an irrelevant predictor to a regression. What happens to R² and adjusted R²?",opts:["R² cannot fall (it typically rises slightly); adjusted R² typically falls","Both fall","Both rise by the same amount","R² falls; adjusted R² rises"],a:0,why:"Least squares can always use the new column to shave SSE a little, so R² does not fall. Adjusted R² charges a degree of freedom, so a useless column lowers it."},
+{t:"num",q:"Five-fold cross-validation gives test RMSEs of 20, 22, 24, 26 and 28. What is the cross-validated RMSE?",a:24,tol:0.01,why:"The average of the five fold errors: (20 + 22 + 24 + 26 + 28)/5 = 24."},
+{t:"mcq",q:"To learn whether a new pickup-ETA screen reduces cancellations, which design gives the most credible answer?",opts:["Randomise requests to see or not see the screen, fix the metric and sample size in advance, compare the two rates","Show the screen in one city and compare it with another city","Regress cancellation on screen exposure, controlling for every variable in the file","Show the screen to riders who ask for it and compare them with the rest"],a:0,why:"Randomisation balances all confounders, measured or not, in expectation. City comparisons need parallel trends; self-selection and observational controls leave unmeasured confounding in place."}
+];
+
+/* ---------- labs ---------- */
+function labScatter(root){
+  root.innerHTML=`<p class="note">Left: 300 completed trips drawn at random from the file. Pick two columns; the lab computes covariance and r live from those 300 and shows the full-file value beside them. Right: four small illustrative sets with the same x values that share nothing but a line.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  const COLS={0:["distance (km)",0,46],3:["duration (min)",0,120],4:["wait (min)",0,30],6:["hour of day",6,23],1:["fare (₹)",0,950],5:["rating",3,5]};
+  const FULL={"0|1":0.907,"3|1":0.8887,"4|1":0.0805,"6|1":0.0215,"4|5":-0.222,"0|3":0.9512,"0|5":0.016,"3|5":-0.0117,"4|3":0.0846,"6|5":0.0117,"6|3":0.0057};
+  left.innerHTML=`<div class="btnrow"><label for="sx">x</label><select id="sx"><option value="0">distance</option><option value="3">duration</option><option value="4">wait</option><option value="6">hour</option></select>
+    <label for="sy">y</label><select id="sy"><option value="1">fare</option><option value="5">rating</option><option value="3">duration</option></select>
+    <label class="confirm" style="font-size:.85rem"><input type="checkbox" id="sline"> show least-squares line</label></div>
+    <div class="svgbox"><canvas aria-label="Scatter plot of the chosen pair of variables"></canvas></div>
+    <div class="readout"><div><span>Covariance (300 trips)</span><b id="scov"></b></div><div><span>r (300 trips)</span><b id="sr"></b></div><div><span>r² (300 trips)</span><b id="sr2"></b></div><div><span>r, all completed trips</span><b id="sfull"></b></div></div>`;
+  const W=360,H=250,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  function draw(){const xi=+$("#sx",left).value,yi=+$("#sy",left).value;const xs=SUB300.map(p=>p[xi]),ys=SUB300.map(p=>p[yi]);const f=ols(xs,ys);
+    $("#scov",left).textContent=(f.sxy/(f.n-1)).toFixed(2);$("#sr",left).textContent=f.r.toFixed(3);$("#sr2",left).textContent=(f.r*f.r).toFixed(3);
+    const key=xi+"|"+yi;$("#sfull",left).textContent=FULL[key]!==undefined?FULL[key].toFixed(3):(xi===yi?"—":"n/a");
+    g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const m={l:44,r:12,t:20,b:32};const cx=COLS[xi],cy=COLS[yi];
+    const xt=[cx[1],Math.round((cx[1]+cx[2])/2),cx[2]],yt=[cy[1],Math.round((cy[1]+cy[2])/2*10)/10,cy[2]];
+    const ax=axes(g,W,H,m,[cx[1],cx[2]],[cy[1],cy[2]],xt,yt,cx[0],cy[0]);
+    g.fillStyle=cssVar("--accent");g.globalAlpha=0.55;xs.forEach((x,i)=>{g.beginPath();g.arc(ax.X(x),ax.Y(ys[i]),3,0,7);g.fill();});g.globalAlpha=1;
+    if($("#sline",left).checked){g.strokeStyle=cssVar("--gold");g.lineWidth=2;g.beginPath();g.moveTo(ax.X(cx[1]),ax.Y(f.b0+f.b1*cx[1]));g.lineTo(ax.X(cx[2]),ax.Y(f.b0+f.b1*cx[2]));g.stroke();g.lineWidth=1;}
+    g.fillStyle=cssVar("--ink");g.font=FONT;g.textAlign="right";g.fillText("r = "+f.r.toFixed(3),W-m.r,m.t-4);g.textAlign="left";}
+  ["sx","sy","sline"].forEach(id=>$("#"+id,left).addEventListener("change",draw));draw();
+  // quartet
+  right.innerHTML=`<span class="eyebrow">Same x, four stories (illustrative sets)</span><div class="svgbox" id="quart"></div><p class="note">A: a line with noise, r = 0.99. B: a perfect curve, r = 0.67. C: a flat cloud and one far point, r = 0.58. D: ten identical x values and one leverage point, r = 0.68. Three of the four have a similar r; no two look alike.</p>`;
+  const Wq=360,Hq=300,s=sv("svg",{viewBox:`0 0 ${Wq} ${Hq}`,role:"img","aria-label":"Four small scatter plots with their least-squares lines"});
+  const names=["A","B","C","D"];names.forEach((k,i)=>{const q=QUARTET[k];const ox=(i%2)*180,oy=Math.floor(i/2)*150;const X=v=>ox+22+(v-1)/15*140,Y=v=>oy+130-(v-1)/16*110;
+    s.appendChild(sv("rect",{x:ox+6,y:oy+6,width:168,height:138,rx:6,style:"fill:var(--sunk);stroke:var(--line)"}));
+    s.appendChild(sv("line",{x1:X(1),x2:X(16),y1:Y(q.b0+q.b1),y2:Y(q.b0+q.b1*16),style:"stroke:var(--gold);stroke-width:1.8"}));
+    q.x.forEach((x,j)=>s.appendChild(sv("circle",{cx:X(x),cy:Y(q.y[j]),r:3.4,style:"fill:var(--accent)"})));
+    const t=sv("text",{x:ox+14,y:oy+22,"font-size":11,"font-weight":"600"});t.textContent=`${k}  r = ${q.r.toFixed(2)}`;s.appendChild(t);
+    const t2=sv("text",{x:ox+14,y:oy+138,"font-size":9,style:"fill:var(--muted)"});t2.textContent=`ŷ = ${q.b0.toFixed(2)} + ${q.b1.toFixed(2)}x`;s.appendChild(t2);});
+  $("#quart",right).appendChild(s);
+}
+
+function labHandFit(root){
+  root.innerHTML=`<p class="note">The same 300 trips. Drag the slope and intercept and watch the sum of squared errors. Then let gradient descent walk downhill to the least-squares answer, one step at a time. Getting within 2% of the minimum by hand earns a badge.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="svgbox"><canvas aria-label="Scatter of fare against distance with an adjustable line and its residuals"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="gdrun" type="button">Run gradient descent</button><button class="btn ghost small" id="gdreset" type="button">Reset line</button><span id="gdsp"></span><label class="confirm" style="font-size:.85rem"><input type="checkbox" id="showres" checked> residuals</label></div>`;
+  right.innerHTML=`<label for="hb1">Slope β₁ (₹ per km): <output id="hb1o"></output></label><input type="range" id="hb1" min="0" max="30" step="0.05" value="10">
+    <label for="hb0">Intercept β₀ (₹): <output id="hb0o"></output></label><input type="range" id="hb0" min="-50" max="200" step="0.5" value="100">
+    <div class="svgbox" id="ssemeter"></div>
+    <div class="readout"><div><span>SSE of your line</span><b id="hsse"></b></div><div><span>SSE at the least-squares line</span><b>${ind(Math.round(SUBFIT.sse))}</b></div><div><span>Least-squares β̂₀, β̂₁ (300 trips)</span><b>${SUBFIT.b0.toFixed(1)}, ${SUBFIT.b1.toFixed(2)}</b></div><div><span>Gradient-descent steps</span><b id="gdn">0</b></div></div>
+    <p class="note" id="hnote"></p><p class="note">Full file (4,197 trips): β̂₀ = 46.23, β̂₁ = 14.47, SSE = 8,301,463. The 300-trip sample gives slightly different numbers, as any sample does; File 3 is about how different.</p>`;
+  const W=360,H=270,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  const xs=SUB300.map(p=>p[0]),ys=SUB300.map(p=>p[1]);const n=xs.length,xb=SUBFIT.xbar;
+  let b1=10,b0=100,speed=1,anim=null,steps=0,got=false,byHand=false;
+  const sse=(a0,a1)=>{let s=0;for(let i=0;i<n;i++){const e=ys[i]-a0-a1*xs[i];s+=e*e;}return s;};
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const m={l:46,r:12,t:18,b:32};
+    const ax=axes(g,W,H,m,[0,46],[0,950],[0,10,20,30,40],[0,200,400,600,800],"distance (km)","fare (₹)");
+    if($("#showres",left).checked){g.strokeStyle=cssVar("--fraud");g.globalAlpha=0.35;for(let i=0;i<n;i++){g.beginPath();g.moveTo(ax.X(xs[i]),ax.Y(ys[i]));g.lineTo(ax.X(xs[i]),ax.Y(Math.max(0,Math.min(950,b0+b1*xs[i]))));g.stroke();}g.globalAlpha=1;}
+    g.fillStyle=cssVar("--accent");g.globalAlpha=0.6;for(let i=0;i<n;i++){g.beginPath();g.arc(ax.X(xs[i]),ax.Y(ys[i]),3,0,7);g.fill();}g.globalAlpha=1;
+    g.strokeStyle=cssVar("--muted");g.setLineDash([4,3]);g.beginPath();g.moveTo(ax.X(0),ax.Y(SUBFIT.b0));g.lineTo(ax.X(46),ax.Y(SUBFIT.b0+SUBFIT.b1*46));g.stroke();g.setLineDash([]);
+    g.strokeStyle=cssVar("--gold");g.lineWidth=2.5;g.beginPath();g.moveTo(ax.X(0),ax.Y(b0));g.lineTo(ax.X(46),ax.Y(b0+b1*46));g.stroke();g.lineWidth=1;
+    g.fillStyle=cssVar("--muted");g.font=FONT;g.fillText("gold: your line · dashed: least squares",m.l+100,m.t-4);
+    const S=sse(b0,b1);$("#hsse",right).textContent=ind(Math.round(S));$("#hb1o",right).textContent=b1.toFixed(2);$("#hb0o",right).textContent=b0.toFixed(1);$("#hb1",right).value=b1;$("#hb0",right).value=b0;
+    const ratio=S/SUBFIT.sse;$("#hnote",right).textContent=ratio<1.02?"Within 2% of the minimum. No other line does better: that is what least squares means.":ratio<1.2?"Close. The residual lines are nearly balanced above and below.":"Large misses. Residuals should sum to zero and show no trend along x.";
+    if(ratio<1.02&&!got&&byHand){got=true;award("handfit");}
+    // meter
+    const Wm=360,Hm=46,lo=Math.log(SUBFIT.sse),hi=Math.log(SUBFIT.sst*3);const Xm=v=>12+(Math.log(Math.max(SUBFIT.sse,Math.min(SUBFIT.sst*3,v)))-lo)/(hi-lo)*(Wm-24);
+    const s=sv("svg",{viewBox:`0 0 ${Wm} ${Hm}`,role:"img","aria-label":"Sum of squared errors meter"});s.appendChild(sv("rect",{x:12,y:16,width:Wm-24,height:8,rx:4,style:"fill:var(--line)"}));
+    s.appendChild(sv("rect",{x:12,y:16,width:Xm(S)-12,height:8,rx:4,style:"fill:var(--fraud)"}));
+    [["min",SUBFIT.sse],["flat line ȳ",SUBFIT.sst]].forEach(([t,v])=>{s.appendChild(sv("line",{x1:Xm(v),x2:Xm(v),y1:12,y2:28,style:"stroke:var(--ink)"}));const tx=sv("text",{x:Xm(v),y:40,"font-size":10,"text-anchor":t==="min"?"start":"middle"});tx.textContent=t;s.appendChild(tx);});
+    const tt=sv("text",{x:Wm-12,y:10,"font-size":10,"text-anchor":"end"});tt.textContent="SSE (log scale)";s.appendChild(tt);
+    const box=$("#ssemeter",right);box.innerHTML="";box.appendChild(s);}
+  $("#hb1",right).addEventListener("input",e=>{b1=+e.target.value;byHand=true;draw();});$("#hb0",right).addEventListener("input",e=>{b0=+e.target.value;byHand=true;draw();});$("#showres",left).addEventListener("change",draw);
+  // gradient descent on centred x: y = a + b (x − x̄); lr scaled by variances
+  const varx=SUBFIT.Sxx/n;
+  function gdStep(){let ga=0,gb=0;for(let i=0;i<n;i++){const e=ys[i]-b0-b1*xs[i];ga+=e;gb+=e*(xs[i]-xb);}ga/=n;gb/=n;let a=b0+b1*xb;a+=0.35*2*ga;b1+=0.35*2*gb/varx;b0=a-b1*xb;steps++;$("#gdn",right).textContent=steps;}
+  $("#gdrun",left).addEventListener("click",()=>{if(anim)anim.stop();steps=0;byHand=false;if(REDUCED){for(let k=0;k<60;k++)gdStep();anim=null;draw();return;}let acc=0;anim=loop(()=>{acc+=0.12*speed;while(acc>=1&&steps<80){acc-=1;gdStep();}draw();if(steps>=80||Math.abs(b1-SUBFIT.b1)<0.002&&Math.abs(b0-SUBFIT.b0)<0.02){anim.stop();anim=null;draw();}});});
+  $("#gdreset",left).addEventListener("click",()=>{if(anim)anim.stop();anim=null;b1=10;b0=100;steps=0;$("#gdn",right).textContent=0;draw();});
+  speedSeg($("#gdsp",left),v=>{speed=v;},[1,4]);
+  draw();
+}
+
+function labSlopeSampling(root){
+  root.innerHTML=`<p class="note">Treat the 300 trips as the population. Each run draws 100 of them at random, fits the line, and drops its slope onto the pile. The pile is the sampling distribution of β̂₁. Beside it, the textbook standard error RSE/√Sxx averaged over those samples.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="svgbox"><canvas aria-label="Current sample's fitted line, and a histogram of slopes from repeated samples"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="ssrun" type="button">Draw 200 samples</button><button class="btn ghost small" id="ssone" type="button">One sample</button><button class="btn ghost small" id="ssreset" type="button">Reset</button><span id="sssp"></span></div>
+    <div class="readout"><div><span>Samples drawn</span><b id="ssn">0</b></div><div><span>Mean of slopes</span><b id="ssm">—</b></div><div><span>SD of slopes (empirical SE)</span><b id="sssd">—</b></div><div><span>Mean textbook SE</span><b id="ssse">—</b></div></div>`;
+  right.innerHTML=`<span class="eyebrow">What the pile should look like</span><div class="formula">β̂₁ ≈ Normal( β₁ , σ² / Sxx )
+SE(β̂₁) = RSE / √Sxx
+95% CI = β̂₁ ± t₀.₀₂₅ · SE(β̂₁)</div>
+    <p class="note">The gold curve is a Normal centred on the 300-trip slope (15.06) with the textbook SE for n = 100 (about 0.65). The pile is wider (SD about 1.3). The formula assumes the same error variance at every distance; this scatter fans out. File 5 names the problem and the fix.</p>
+    <div class="readout"><div><span>Full file: β̂₁ ± SE</span><b>14.470 ± 0.104</b></div><div><span>Full file: 95% CI</span><b>[14.27, 14.67]</b></div><div><span>Full file: t, F</span><b>139.5, 19,458</b></div><div><span>At 10 km: CI for mean</span><b>[189.5, 192.3]</b></div><div><span>At 10 km: prediction interval</span><b>[103.7, 278.2]</b></div></div>`;
+  const W=360,H=300,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  let r=rng(31),slopes=[],seSum=0,cur=null,speed=1,anim=null;
+  function one(){const idx=shuffled(300,Math.floor(r()*1e9)).slice(0,100);const xs=idx.map(i=>SUB300[i][0]),ys=idx.map(i=>SUB300[i][1]);const f=ols(xs,ys);slopes.push(f.b1);seSum+=f.rse/Math.sqrt(f.sxx);cur={idx,f};}
+  function stats(){const n=slopes.length;$("#ssn",left).textContent=n;if(!n){$("#ssm",left).textContent="—";$("#sssd",left).textContent="—";$("#ssse",left).textContent="—";return;}const m=slopes.reduce((a,b)=>a+b,0)/n;const sd=n>1?Math.sqrt(slopes.reduce((a,b)=>a+(b-m)**2,0)/(n-1)):0;$("#ssm",left).textContent=m.toFixed(3);$("#sssd",left).textContent=n>1?sd.toFixed(3):"—";$("#ssse",left).textContent=(seSum/n).toFixed(3);}
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);
+    // top: scatter of current sample
+    const m={l:44,r:12,t:16,b:168};const ax=axes(g,W,H,m,[0,46],[0,950],[0,20,40],[0,400,800],"distance (km)","fare (₹)");
+    g.fillStyle=cssVar("--line");SUB300.forEach(p=>{g.beginPath();g.arc(ax.X(p[0]),ax.Y(p[1]),2,0,7);g.fill();});
+    if(cur){g.fillStyle=cssVar("--accent");cur.idx.forEach(i=>{const p=SUB300[i];g.beginPath();g.arc(ax.X(p[0]),ax.Y(p[1]),3,0,7);g.fill();});g.strokeStyle=cssVar("--accent");g.lineWidth=2;g.beginPath();g.moveTo(ax.X(0),ax.Y(cur.f.b0));g.lineTo(ax.X(46),ax.Y(cur.f.b0+46*cur.f.b1));g.stroke();g.lineWidth=1;
+      g.fillStyle=cssVar("--ink");g.font=FONT;g.textAlign="right";g.fillText("this sample: β̂₁ = "+cur.f.b1.toFixed(2),W-m.r,m.t+10);g.textAlign="left";}
+    // bottom: histogram of slopes 10..20
+    const m2={l:44,r:12,t:186,b:28};const lo=10,hi=20,nb=40,bw=(hi-lo)/nb;const counts=new Array(nb).fill(0);slopes.forEach(s=>{const k=Math.floor((s-lo)/bw);if(k>=0&&k<nb)counts[k]++;});
+    const ymax=Math.max(10,...counts);const X=v=>m2.l+(v-lo)/(hi-lo)*(W-m2.l-m2.r),Y=v=>H-m2.b-v/ymax*(H-m2.t-m2.b);
+    g.strokeStyle=cssVar("--line");g.beginPath();g.moveTo(m2.l,Y(0));g.lineTo(W-m2.r,Y(0));g.stroke();g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";g.textAlign="center";[10,12,14,16,18,20].forEach(v=>g.fillText(v,X(v),H-m2.b+13));g.textAlign="left";
+    g.fillStyle=cssVar("--accent");counts.forEach((c,k)=>{if(c)g.fillRect(X(lo+k*bw)+1,Y(c),X(lo+(k+1)*bw)-X(lo+k*bw)-2,Y(0)-Y(c));});
+    // normal with textbook SE
+    const se=0.651,mu=SUBFIT.b1,n=Math.max(slopes.length,1);g.strokeStyle=cssVar("--gold");g.lineWidth=2;g.beginPath();for(let i=0;i<=120;i++){const v=lo+(hi-lo)*i/120;const yv=normPDF(v,mu,se)*bw*n;const px=X(v),py=Y(Math.min(yv,ymax*1.05));i?g.lineTo(px,py):g.moveTo(px,py);}g.stroke();g.lineWidth=1;
+    g.strokeStyle=cssVar("--fraud");g.setLineDash([4,3]);g.beginPath();g.moveTo(X(M1.b1),Y(0));g.lineTo(X(M1.b1),m2.t);g.stroke();g.setLineDash([]);
+    g.fillStyle=cssVar("--ink");g.font=FONT;g.fillText("slopes of 100-trip samples · gold: textbook Normal · red: full file",m2.l,m2.t-5);}
+  $("#ssone",left).addEventListener("click",()=>{if(anim)anim.stop();one();stats();draw();});
+  $("#ssrun",left).addEventListener("click",()=>{if(anim)anim.stop();const target=slopes.length+200;if(REDUCED){while(slopes.length<target)one();stats();draw();award("sampler");return;}let acc=0;anim=loop(()=>{acc+=0.5*speed;while(acc>=1&&slopes.length<target){acc-=1;one();}stats();draw();if(slopes.length>=target){anim.stop();award("sampler");}});});
+  $("#ssreset",left).addEventListener("click",()=>{if(anim)anim.stop();r=rng(31);slopes=[];seSum=0;cur=null;stats();draw();});
+  speedSeg($("#sssp",left),v=>{speed=v;},[1,4,16]);
+  stats();draw();
+}
+
+function labMultiple(root){
+  root.innerHTML=`<p class="note">Four fitted models on the 4,197 completed trips, side by side. Switch between them and watch the coefficients and the fit move; then price a trip with the vehicle model and see the three parallel lines the journalist did not draw.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  const MODELS={m1:{name:"fare ~ distance",rows:[["Intercept",M1.b0,M1.se0],["distance (per km)",M1.b1,M1.se1]],r2:M1.r2,adj:M1.r2,rse:M1.rse,note:"The File 2 line. Autos sit below it and sedans above it at every distance."},
+    mv:{name:"fare ~ vehicle",rows:[["Intercept (auto)",MV.b0,2.4388],["mini",MV.mini,3.4358],["sedan",MV.sedan,4.3237]],r2:MV.r2,adj:MV.adj,rse:MV.rse,note:"The journalist's regression: group means. Sedans are ₹91.6 above autos on average, but distance is ignored."},
+    m2:{name:"fare ~ distance + vehicle",rows:[["Intercept (auto)",M2.b0,M2.se.b0],["distance (per km)",M2.dist,M2.se.dist],["mini",M2.mini,M2.se.mini],["sedan",M2.sedan,M2.se.sedan]],r2:M2.r2,adj:M2.adj,rse:M2.rse,note:"Three parallel lines. The sedan gap holding distance fixed is ₹94.2: distance explains none of it, because sedans travel the same distances."},
+    m3:{name:"fare ~ distance + duration + vehicle",rows:[["Intercept (auto)",M3.b0,M3.se.b0],["distance (per km)",M3.dist,M3.se.dist],["duration (per min)",M3.dur,M3.se.dur],["mini",M3.mini,M3.se.mini],["sedan",M3.sedan,M3.se.sedan]],r2:M3.r2,adj:M3.adj,rse:M3.rse,note:"Duration earns ₹1.79 a minute once distance is held fixed, not the ₹5.66 of the one-variable regression. The distance SE triples (0.067 → 0.205): File 5 explains why."},
+    m4:{name:"fare ~ distance × surge + vehicle",rows:[["Intercept (auto)",M4.b0,M4.se.b0],["distance (per km)",M4.dist,M4.se.dist],["surge (flat)",M4.surge,M4.se.surge],["distance × surge",M4.ds,M4.se.ds],["mini",M4.mini,M4.se.mini],["sedan",M4.sedan,M4.se.sedan]],r2:M4.r2,adj:M4.adj,rse:M4.rse,note:"An interaction: under surge the per-km rate is 13.78 + 4.00 = ₹17.78. The flat surge term is indistinguishable from zero."}};
+  left.innerHTML=`<div class="regbtns" id="mpick">${Object.keys(MODELS).map((k,i)=>`<button class="regbtn" type="button" data-m="${k}" aria-pressed="${i===0}">${MODELS[k].name}</button>`).join("")}</div>
+    <div class="tbl"><table><thead><tr><th>Term</th><th>Coefficient</th><th>SE</th><th>t</th></tr></thead><tbody id="mtab"></tbody></table></div>
+    <div class="readout"><div><span>R²</span><b id="mr2"></b></div><div><span>Adjusted R²</span><b id="madj"></b></div><div><span>RSE (₹)</span><b id="mrse"></b></div></div><p class="note" id="mnote"></p>`;
+  function show(k){const M=MODELS[k];$("#mtab",left).innerHTML=M.rows.map(([t,c,s])=>`<tr><td>${t}</td><td class="num">${c.toFixed(3)}</td><td class="num">${s.toFixed(4)}</td><td class="num">${(c/s).toFixed(1)}</td></tr>`).join("");$("#mr2",left).textContent=M.r2.toFixed(4);$("#madj",left).textContent=M.adj.toFixed(4);$("#mrse",left).textContent=M.rse.toFixed(2);$("#mnote",left).textContent=M.note;}
+  left.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{left.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));show(b.dataset.m);}));show("m1");
+  right.innerHTML=`<span class="eyebrow">Price a trip with the vehicle model</span>
+    <label for="pkm">Distance: <output id="pkmo"></output> km</label><input type="range" id="pkm" min="1" max="45" step="0.5" value="12">
+    <div class="regbtns" id="pveh"><button class="regbtn" type="button" data-v="0" aria-pressed="true">auto</button><button class="regbtn" type="button" data-v="1" aria-pressed="false">mini</button><button class="regbtn" type="button" data-v="2" aria-pressed="false">sedan</button></div>
+    <div class="readout"><div><span>Predicted fare</span><b id="pfare"></b></div><div><span>Gap to an auto, same distance</span><b id="pgap"></b></div></div>
+    <div class="svgbox" id="plines"></div>
+    <div class="tbl"><table><thead><tr><th>Vehicle</th><th>Trips</th><th>Mean km</th><th>Mean fare</th><th>Mean ₹/km</th></tr></thead><tbody>${Object.keys(VEH).map(v=>`<tr><td>${v}</td><td class="num">${ind(VEH[v].n)}</td><td class="num">${VEH[v].md.toFixed(2)}</td><td class="num">₹${VEH[v].mf.toFixed(0)}</td><td class="num">${VEH[v].pk.toFixed(1)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="note">Mean distance is the same for all three vehicles, so "sedans go farther" is false before any model is fitted. Mean ₹/km is a different trap: a fixed component makes ₹/km fall with distance for every vehicle.</p>`;
+  let veh=0;
+  function price(){const km=+$("#pkm",right).value;$("#pkmo",right).textContent=km;const add=[0,M2.mini,M2.sedan][veh];const f=M2.b0+add+M2.dist*km;$("#pfare",right).textContent="₹"+f.toFixed(1);$("#pgap",right).textContent=veh?"+₹"+add.toFixed(1):"—";
+    const W=360,H=210,m={l:44,r:12,t:18,b:30};const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Three parallel fitted lines, one per vehicle"});
+    const X=v=>m.l+v/46*(W-m.l-m.r),Y=v=>H-m.b-v/950*(H-m.t-m.b);
+    [0,200,400,600,800].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-4,y:Y(v)+3,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+    [0,10,20,30,40].forEach(v=>{const t=sv("text",{x:X(v),y:H-m.b+13,"font-size":10,"text-anchor":"middle"});t.textContent=v;s.appendChild(t);});
+    const cols=["var(--accent)","var(--gold)","var(--fraud)"];[0,M2.mini,M2.sedan].forEach((a,i)=>{s.appendChild(sv("line",{x1:X(0),x2:X(46),y1:Y(M2.b0+a),y2:Y(M2.b0+a+M2.dist*46),style:`stroke:${cols[i]};stroke-width:${i===veh?3:1.6}`}));const t=sv("text",{x:X(40),y:Y(M2.b0+a+M2.dist*40)-6,"font-size":10,"text-anchor":"end"});t.textContent=VNAME[i];s.appendChild(t);});
+    s.appendChild(sv("line",{x1:X(km),x2:X(km),y1:Y(0),y2:Y(f),style:"stroke:var(--muted);stroke-dasharray:3 3"}));s.appendChild(sv("circle",{cx:X(km),cy:Y(f),r:5,style:`fill:${cols[veh]};stroke:var(--surface);stroke-width:2`}));
+    const xl=sv("text",{x:W-m.r,y:H-3,"font-size":10,"text-anchor":"end"});xl.textContent="distance (km)";s.appendChild(xl);
+    const b=$("#plines",right);b.innerHTML="";b.appendChild(s);}
+  $("#pkm",right).addEventListener("input",price);right.querySelectorAll("[data-v]").forEach(b=>b.addEventListener("click",()=>{veh=+b.dataset.v;right.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-pressed",x===b));price();}));price();
+}
+
+function labDiagnostics(root){
+  root.innerHTML=`<p class="note">Residuals of the 300 sample trips under the full-file line (fare = 46.23 + 14.47·distance), plotted against distance. Toggle the log–log model to see what a transform does to the fan. Right: the variance inflation factor as a function of how correlated two predictors are.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="btnrow"><div class="seg" role="group" aria-label="Model"><button type="button" data-t="raw" aria-pressed="true">fare on distance</button><button type="button" data-t="log" aria-pressed="false">ln fare on ln distance</button></div></div>
+    <div class="svgbox"><canvas aria-label="Residual plot against distance"></canvas></div>
+    <div class="readout"><div><span>Residual SD, shortest third</span><b id="d1"></b></div><div><span>Middle third</span><b id="d2"></b></div><div><span>Longest third</span><b id="d3"></b></div></div><p class="note" id="dnote"></p>`;
+  const W=360,H=240,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  const sorted=[...SUB300].sort((a,b)=>a[0]-b[0]);
+  function draw(mode){const res=sorted.map(p=>mode==="raw"?p[1]-(M1.b0+M1.b1*p[0]):Math.log(p[1])-(DIAG.loglog.b0+DIAG.loglog.b1*Math.log(p[0])));
+    const sd=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/(a.length-1));};
+    const t=[res.slice(0,100),res.slice(100,200),res.slice(200)];["d1","d2","d3"].forEach((id,i)=>$("#"+id,left).textContent=mode==="raw"?"₹"+sd(t[i]).toFixed(1):sd(t[i]).toFixed(3));
+    $("#dnote",left).textContent=mode==="raw"?"A fan: the spread of residuals grows with distance. Breusch–Pagan on the full file: LM = 830, p ≈ 0. The slope is fine; its classical SE (0.104) is not; the robust SE is 0.193.":"In logs the spread is far more even across distance, and the slope 0.62 reads as an elasticity. Breusch–Pagan still rejects on the full file (LM = 218), so robust SEs remain the safe choice.";
+    g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const m={l:48,r:12,t:18,b:32};const yr=mode==="raw"?[-200,200]:[-0.8,0.8];
+    const ax=axes(g,W,H,m,[0,46],yr,[0,10,20,30,40],mode==="raw"?[-200,-100,0,100,200]:[-0.8,-0.4,0,0.4,0.8],"distance (km)",mode==="raw"?"residual (₹)":"residual (log)");
+    g.strokeStyle=cssVar("--gold");g.lineWidth=1.5;g.beginPath();g.moveTo(ax.X(0),ax.Y(0));g.lineTo(ax.X(46),ax.Y(0));g.stroke();g.lineWidth=1;
+    // ± rolling SD envelope by tercile
+    g.strokeStyle=cssVar("--fraud");g.setLineDash([4,3]);[[0,100],[100,200],[200,300]].forEach(([a,b],i)=>{const s=sd(res.slice(a,b));const x0=sorted[a][0],x1=sorted[Math.min(b,299)][0];g.beginPath();g.moveTo(ax.X(x0),ax.Y(Math.min(yr[1],2*s)));g.lineTo(ax.X(x1),ax.Y(Math.min(yr[1],2*s)));g.stroke();g.beginPath();g.moveTo(ax.X(x0),ax.Y(Math.max(yr[0],-2*s)));g.lineTo(ax.X(x1),ax.Y(Math.max(yr[0],-2*s)));g.stroke();});g.setLineDash([]);
+    g.fillStyle=cssVar("--accent");g.globalAlpha=0.6;sorted.forEach((p,i)=>{g.beginPath();g.arc(ax.X(p[0]),ax.Y(Math.max(yr[0],Math.min(yr[1],res[i]))),3,0,7);g.fill();});g.globalAlpha=1;
+    g.fillStyle=cssVar("--muted");g.font=FONT;g.textAlign="right";g.fillText("dashed: ±2 residual SD per third",W-m.r,m.t-4);g.textAlign="left";}
+  left.querySelectorAll("[data-t]").forEach(b=>b.addEventListener("click",()=>{left.querySelectorAll("[data-t]").forEach(x=>x.setAttribute("aria-pressed",x===b));draw(b.dataset.t);}));draw("raw");
+  right.innerHTML=`<span class="eyebrow">Multicollinearity: VIF = 1 / (1 − r²)</span>
+    <label for="vr">Correlation between two predictors: <output id="vro"></output></label><input type="range" id="vr" min="0" max="0.99" step="0.01" value="0.95">
+    <div class="readout"><div><span>VIF</span><b id="vif"></b></div><div><span>SE multiplier √VIF</span><b id="vsq"></b></div><div><span>Distance vs duration in the file</span><b>r = 0.951, VIF = 10.5</b></div></div>
+    <div class="svgbox" id="vchart"></div>
+    <span class="eyebrow" style="margin-top:8px">Influence, full file (vehicle model)</span>
+    <div class="tbl"><table><thead><tr><th>Trip</th><th>What</th><th>Value</th></tr></thead><tbody>
+      <tr><td>${DIAG.cook.trip}</td><td>largest Cook's D (37.3 km sedan, ₹927)</td><td class="num">${DIAG.cook.D.toFixed(3)}</td></tr>
+      <tr><td>${DIAG.cook.trip}</td><td>studentized residual</td><td class="num">${DIAG.cook.r.toFixed(1)}</td></tr>
+      <tr><td>${DIAG.lev.trip}</td><td>largest leverage h (45.0 km)</td><td class="num">${DIAG.lev.h.toFixed(4)}</td></tr>
+      <tr><td>—</td><td>mean leverage p/n</td><td class="num">${DIAG.lev.mean.toFixed(5)}</td></tr>
+      <tr><td>—</td><td>trips with Cook's D &gt; 4/n</td><td class="num">${DIAG.cook.nOver}</td></tr>
+      <tr><td>—</td><td>Durbin–Watson, trip-ID order</td><td class="num">${DIAG.dw.toFixed(2)}</td></tr></tbody></table></div>`;
+  function vdraw(){const r=+$("#vr",right).value;$("#vro",right).textContent=r.toFixed(2);const v=1/(1-r*r);$("#vif",right).textContent=v.toFixed(2);$("#vsq",right).textContent=Math.sqrt(v).toFixed(2)+"×";
+    const W=360,H=150,m={l:40,r:12,t:12,b:30};const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"VIF against correlation"});const X=c=>m.l+c*(W-m.l-m.r),Y=val=>H-m.b-Math.min(val,20)/20*(H-m.t-m.b);
+    [1,5,10,20].forEach(val=>{s.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(val),y2:Y(val),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-4,y:Y(val)+3,"font-size":10,"text-anchor":"end"});t.textContent=val;s.appendChild(t);});
+    [0,0.5,0.9].forEach(c=>{const t=sv("text",{x:X(c),y:H-14,"font-size":10,"text-anchor":"middle"});t.textContent=c;s.appendChild(t);});
+    let d="";for(let i=0;i<=99;i++){const c=i/100;d+=(i?"L":"M")+X(c).toFixed(1)+","+Y(1/(1-c*c)).toFixed(1);}s.appendChild(sv("path",{d,style:"fill:none;stroke:var(--accent);stroke-width:2"}));
+    s.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(10),y2:Y(10),style:"stroke:var(--fraud);stroke-dasharray:4 3"}));s.appendChild(sv("circle",{cx:X(r),cy:Y(v),r:5,style:"fill:var(--gold)"}));
+    const lab=sv("text",{x:W-m.r,y:H-2,"font-size":10,"text-anchor":"end"});lab.textContent="r between predictors";s.appendChild(lab);
+    const b=$("#vchart",right);b.innerHTML="";b.appendChild(s);}
+  $("#vr",right).addEventListener("input",vdraw);vdraw();
+}
+
+function labCV(root){
+  root.innerHTML=`<p class="note">A 400-trip sample. Pick a model, press Run: the five folds take turns as the held-out set (red), the model is fitted on the other four (blue) and scored on the one it has not seen. Below, an illustrative overfitting demo on 25 training trips.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="btnrow"><select id="cvm" aria-label="Model"><option value="p1">degree 1: fare ~ distance</option><option value="p2">degree 2 polynomial in distance</option><option value="p3">degree 3</option><option value="p5">degree 5</option><option value="p8">degree 8</option><option value="dd">fare ~ distance + duration</option></select>
+    <button class="btn small" id="cvrun" type="button">Run 5-fold CV</button><span id="cvsp"></span></div>
+    <div class="svgbox"><canvas aria-label="Scatter with the current training fit; held-out fold highlighted"></canvas></div>
+    <div class="tbl"><table><thead><tr><th>Fold</th><th>Train n</th><th>Test n</th><th>Test RMSE (₹)</th></tr></thead><tbody id="cvtab"></tbody></table></div>
+    <div class="readout"><div><span>Mean CV RMSE</span><b id="cvmean">—</b></div><div><span>In-sample RMSE (all 400)</span><b id="cvin">—</b></div></div>`;
+  right.innerHTML=`<span class="eyebrow">Overfitting demo (illustrative: 25 training trips, 375 test trips)</span>
+    <label for="odeg">Polynomial degree: <output id="odego"></output></label><input type="range" id="odeg" min="1" max="9" step="1" value="1">
+    <div class="svgbox" id="ochart"></div>
+    <div class="readout"><div><span>Training RMSE</span><b id="otr"></b></div><div><span>Test RMSE</span><b id="ote"></b></div></div>
+    <span class="eyebrow" style="margin-top:8px">Full file, 5-fold CV and information criteria</span>
+    <div class="tbl"><table><thead><tr><th>Model</th><th>CV RMSE</th><th>AIC</th><th>BIC</th></tr></thead><tbody>
+      <tr><td>distance</td><td class="num">${CVFULL.M1}</td><td class="num">${ind(M1.aic)}</td><td class="num">${ind(M1.bic)}</td></tr>
+      <tr><td>+ vehicle</td><td class="num">${CVFULL.M2}</td><td class="num">${ind(M2.aic)}</td><td class="num">${ind(M2.bic)}</td></tr>
+      <tr><td>+ vehicle + duration</td><td class="num">${CVFULL.M3}</td><td class="num">${ind(M3.aic)}</td><td class="num">${ind(M3.bic)}</td></tr>
+      <tr><td>+ vehicle + distance × surge</td><td class="num">${CVFULL.M4}</td><td class="num">${ind(M4.aic)}</td><td class="num">${ind(M4.bic)}</td></tr>
+      <tr><td>all of the above</td><td class="num">${CVFULL.M5}</td><td class="num">${ind(M5.aic)}</td><td class="num">${ind(M5.bic)}</td></tr></tbody></table></div>`;
+  const W=360,H=240,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  const xs=CV400.map(p=>p[0]),ds=CV400.map(p=>p[1]),ys=CV400.map(p=>p[2]);const fold=CV400.map((_,i)=>i%5);
+  let kind="p1",state=null,speed=1,anim=null;
+  function design(kind,idx,mu,sd){if(kind==="dd")return idx.map(i=>[1,xs[i],ds[i]]);const deg=+kind.slice(1);return idx.map(i=>{const z=(xs[i]-mu)/sd;const r=[1];for(let j=1;j<=deg;j++)r.push(r[j-1]*z);return r;});}
+  function fit(kind,tr){const mu=tr.reduce((a,i)=>a+xs[i],0)/tr.length;const sd=Math.sqrt(tr.reduce((a,i)=>a+(xs[i]-mu)**2,0)/tr.length);const b=lstsq(design(kind,tr,mu,sd),tr.map(i=>ys[i]));return {b,mu,sd,pred:(idx)=>design(kind,idx,mu,sd).map(r=>r.reduce((a,v,j)=>a+v*b[j],0)),curve:(x,d)=>{if(kind==="dd")return null;const z=(x-mu)/sd;let v=0,p=1;for(let j=0;j<b.length;j++){v+=b[j]*p;p*=z;}return v;}};}
+  const rmse=(idx,p)=>Math.sqrt(idx.reduce((a,i,k)=>a+(ys[i]-p[k])**2,0)/idx.length);
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const m={l:44,r:12,t:18,b:32};const ax=axes(g,W,H,m,[0,46],[0,950],[0,10,20,30,40],[0,200,400,600,800],"distance (km)","fare (₹)");
+    const k=state?state.k:-1;
+    for(let i=0;i<400;i++){const held=fold[i]===k;g.fillStyle=held?cssVar("--fraud"):cssVar("--accent");g.globalAlpha=held?0.9:(k>=0?0.3:0.55);g.beginPath();g.arc(ax.X(xs[i]),ax.Y(ys[i]),held?3.2:2.5,0,7);g.fill();}g.globalAlpha=1;
+    if(state&&state.model&&kind!=="dd"){g.strokeStyle=cssVar("--gold");g.lineWidth=2.5;g.beginPath();for(let i=0;i<=200;i++){const x=0.8+45*i/200;const y=Math.max(-50,Math.min(1000,state.model.curve(x)));const px=ax.X(x),py=ax.Y(Math.max(0,Math.min(950,y)));i?g.lineTo(px,py):g.moveTo(px,py);}g.stroke();g.lineWidth=1;}
+    g.fillStyle=cssVar("--ink");g.font=FONT;g.textAlign="right";g.fillText(state?`fold ${state.k+1} held out (red)`:"press Run",W-m.r,m.t+10);g.textAlign="left";}
+  function reset(){state=null;$("#cvtab",left).innerHTML="";$("#cvmean",left).textContent="—";const all=[...Array(400).keys()];const f=fit(kind,all);$("#cvin",left).textContent=rmse(all,f.pred(all)).toFixed(2);draw();}
+  function doFold(k){const tr=[],te=[];for(let i=0;i<400;i++)(fold[i]===k?te:tr).push(i);const f=fit(kind,tr);const e=rmse(te,f.pred(te));state={k,model:f,errs:[...(state?state.errs:[]),e]};$("#cvtab",left).innerHTML+=`<tr><td>${k+1}</td><td class="num">${tr.length}</td><td class="num">${te.length}</td><td class="num">${e.toFixed(2)}</td></tr>`;if(state.errs.length===5){$("#cvmean",left).textContent=(state.errs.reduce((a,b)=>a+b,0)/5).toFixed(2);award("folds");}}
+  $("#cvrun",left).addEventListener("click",()=>{if(anim)anim.stop();reset();if(REDUCED){for(let k=0;k<5;k++)doFold(k);draw();return;}let t=0,k=0;doFold(0);draw();anim=loop(()=>{t+=speed;if(t>=70){t=0;k++;if(k>=5){anim.stop();return;}doFold(k);draw();}});});
+  $("#cvm",left).addEventListener("change",e=>{if(anim)anim.stop();kind=e.target.value;reset();});
+  speedSeg($("#cvsp",left),v=>{speed=v;},[1,4]);reset();
+  // overfit demo: polynomial fitted on first 25 rows, drawn with embedded RMSEs
+  function odraw(){const deg=+$("#odeg",right).value;$("#odego",right).textContent=deg;const [tr,te]=OVERFIT[deg];$("#otr",right).textContent=tr.toFixed(1);$("#ote",right).textContent=te>=1000?ind(Math.round(te)):te.toFixed(1);
+    const idx=[...Array(25).keys()];const f=fit("p"+deg,idx);
+    const W2=360,H2=200,m={l:44,r:12,t:14,b:30};const s=sv("svg",{viewBox:`0 0 ${W2} ${H2}`,role:"img","aria-label":"Polynomial of chosen degree fitted to 25 trips"});const X=v=>m.l+v/46*(W2-m.l-m.r),Y=v=>H2-m.b-Math.max(0,Math.min(950,v))/950*(H2-m.t-m.b);
+    [0,400,800].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:W2-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-4,y:Y(v)+3,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+    for(let i=25;i<400;i++)s.appendChild(sv("circle",{cx:X(xs[i]),cy:Y(ys[i]),r:1.6,style:"fill:var(--line)"}));
+    let d="";for(let i=0;i<=200;i++){const x=0.8+45*i/200;const y=f.curve(x);d+=(i?"L":"M")+X(x).toFixed(1)+","+Y(y).toFixed(1);}s.appendChild(sv("path",{d,style:"fill:none;stroke:var(--gold);stroke-width:2.2"}));
+    idx.forEach(i=>s.appendChild(sv("circle",{cx:X(xs[i]),cy:Y(ys[i]),r:3.4,style:"fill:var(--accent)"})));
+    const t=sv("text",{x:W2-m.r,y:H2-2,"font-size":10,"text-anchor":"end"});t.textContent="blue: 25 training trips · grey: 375 test trips";s.appendChild(t);
+    const b=$("#ochart",right);b.innerHTML="";b.appendChild(s);}
+  $("#odeg",right).addEventListener("input",odraw);odraw();
+}
+
+function labLogistic(root){
+  root.innerHTML=`<p class="note">Left: the fitted logistic curve for cancellation against wait time, with the empirical cancellation rate in wait bins (circles). Switch surge and rain to see the curve shift. Right: move the decision threshold and watch the confusion matrix, precision, recall and the point on the ROC curve.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="btnrow"><label class="confirm" style="font-size:.85rem"><input type="checkbox" id="lsurge"> surge</label><label class="confirm" style="font-size:.85rem"><input type="checkbox" id="lrain"> rain</label><label for="ldist" style="font-size:.85rem">distance <output id="ldisto">8</output> km</label><input type="range" id="ldist" min="1" max="40" step="1" value="8" style="width:120px"></div>
+    <div class="svgbox"><canvas aria-label="Logistic curve of cancellation probability against wait time"></canvas></div>
+    <div class="formula" id="lform"></div>
+    <div class="readout"><div><span>P(cancel) at wait 3 min</span><b id="lp3"></b></div><div><span>at wait 10 min</span><b id="lp10"></b></div><div><span>Odds ratio: surge</span><b>${LG.orr.surge.toFixed(3)}</b></div><div><span>Odds ratio: rain</span><b>${LG.orr.rain.toFixed(3)}</b></div><div><span>Odds ratio: +1 min wait</span><b>${LG.orr.wait_min.toFixed(3)}</b></div><div><span>Odds ratio: +1 km</span><b>${LG.orr.distance_km.toFixed(3)}</b></div></div>
+    <p class="note">Linear probability model on the same predictors: ${LPM.neg} fitted probabilities below 0 and ${LPM.over} above 1 (range ${LPM.mn} to ${LPM.mx}). AUC of the logit: ${LG.auc.toFixed(3)}.</p>`;
+  const W=360,H=230,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);const C=LG.coef;
+  const pz=(w,s,r,k)=>logistic(C.Intercept+C.wait_min*w+C.surge*s+C.rain*r+C.distance_km*k);
+  function draw(){const s=$("#lsurge",left).checked?1:0,r=$("#lrain",left).checked?1:0,k=+$("#ldist",left).value;$("#ldisto",left).textContent=k;
+    $("#lp3",left).textContent=pz(3,s,r,k).toFixed(3);$("#lp10",left).textContent=pz(10,s,r,k).toFixed(3);
+    $("#lform",left).textContent=`ln(odds) = ${C.Intercept.toFixed(3)} + ${C.wait_min.toFixed(4)}·wait\n          + ${C.surge.toFixed(4)}·${s} + ${C.rain.toFixed(4)}·${r} ${C.distance_km.toFixed(4)}·${k}\np = 1 / (1 + e^−ln(odds))`;
+    g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const m={l:40,r:12,t:18,b:32};const ax=axes(g,W,H,m,[0,30],[0,1],[0,5,10,15,20,25,30],[0,0.5,1],"wait (min)","P(cancel)");
+    g.strokeStyle=cssVar("--line");g.setLineDash([3,3]);g.beginPath();g.moveTo(ax.X(0),ax.Y(0.5));g.lineTo(ax.X(30),ax.Y(0.5));g.stroke();g.setLineDash([]);
+    // empirical bins (all trips, mixed conditions)
+    LG.waitbins.forEach(([a,b,p,n])=>{const x=(a+Math.min(b,20))/2;g.strokeStyle=cssVar("--muted");g.lineWidth=1.5;g.beginPath();g.arc(ax.X(x),ax.Y(p),4,0,7);g.stroke();g.lineWidth=1;});
+    // reference curve: all off, distance 8
+    g.strokeStyle=cssVar("--line");g.lineWidth=1.5;g.beginPath();for(let i=0;i<=120;i++){const w=30*i/120;const px=ax.X(w),py=ax.Y(pz(w,0,0,8));i?g.lineTo(px,py):g.moveTo(px,py);}g.stroke();
+    g.strokeStyle=cssVar("--accent");g.lineWidth=2.5;g.beginPath();for(let i=0;i<=120;i++){const w=30*i/120;const px=ax.X(w),py=ax.Y(pz(w,s,r,k));i?g.lineTo(px,py):g.moveTo(px,py);}g.stroke();g.lineWidth=1;
+    g.fillStyle=cssVar("--muted");g.font=FONT;g.textAlign="right";g.fillText("circles: observed rate by wait bin",W-m.r,m.t-4);g.textAlign="left";}
+  ["lsurge","lrain"].forEach(id=>$("#"+id,left).addEventListener("change",draw));$("#ldist",left).addEventListener("input",draw);draw();
+  right.innerHTML=`<label for="lth">Threshold c: predict "will cancel" when p̂ ≥ <output id="ltho">0.50</output></label><input type="range" id="lth" min="0.05" max="0.95" step="0.025" value="0.5">
+    <div class="tbl"><table><thead><tr><th></th><th>Actually cancelled</th><th>Completed</th></tr></thead><tbody><tr><td>Predicted cancel</td><td class="num" id="ctp"></td><td class="num" id="cfp"></td></tr><tr><td>Predicted complete</td><td class="num" id="cfn"></td><td class="num" id="ctn"></td></tr></tbody></table></div>
+    <div class="readout"><div><span>Accuracy</span><b id="cacc"></b></div><div><span>Precision TP/(TP+FP)</span><b id="cpre"></b></div><div><span>Recall TP/(TP+FN)</span><b id="crec"></b></div><div><span>False positive rate</span><b id="cfpr"></b></div></div>
+    <div class="svgbox" id="roc"></div><p class="note">Always predicting "complete" scores accuracy 0.700. The ROC curve plots recall against the false positive rate for every threshold; the diagonal is a coin flip. AUC = ${LG.auc.toFixed(3)}.</p>`;
+  function conf(){const c=+$("#lth",right).value;$("#ltho",right).textContent=c.toFixed(3).replace(/0+$/,"");const kb=Math.round(c*40);let tp=0,fp=0,fn=0,tn=0;for(let b=0;b<40;b++){if(b>=kb){tp+=LG.h1[b];fp+=LG.h0[b];}else{fn+=LG.h1[b];tn+=LG.h0[b];}}
+    $("#ctp",right).textContent=ind(tp);$("#cfp",right).textContent=ind(fp);$("#cfn",right).textContent=ind(fn);$("#ctn",right).textContent=ind(tn);
+    $("#cacc",right).textContent=((tp+tn)/NT).toFixed(3);$("#cpre",right).textContent=tp+fp?(tp/(tp+fp)).toFixed(3):"—";$("#crec",right).textContent=(tp/(tp+fn)).toFixed(3);$("#cfpr",right).textContent=(fp/(fp+tn)).toFixed(3);
+    const W2=360,H2=230,m={l:40,r:12,t:12,b:30};const s=sv("svg",{viewBox:`0 0 ${W2} ${H2}`,role:"img","aria-label":"ROC curve with the current threshold marked"});const X=v=>m.l+v*(W2-m.l-m.r),Y=v=>H2-m.b-v*(H2-m.t-m.b);
+    [0,0.5,1].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:W2-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-4,y:Y(v)+3,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);const t2=sv("text",{x:X(v),y:H2-m.b+13,"font-size":10,"text-anchor":"middle"});t2.textContent=v;s.appendChild(t2);});
+    s.appendChild(sv("line",{x1:X(0),y1:Y(0),x2:X(1),y2:Y(1),style:"stroke:var(--muted);stroke-dasharray:4 3"}));
+    let d="";LG.roc.forEach(([f,t],i)=>{d+=(i?"L":"M")+X(f).toFixed(1)+","+Y(t).toFixed(1);});s.appendChild(sv("path",{d,style:"fill:none;stroke:var(--accent);stroke-width:2.2"}));
+    s.appendChild(sv("circle",{cx:X(fp/(fp+tn)),cy:Y(tp/(tp+fn)),r:6,style:"fill:var(--gold);stroke:var(--surface);stroke-width:2"}));
+    const xl=sv("text",{x:W2-m.r,y:H2-2,"font-size":10,"text-anchor":"end"});xl.textContent="false positive rate";s.appendChild(xl);const yl=sv("text",{x:m.l,y:m.t-2,"font-size":10});yl.textContent="recall (true positive rate)";s.appendChild(yl);
+    const b=$("#roc",right);b.innerHTML="";b.appendChild(s);}
+  $("#lth",right).addEventListener("input",conf);conf();
+}
+
+function labAB(root){
+  root.innerHTML=`<p class="note">Design the test, then run it. Requests arrive and are randomised by coin flip to the old screen (control) or the new one (treatment); each cancels with its arm's true probability. One run shows the two rates settling and the z test. Two hundred runs show how often a true effect is detected (power) and how often a zero effect is "found" (the false positive rate).</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  right.innerHTML=`<label for="abeff">True effect of the screen: <output id="abeffo"></output> points off the 30.05% baseline</label><input type="range" id="abeff" min="0" max="6" step="0.5" value="3">
+    <label for="abn">Requests per arm: <output id="abno"></output></label><input type="range" id="abn" min="250" max="6000" step="250" value="1500">
+    <div class="readout"><div><span>Formula: n per arm for 80% power</span><b id="abneed"></b></div><div><span>Formula: power at this n</span><b id="abpow"></b></div></div>
+    <div class="formula">z = (p̂_C − p̂_T) / √( p̂_T(1−p̂_T)/n + p̂_C(1−p̂_C)/n )
+significant at 5% if |z| > 1.96</div>
+    <p class="note">Peak hour, for comparison, is observational: cancel rate ${pct(AB.peak1,1)} at peak vs ${pct(AB.peak0,1)} off-peak, logit coefficient ${AB.peakAlone.toFixed(2)} alone and ${AB.peakAdj.toFixed(2)} once wait and surge are in the model. Surge requests wait ${AB.waitS1} minutes on average against ${AB.waitS0}. No regression on this file can say what a new screen does.</p>`;
+  left.innerHTML=`<div class="btnrow"><button class="btn small" id="abone" type="button">Run one test</button><button class="btn ghost small" id="abmany" type="button">Run 200 tests</button><button class="btn ghost small" id="abreset" type="button">Reset</button><span id="absp"></span></div>
+    <div class="svgbox"><canvas aria-label="Two arms of an A/B test filling with requests; a histogram of z statistics from repeated tests"></canvas></div>
+    <div class="readout"><div><span>Control: cancelled / n</span><b id="abc">—</b></div><div><span>Treatment: cancelled / n</span><b id="abt">—</b></div><div><span>Difference (points)</span><b id="abd">—</b></div><div><span>z</span><b id="abz">—</b></div><div><span>Tests run</span><b id="abk">0</b></div><div><span>Share significant (|z| &gt; 1.96)</span><b id="absig">—</b></div></div>`;
+  const W=360,H=300,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  let r=rng(17),speed=1,anim=null,run=null,zs=[],sig=0,many=0;
+  const p0=AB.p0;
+  function params(){const eff=+$("#abeff",right).value/100,n=+$("#abn",right).value;$("#abeffo",right).textContent=(eff*100).toFixed(1);$("#abno",right).textContent=ind(n);const p1=p0-eff;
+    const need=eff>0?Math.round(2.8**2*(p0*(1-p0)+p1*(1-p1))/eff**2):Infinity;$("#abneed",right).textContent=isFinite(need)?ind(need):"— (no effect to detect)";
+    const se=Math.sqrt(p0*(1-p0)/n+p1*(1-p1)/n);const pw=eff>0?1-normCDF(1.96-eff/se)+normCDF(-1.96-eff/se):0.05;$("#abpow",right).textContent=eff>0?pct(pw,1):"5.0% (false positive rate)";return {eff,n,p1};}
+  function newRun(){const {n,p1}=params();run={n,p1,i:0,cC:0,nC:0,cT:0,nT:0,done:false};}
+  function stepRun(){if(run.i>=2*run.n){return finish();}const treat=r()<0.5;if(treat){run.nT++;if(r()<run.p1)run.cT++;}else{run.nC++;if(r()<p0)run.cC++;}run.i++;}
+  function zOf(){if(!run||!run.nC||!run.nT)return NaN;const pc=run.cC/run.nC,pt=run.cT/run.nT;const se=Math.sqrt(pc*(1-pc)/run.nC+pt*(1-pt)/run.nT);return se>0?(pc-pt)/se:0;}
+  function finish(){if(run.done)return;run.done=true;const z=zOf();zs.push(z);if(Math.abs(z)>1.96)sig++;$("#abk",left).textContent=zs.length;$("#absig",left).textContent=pct(sig/zs.length,1);if(zs.length>=200)award("abtest");}
+  function stats(){if(!run)return;$("#abc",left).textContent=`${run.cC} / ${run.nC}`;$("#abt",left).textContent=`${run.cT} / ${run.nT}`;const pc=run.nC?run.cC/run.nC:0,pt=run.nT?run.cT/run.nT:0;$("#abd",left).textContent=run.nC&&run.nT?((pc-pt)*100).toFixed(2):"—";const z=zOf();$("#abz",left).textContent=isNaN(z)?"—":z.toFixed(2);}
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);
+    // arms
+    const m={l:44,r:12,t:18,b:160};const ax=axes(g,W,H,m,[0,1],[0,0.5],[],[0,0.25,0.5],"","cancellation rate");
+    const bars=[["control",run?run.cC:0,run?run.nC:0,cssVar("--muted"),p0],["treatment",run?run.cT:0,run?run.nT:0,cssVar("--accent"),run?run.p1:p0-0.03]];
+    bars.forEach(([lab,c,n,col,truth],i)=>{const x0=m.l+30+i*150,w=100;const rate=n?c/n:0;g.fillStyle=col;g.fillRect(x0,ax.Y(rate),w,ax.Y(0)-ax.Y(rate));g.strokeStyle=cssVar("--gold");g.setLineDash([4,3]);g.beginPath();g.moveTo(x0-6,ax.Y(truth));g.lineTo(x0+w+6,ax.Y(truth));g.stroke();g.setLineDash([]);
+      g.fillStyle=cssVar("--ink");g.font=FONT;g.textAlign="center";g.fillText(`${lab} ${n?pct(rate,1):""}`,x0+w/2,H-m.b+14);g.fillText(n?`n = ${ind(n)}`:"",x0+w/2,H-m.b+27);g.textAlign="left";});
+    g.fillStyle=cssVar("--muted");g.textAlign="right";g.fillText("dashed: true rate in each arm",W-m.r,m.t-4);g.textAlign="left";
+    // z histogram
+    const m2={l:44,r:12,t:H-105,b:28};const lo=-4,hi=8,nb=48,bw=(hi-lo)/nb;const counts=new Array(nb).fill(0);zs.forEach(z=>{const k=Math.floor((z-lo)/bw);if(k>=0&&k<nb)counts[k]++;});const ymax=Math.max(8,...counts);
+    const X=v=>m2.l+(v-lo)/(hi-lo)*(W-m2.l-m2.r),Y=v=>H-m2.b-v/ymax*(H-m2.t-m2.b);
+    g.strokeStyle=cssVar("--line");g.beginPath();g.moveTo(m2.l,Y(0));g.lineTo(W-m2.r,Y(0));g.stroke();g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";g.textAlign="center";[-4,-2,0,2,4,6,8].forEach(v=>g.fillText(v,X(v),H-m2.b+13));g.textAlign="left";
+    counts.forEach((c,k)=>{if(!c)return;const z=lo+(k+0.5)*bw;g.fillStyle=Math.abs(z)>1.96?cssVar("--fraud"):cssVar("--line");g.fillRect(X(lo+k*bw)+1,Y(c),X(lo+(k+1)*bw)-X(lo+k*bw)-2,Y(0)-Y(c));});
+    g.strokeStyle=cssVar("--gold");g.setLineDash([4,3]);[-1.96,1.96].forEach(v=>{g.beginPath();g.moveTo(X(v),Y(0));g.lineTo(X(v),m2.t);g.stroke();});g.setLineDash([]);
+    g.fillStyle=cssVar("--ink");g.font=FONT;g.fillText("z of each test · red: |z| > 1.96 (dashed)",m2.l,m2.t-5);}
+  function startOne(){if(anim)anim.stop();newRun();if(REDUCED){while(!run.done)stepRun();stats();draw();return;}anim=loop(()=>{const per=Math.max(4,Math.round(run.n/60))*speed*(many>0?4:1);for(let k=0;k<per&&!run.done;k++)stepRun();stats();draw();if(run.done){anim.stop();if(many>0){many--;startOne();}}});}
+  $("#abone",left).addEventListener("click",()=>{many=0;startOne();});
+  $("#abmany",left).addEventListener("click",()=>{if(anim)anim.stop();if(REDUCED||speed>=16){for(let t=0;t<200;t++){newRun();while(!run.done)stepRun();}stats();draw();return;}many=199;startOne();});
+  $("#abreset",left).addEventListener("click",()=>{if(anim)anim.stop();many=0;r=rng(17);zs=[];sig=0;run=null;$("#abk",left).textContent=0;$("#absig",left).textContent="—";["abc","abt","abd","abz"].forEach(id=>$("#"+id,left).textContent="—");draw();});
+  ["abeff","abn"].forEach(id=>$("#"+id,right).addEventListener("input",()=>{params();draw();}));
+  speedSeg($("#absp",left),v=>{speed=v;},[1,4,16]);
+  params();draw();
+}
+
+const COURSE={
+  key:"regression",
+  title:"NimbusRide Pricing Lab",
+  eyebrow:"Statistics, played · 4 · Regression and prediction",
+  lede:"You have joined the pricing lab of NimbusRide, a ride-hailing company, as its newest modeller. Eight case files are waiting: a Chief Financial Officer (CFO) who wants a fare formula riders can do in their heads, a 30% cancellation rate nobody can explain, an estimated-time-of-arrival (ETA) screen that needs a prediction, and a journalist who says sedans overcharge. Each file is one chapter of regression: a short story, the theory with its equations, a lab you can run, and challenges that earn experience points (XP). Clear five files and the pricing review will see you.",
+  meta:"For graduate students of statistics, data science, economics and business, or anyone who wants to fit a line and know what it means. First-try answers earn full XP; hints cost 25. Progress is saved in this browser only.",
+  hero:root=>HeroSim(root),
+  heroNote:"This is the whole set of files in one picture. Each dot is a completed trip; the line is refitted by least squares after every arrival and its coefficients tick in the boxes; the band is one residual standard deviation. Press \"Colour by vehicle\" to see three lines hiding inside one. Why one slope is not enough is File 4; why the band widens to the right is File 5.",
+  ranks:[[0,"Trainee Modeller"],[600,"Junior Modeller"],[1500,"Pricing Analyst"],[2600,"Senior Pricing Analyst"],[3600,"Pricing Lead"]],
+  topRank:"Head of Pricing Science",
+  boardTitle:"The pricing review", boardCard:"Face the pricing review",
+  boardPass:7, boardUnlock:5,
+  badges:[["handfit","Steady Hand","Fitted the line by hand within 2% of least squares"],["sampler","Slope Sampler","Piled up 200 resampled slopes"],["folds","Fold Turner","Ran a full five-fold cross-validation"],["abtest","Trial Runner","Ran 200 simulated A/B tests"]],
+  freshExtra:()=>({}),
+  settingsNote:"Teaching with this page? Students can play on their own; the files follow the usual order of a first treatment of regression and go a little beyond it, and every number can be reproduced from the fixed data set.",
+  formulas:[
+   ["Correlation","cov = Σ(xᵢ−x̄)(yᵢ−ȳ)/(n−1)\nr = cov/(sₓ s_y),  −1 ≤ r ≤ 1\nE[z_y | z_x] = r·z_x"],
+   ["Least squares","β̂₁ = Sxy/Sxx,  β̂₀ = ȳ − β̂₁x̄\neᵢ = yᵢ − ŷᵢ,  Σeᵢ = 0\nR² = 1 − SSE/SST,  RSE = √(SSE/(n−2))"],
+   ["Inference","SE(β̂₁) = RSE/√Sxx,  t = β̂₁/SE\nCI: β̂₁ ± t₀.₀₂₅ SE\nPI adds +1 under the root\nF = MSR/MSE = t² (one predictor)"],
+   ["Multiple regression","y = β₀ + β₁x₁ + … + βₚxₚ + ε\nβⱼ: effect holding others fixed\nR̄² = 1 − [SSE/(n−p−1)]/[SST/(n−1)]\nOVB: β̃₁ = β₁ + β₂δ₁"],
+   ["Diagnostics","BP: regress e² on x\nrobust SE for unequal variance\nVIFⱼ = 1/(1−R²ⱼ)\nCook's D = Σ(ŷⱼ−ŷⱼ₍ᵢ₎)²/(p·MSE)"],
+   ["Selection","RMSE = √(Σ(y−ŷ)²/m) on test data\nk-fold CV: average of k test errors\nAIC = −2lnL + 2k\nBIC = −2lnL + k ln n"],
+   ["Logistic","ln[p/(1−p)] = β₀ + β₁x₁ + …\np = 1/(1+e^−z),  OR = e^β\nprecision = TP/(TP+FP)\nrecall = TP/(TP+FN)"],
+   ["Experiments","effect = p̂_T − p̂_C\nSE = √(p̂_T q̂_T/n_T + p̂_C q̂_C/n_C)\nn/arm ≈ (1.96+0.84)²[p₀q₀+p₁q₁]/(p₀−p₁)²\nDiD = Δtreated − Δcontrol"]],
+  L, BOARD
+};
+
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const el=(tag,attrs={},html)=>{const e=document.createElement(tag);for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),attrs[k]);else e.setAttribute(k,attrs[k]);}if(html!==undefined)e.innerHTML=html;return e;};
+const fmt=(x,d=4)=>Number(x).toFixed(d);
+const pct=(x,d=1)=>(100*x).toFixed(d)+"%";
+const ind=x=>Number(x).toLocaleString("en-US");
+const SVGNS="http://www.w3.org/2000/svg";
+const sv=(tag,attrs={})=>{const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;};
+const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const REDUCED=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function rng(seed){let a=(seed*2654435761)>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function shuffled(n,seed){const o=[...Array(n).keys()];const r=rng(seed);for(let k=n-1;k>0;k--){const j=Math.floor(r()*(k+1));[o[k],o[j]]=[o[j],o[k]];}return o;}
+const lnFact=n=>{let s=0;for(let i=2;i<=n;i++)s+=Math.log(i);return s;};
+const binomPMF=(k,n,p)=>Math.exp(lnFact(n)-lnFact(k)-lnFact(n-k)+k*Math.log(p)+(n-k)*Math.log(1-p));
+const poisPMF=(k,l)=>Math.exp(k*Math.log(l)-l-lnFact(k));
+const normPDF=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
+function sampleAmount(r){const u=r()*100;let lo=0,hi=AMTK.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(AMTK[m]<=u)lo=m;else hi=m;}const t=(u-AMTK[lo])/(AMTK[hi]-AMTK[lo]);return AMTV[lo]+(AMTV[hi]-AMTV[lo])*t;}
+function sampleDaily(r){const u=r()*90;let c=0;for(const x of Object.keys(DAILY)){c+=DAILY[x];if(u<c)return +x;}return 17;}
+function canvasSetup(c,w,h){const dpr=Math.min(2,window.devicePixelRatio||1);c.width=w*dpr;c.height=h*dpr;c.style.aspectRatio=`${w} / ${h}`;const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);return g;}
+const runners=new Set(); // active animation loops, stopped on navigation
+function loop(fn){let id,on=true;const step=()=>{if(!on)return;fn();id=requestAnimationFrame(step);};id=requestAnimationFrame(step);const h={stop(){on=false;cancelAnimationFrame(id);runners.delete(h);}};runners.add(h);return h;}
+function stopAll(){[...runners].forEach(r=>r.stop());}
+
+/* ---------- state ---------- */
+const KEY="stats-play-"+COURSE.key;
+const fresh=()=>Object.assign({xp:0,streak:0,best:0,badges:[],ans:{},board:null,unlockAll:false,lab:{}},COURSE.freshExtra?COURSE.freshExtra():{});
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.parse(raw));}catch(e){}
+const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+
+const RANKS=COURSE.ranks;
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+
+function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
+function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}
+function award(id){if(S.badges.includes(id))return;S.badges.push(id);save();const b=BADGES.find(x=>x[0]===id);toast(`Badge earned: <b>${b[1]}</b>`);renderStrip();}
+function rankOf(){if(S.badges.includes("board"))return [COURSE.topRank,null];let r=RANKS[0],nx=null;for(let i=0;i<RANKS.length;i++){if(S.xp>=RANKS[i][0]){r=RANKS[i];nx=RANKS[i+1]||null;}}return [r[1],nx];}
+function renderStrip(){const [r,nx]=rankOf();$("#rank").textContent=r;$("#xptext").textContent=ind(S.xp)+" XP";
+  if(nx){const lo=RANKS.find(x=>x[1]===r)[0];$("#xpfill").style.width=Math.min(100,100*(S.xp-lo)/(nx[0]-lo))+"%";$("#xpnext").textContent=ind(nx[0]-S.xp)+" XP to "+nx[1];}
+  else{$("#xpfill").style.width="100%";$("#xpnext").textContent=S.badges.includes("board")?"Top rank reached":"Pass the board meeting for "+COURSE.topRank;}
+  $("#streak").textContent=S.streak;$("#streakchip").classList.toggle("hot",S.streak>=3);$("#badgecount").textContent=S.badges.length+" / "+BADGES.length;}
+
+function speedSeg(root,onchange,opts=[1,4,16]){const s=el("div",{class:"seg",role:"group","aria-label":"Speed"});opts.forEach((v,i)=>{const b=el("button",{type:"button","aria-pressed":i===0},v+"×");b.addEventListener("click",()=>{s.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));onchange(v);});s.appendChild(b);});root.appendChild(s);return s;}
+
+/* ---------- unlocking and progress ---------- */
+function qstate(lid,i){S.ans[lid]=S.ans[lid]||{};S.ans[lid][i]=S.ans[lid][i]||{tries:0,done:false,first:false,hint:false,got:0};return S.ans[lid][i];}
+function levelDone(lv){return lv.qs.every((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].done);}
+function levelStars(lv){if(!levelDone(lv))return 0;const f=lv.qs.filter((q,i)=>S.ans[lv.id][i].first).length;return f===lv.qs.length?3:(f>=lv.qs.length/2?2:1);}
+function attempted(lv){return lv.qs.every((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].tries>0);}
+function unlocked(idx){if(S.unlockAll||idx===0)return true;const prev=L[idx-1];return levelDone(prev)||attempted(prev);}
+function boardUnlocked(){return S.unlockAll||L.filter(levelDone).length>=COURSE.boardUnlock;}
+
+/* ---------- views ---------- */
+function home(){
+  stopAll();const app=$("#app");app.innerHTML="";
+  const cleared=L.filter(levelDone).length;
+  const hero=el("section",{class:"hero"});
+  hero.innerHTML=`<div class="herotop"><div><p class="eyebrow">${COURSE.eyebrow}</p>
+    <h1>${COURSE.title}</h1>
+    <p class="lede">${COURSE.lede}</p>
+    <p class="meta">${COURSE.meta||"First-try answers earn full XP; hints cost 25. Progress is saved in this browser only."}</p></div>
+    <div class="ticket" aria-label="Your desk">
+      <div class="row"><span>Case files cleared</span><span>${cleared} / ${L.length}</span></div>
+      <div class="row"><span>Stars</span><span>${L.reduce((s,l)=>s+levelStars(l),0)} / ${3*L.length}</span></div>
+      <div class="row"><span>Best streak</span><span>${S.best}</span></div>
+      <div class="row"><span>Board meeting</span><span>${S.board?S.board.score+" / "+BOARD.length:(boardUnlocked()?"Ready":"Locked")}</span></div>
+    </div></div>`;
+  if(COURSE.hero){const hz=el("div");hero.appendChild(hz);app.appendChild(hero);COURSE.hero(hz);if(COURSE.heroNote)hero.appendChild(el("p",{class:"note"},COURSE.heroNote));}
+  else app.appendChild(hero);
+  const g=el("div",{class:"cases"});
+  L.forEach((lv,i)=>{
+    const ok=unlocked(i),done=levelDone(lv),st=levelStars(lv);
+    const b=el("button",{class:"case",type:"button"});if(!ok)b.disabled=true;
+    b.innerHTML=`<div class="top"><span class="tag">CASE FILE ${i+1}</span>
+      <span class="stamp ${done?"ok":ok?"open":"lock"}">${done?"CLEARED":ok?"OPEN":"LOCKED"}</span></div>
+      <h3>${lv.title}</h3><div class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}<span class="off">${"★".repeat(3-st)}</span></div>
+      <p class="topics">${lv.topics}</p>`;
+    b.addEventListener("click",()=>{location.hash=lv.id;});
+    g.appendChild(b);
+  });
+  const bb=el("button",{class:"case boss",type:"button"});if(!boardUnlocked())bb.disabled=true;
+  bb.innerHTML=`<div class="top"><span class="tag">FINAL · ${(COURSE.boardTitle||"The board meeting").toUpperCase()}</span><span class="stamp">${S.board?S.board.score+" / 8":boardUnlocked()?"READY":"LOCKED"}</span></div>
+    <h3>${COURSE.boardCard||"Face the board"}</h3><p class="nick">${BOARD.length} questions, one attempt each. Score ${COURSE.boardPass} or more to become ${COURSE.topRank}.</p>
+    <p class="topics">Unlocks after ${COURSE.boardUnlock} case files are cleared.</p>`;
+  bb.addEventListener("click",()=>{location.hash="board";});
+  g.appendChild(bb);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Case files</h2><span class="note">Each file unlocks when you have answered every question in the one before.</span>`));
+  app.appendChild(g);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Badges</h2><span class="note">${S.badges.length} of ${BADGES.length} earned</span>`));
+  const bg=el("div",{class:"badges"});
+  BADGES.forEach(([id,name,desc])=>{const got=S.badges.includes(id);bg.appendChild(el("div",{class:"badge"+(got?" got":"")},`<span class="seal">${got?"EARNED":"NOT YET"}</span><b>${name}</b><span>${desc}</span>`));});
+  app.appendChild(bg);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Formula sheet</h2><span class="note">Everything the ${L.length} files use, on one card.</span>`));
+  app.appendChild(formulaSheet());
+  app.appendChild(el("div",{class:"section-h"},`<h2>Desk settings</h2>`));
+  const t=el("div",{class:"panel"});
+  t.innerHTML=`<label class="confirm"><input type="checkbox" id="unlockall" ${S.unlockAll?"checked":""}> Open every case file now (for revision; XP still counts)</label>
+    <div class="confirm" id="resetbox"><button class="btn ghost small" id="reset" type="button">Reset my progress</button></div>
+    <p class="note">${COURSE.settingsNote||"Teaching with this page? Students can play on their own, and every number can be reproduced from the fixed data set."}</p>`;
+  app.appendChild(t);
+  $("#unlockall").addEventListener("change",e=>{S.unlockAll=e.target.checked;save();home();});
+  $("#reset").addEventListener("click",()=>{const box=$("#resetbox");box.innerHTML=`<span>Erase all XP, badges and answers?</span>`;
+    const y=el("button",{class:"btn small",type:"button"},"Yes, reset");const n=el("button",{class:"btn ghost small",type:"button"},"Keep my progress");
+    y.addEventListener("click",()=>{S=fresh();save();renderStrip();home();toast("Progress reset");});n.addEventListener("click",home);box.append(y,n);});
+  window.scrollTo(0,0);
+}
+
+function formulaSheet(){
+  const s=el("div",{class:"sheet"});
+  COURSE.formulas.forEach(([h,f])=>{const d=el("div",{class:"panel"});d.innerHTML=`<h3>${h}</h3><div class="formula">${f}</div>`;s.appendChild(d);});
+  return s;
+}
+function level(lv){
+  stopAll();const idx=L.indexOf(lv);
+  if(!unlocked(idx)){location.hash="";return;}
+  const app=$("#app");app.innerHTML="";
+  const d=el("div",{class:"dossier"});
+  const back=el("button",{class:"back",type:"button"},"← Back to the desk");back.addEventListener("click",()=>{location.hash="";});
+  d.appendChild(back);
+  d.appendChild(el("div",{},`<p class="eyebrow">Case file ${idx+1} of ${L.length}</p><h1 style="margin-top:8px">${lv.title}</h1><p class="note" style="margin-top:8px">${lv.topics}</p>`));
+  const p0=el("section",{class:"panel"});p0.innerHTML=`<h3><span class="eyebrow">The case</span></h3><p class="story">${lv.story}</p>`;d.appendChild(p0);
+  const p1=el("section",{class:"panel"});p1.innerHTML=`<h3><span class="eyebrow">Theory, briefly</span></h3><div class="brief">${lv.brief}</div><p class="refs">Further reading: ${lv.refs}</p>`;d.appendChild(p1);
+  const p2=el("section",{class:"panel"});p2.innerHTML=`<h3><span class="eyebrow">Lab</span></h3>`;const lb=el("div");p2.appendChild(lb);d.appendChild(p2);
+  const p3=el("section",{class:"panel"});p3.innerHTML=`<h3><span class="eyebrow">Challenges</span> <span class="note" id="qprog"></span></h3>`;
+  lv.qs.forEach((q,i)=>p3.appendChild(question(lv,q,i)));
+  d.appendChild(p3);
+  const nx=el("div",{class:"btnrow"});
+  if(idx<L.length-1){const b=el("button",{class:"btn",type:"button"},"Next case file →");b.addEventListener("click",()=>{if(unlocked(idx+1))location.hash=L[idx+1].id;else toast("Answer every question here to unlock the next file");});nx.appendChild(b);}
+  else{const b=el("button",{class:"btn",type:"button"},"Go to the board meeting →");b.addEventListener("click",()=>{if(boardUnlocked())location.hash="board";else toast("Clear "+COURSE.boardUnlock+" case files to unlock the board");});nx.appendChild(b);}
+  d.appendChild(nx);
+  app.appendChild(d);
+  lv.lab(lb);
+  updProg(lv);
+  window.scrollTo(0,0);
+}
+function updProg(lv){const n=lv.qs.filter((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].done).length;const e=$("#qprog");if(e)e.textContent=`${n} of ${lv.qs.length} solved`;}
+
+function parseNum(s){if(s==null)return NaN;s=String(s).trim().replace(/[₹,\s]/g,"");let isPct=false;if(s.endsWith("%")){isPct=true;s=s.slice(0,-1);}let v=parseFloat(s);if(isPct)v/=100;return v;}
+function numOK(v,q){if(Number.isNaN(v))return false;if(Math.abs(v-q.a)<=q.tol)return true;if(q.a<1&&v>1&&Math.abs(v/100-q.a)<=q.tol)return true;return false;}
+
+function question(lv,q,i){
+  const st=qstate(lv.id,i);
+  const box=el("div",{class:"q"});
+  box.innerHTML=`<div class="qhead"><span class="eyebrow">Challenge ${i+1}</span><span class="eyebrow" data-x></span></div><p class="qtext">${q.q}</p>`;
+  const fb=el("div");
+  const tag=box.querySelector("[data-x]");
+  const setTag=()=>{tag.textContent=st.done?`+${st.got} XP`:(st.hint?"hint used · 75 XP":"100 XP");};
+  setTag();
+  const solve=(correct)=>{
+    st.tries++;
+    if(correct){
+      st.done=true;st.first=(st.tries===1&&!st.hint);
+      let gain=st.tries===1?100:st.tries===2?50:20; if(st.hint)gain=Math.max(0,gain-25); st.got=gain;
+      if(st.tries===1){S.streak++;S.best=Math.max(S.best,S.streak);if(S.streak>=5)award("streak5");}
+      save(); addXP(gain,"Challenge "+(i+1));
+      fb.innerHTML=`<div class="fb ok"><b>Correct.</b><span>${q.why}</span></div>`;
+      setTag(); updProg(lv); checkLevel(lv); const hbx=box.querySelector("[data-hint]"); if(hbx)hbx.hidden=true;
+    } else {
+      S.streak=0;save();renderStrip();
+      fb.innerHTML=`<div class="fb no"><b>Not yet.</b><span>${st.tries>=2?"Look at the hint, or rework it in the lab, then try again.":"Try again; the lab above has what you need."}</span></div>`;
+    }
+  };
+  if(q.t==="mcq"){
+    const order=shuffled(q.opts.length,lv.id.charCodeAt(1)*31+i*17);
+    const opts=el("div",{class:"opts"});
+    order.forEach(k=>{const b=el("button",{class:"opt",type:"button"},q.opts[k]);
+      if(st.done){b.disabled=true;if(k===q.a)b.classList.add("right");}
+      b.addEventListener("click",()=>{if(st.done)return;const c=(k===q.a);b.classList.add(c?"right":"wrong");if(c)opts.querySelectorAll("button").forEach(x=>x.disabled=true);else b.disabled=true;solve(c);});
+      opts.appendChild(b);});
+    box.appendChild(opts);
+  } else {
+    const row=el("div",{class:"numrow"});
+    const inp=el("input",{type:"text",inputmode:"decimal",id:`in-${lv.id}-${i}`,"aria-label":"Your answer",placeholder:q.ph||"e.g. 0.123"});
+    const go=el("button",{class:"btn small",type:"button"},"Check");
+    if(st.done){inp.disabled=true;go.disabled=true;inp.value=String(+q.a.toFixed(4));}
+    const check=()=>{if(st.done)return;const v=parseNum(inp.value);if(Number.isNaN(v)){fb.innerHTML=`<div class="fb no"><b>Enter a number.</b><span>Decimals (0.25) and percentages (25%) both work.</span></div>`;return;}const c=numOK(v,q);if(c){inp.disabled=true;go.disabled=true;}solve(c);};
+    go.addEventListener("click",check);inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+    row.append(inp,go);box.appendChild(row);
+  }
+  if(q.hint){const hb=el("button",{class:"btn ghost small",type:"button","data-hint":"1"},"Show hint (−25 XP)");
+    if(st.done)hb.hidden=true;
+    hb.addEventListener("click",()=>{st.hint=true;save();setTag();hb.hidden=true;fb.innerHTML=`<div class="fb hint"><b>Hint.</b><span>${q.hint}</span></div>`;});
+    const r=el("div",{class:"btnrow"});r.appendChild(hb);box.appendChild(r);
+    if(st.hint&&!st.done){hb.hidden=true;fb.innerHTML=`<div class="fb hint"><b>Hint.</b><span>${q.hint}</span></div>`;}
+  }
+  if(st.done)fb.innerHTML=`<div class="fb ok"><b>Solved.</b><span>${q.why}</span></div>`;
+  box.appendChild(fb);
+  return box;
+}
+function checkLevel(lv){if(!levelDone(lv))return;const was=S.badges.includes(lv.id);award(lv.id);
+  if(lv.qs.every((q,i)=>S.ans[lv.id][i].first))award("clean");
+  if(!was){addXP(150,"Case file cleared");}}
+
+function board(){
+  stopAll();if(!boardUnlocked()){location.hash="";return;}
+  const app=$("#app");app.innerHTML="";
+  const d=el("div",{class:"dossier"});
+  const back=el("button",{class:"back",type:"button"},"← Back to the desk");back.addEventListener("click",()=>{location.hash="";});d.appendChild(back);
+  d.appendChild(el("div",{},`<p class="eyebrow">Final</p><h1 style="margin-top:8px">${COURSE.boardTitle||"The board meeting"}</h1><p class="note" style="margin-top:8px">${BOARD.length} questions from across the files. One attempt each, no hints. Score ${COURSE.boardPass} or more to earn ${COURSE.topRank}. XP is awarded on your first sitting only.</p>`));
+  const p=el("section",{class:"panel"});d.appendChild(p);app.appendChild(d);
+  const run={i:0,score:0,first:!S.board};
+  const show=()=>{
+    if(run.i>=BOARD.length){
+      const pass=run.score>=COURSE.boardPass;
+      S.board={score:Math.max(run.score,S.board?S.board.score:0)};save();
+      if(run.first)addXP(run.score*100,"Board meeting");
+      if(pass)award("board");
+      p.innerHTML=`<h2>${pass?"The board is satisfied.":"The board wants another look."}</h2><p>You scored <b class="mono">${run.score} / ${BOARD.length}</b>. ${pass?"You are now "+COURSE.topRank+".":"Revisit the case files, then reconvene."}</p>`;
+      const r=el("div",{class:"btnrow"});const a=el("button",{class:"btn",type:"button"},"Reconvene");a.addEventListener("click",board);const b=el("button",{class:"btn ghost",type:"button"},"Back to the desk");b.addEventListener("click",()=>{location.hash="";});r.append(a,b);p.appendChild(r);renderStrip();return;}
+    const q=BOARD[run.i];p.innerHTML=`<div class="qhead"><span class="eyebrow">Question ${run.i+1} of ${BOARD.length}</span><span class="eyebrow">Score ${run.score}</span></div><p class="qtext">${q.q}</p>`;
+    const fb=el("div");const next=el("button",{class:"btn",type:"button"},run.i<BOARD.length-1?"Next question →":"See the verdict");next.hidden=true;next.addEventListener("click",()=>{run.i++;show();});
+    const done=(c)=>{if(c)run.score++;fb.innerHTML=`<div class="fb ${c?"ok":"no"}"><b>${c?"Correct.":"Not quite."}</b><span>${q.why}</span></div>`;next.hidden=false;};
+    if(q.t==="mcq"){const o=el("div",{class:"opts"});const order=shuffled(q.opts.length,run.i*7+3);
+      order.forEach(k=>{const b=el("button",{class:"opt",type:"button"},q.opts[k]);b.addEventListener("click",()=>{o.querySelectorAll("button").forEach((x,ix)=>{x.disabled=true;if(order[ix]===q.a)x.classList.add("right");});if(k!==q.a)b.classList.add("wrong");done(k===q.a);});o.appendChild(b);});p.appendChild(o);}
+    else{const r=el("div",{class:"numrow"});const inp=el("input",{type:"text",inputmode:"decimal",id:"board-in-"+run.i,"aria-label":"Your answer",placeholder:"e.g. 0.5"});const g=el("button",{class:"btn small",type:"button"},"Submit");
+      const sub=()=>{const v=parseNum(inp.value);if(Number.isNaN(v))return;inp.disabled=true;g.disabled=true;done(numOK(v,q));};g.addEventListener("click",sub);inp.addEventListener("keydown",e=>{if(e.key==="Enter")sub();});r.append(inp,g);p.appendChild(r);}
+    p.appendChild(fb);p.appendChild(next);
+  };
+  show();window.scrollTo(0,0);
+}
+/* ---------- router ---------- */
+function route(){const h=location.hash.replace("#","");const lv=L.find(x=>x.id===h);if(lv)level(lv);else if(h==="board")board();else home();}
+window.addEventListener("hashchange",route);
+renderStrip();route();
+
+})();
+</script>
+</body>
+</html>

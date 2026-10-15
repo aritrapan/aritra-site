@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>ChargeGrid Tariff Room</title>
+<meta name="description" content="Learn random variables, named distributions, model fitting and simulation by pricing an EV-charging network: case files with theory, live labs, challenges and XP.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: an analyst's case desk. Sticky status strip (rank, XP, streak); a live transaction-flow
+   simulation as the hero; case files as a grid; an opened file is a single-column dossier:
+   story, theory, lab, challenges. */
+:root{
+  --bg:#EAEFF4; --surface:#FFFFFF; --sunk:#F3F6F9; --ink:#13233A; --muted:#566880; --line:#C9D3DF;
+  --accent:#1F5FA8; --accent-soft:#DCE7F5; --gold:#A86E06; --gold-soft:#F6E7C8;
+  --fraud:#B3263E; --fraud-soft:#F7DCE1; --ok:#1B7349; --ok-soft:#D7EFE2;
+  --display:"IBM Plex Sans Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1722; --surface:#172232; --sunk:#121C29; --ink:#E3E9F1; --muted:#97A7BB; --line:#2B3B51;
+  --accent:#73AAE9; --accent-soft:#1C3150; --gold:#E3AA3E; --gold-soft:#3A2C12;
+  --fraud:#F06D82; --fraud-soft:#3D1A22; --ok:#52C78E; --ok-soft:#14352A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1722; --surface:#172232; --sunk:#121C29; --ink:#E3E9F1; --muted:#97A7BB; --line:#2B3B51;
+  --accent:#73AAE9; --accent-soft:#1C3150; --gold:#E3AA3E; --gold-soft:#3A2C12;
+  --fraud:#F06D82; --fraud-soft:#3D1A22; --ok:#52C78E; --ok-soft:#14352A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1000px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:700}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font:600 .75rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+.note{font-size:.88rem;color:var(--muted)}
+
+/* status strip */
+.strip{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
+  padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.strip .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+.strip .rank{font:700 1.05rem/1.1 var(--display)}
+.xpbox{flex:1 1 220px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.xpbar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.xpbar>i{display:block;height:100%;background:var(--gold);width:0;transition:width .5s ease}
+.xpmeta{display:flex;justify-content:space-between;font:400 .8rem/1 var(--mono);color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:4px 11px;font:600 .82rem/1.2 var(--mono);white-space:nowrap}
+a.chip{text-decoration:none;color:var(--accent)}
+.chip.hot{border-color:var(--gold);background:var(--gold-soft)}
+
+/* hero */
+.hero{display:grid;gap:18px;padding-block:30px 10px}
+.hero p.lede{font-size:1.08rem;max-width:62ch;margin-top:12px}
+.hero .meta{color:var(--muted);font-size:.9rem;margin-top:8px;max-width:62ch}
+.herotop{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;align-items:end}
+@media (max-width:720px){.herotop{grid-template-columns:1fr}}
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;gap:8px;font-size:.92rem}
+.ticket .row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.ticket .row:last-child{border-bottom:0;padding-bottom:0}
+.ticket .row span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* flow simulation */
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;min-width:0}
+.flow canvas{width:100%;height:auto;display:block;max-width:100%;border-radius:6px}
+.flowbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.flowbar .ctrls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flowstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.flowstats div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:grid;gap:1px}
+.flowstats span{font-size:.72rem;color:var(--muted)}
+.flowstats b{font:600 1.05rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:4px 10px;font:600 .8rem/1.2 var(--mono)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+
+/* case grid */
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.case{position:relative;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;min-height:176px;transition:transform .15s,border-color .15s}
+.case:hover:not([disabled]){transform:translateY(-2px);border-color:var(--accent)}
+.case[disabled]{cursor:not-allowed;opacity:.55}
+.case .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.case .tag{font:600 .72rem/1 var(--mono);letter-spacing:.1em;color:var(--accent)}
+.case h3{font-size:1.25rem}
+.case .nick{font-size:.9rem;color:var(--muted)}
+.case .topics{font-size:.85rem;color:var(--muted);margin-top:auto}
+.stars{font-size:1rem;letter-spacing:2px;color:var(--gold)}
+.stars .off{color:var(--line)}
+.stamp{font:700 .7rem/1 var(--mono);letter-spacing:.1em;padding:4px 7px;border-radius:4px;border:1.5px solid currentColor}
+.stamp.ok{color:var(--ok)} .stamp.lock{color:var(--muted)} .stamp.open{color:var(--accent)}
+.case.boss{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.case.boss .tag,.case.boss .nick,.case.boss .topics{color:var(--bg);opacity:.8}
+
+.section-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:34px 0 12px;flex-wrap:wrap}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.badge{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.badge b{font:600 .95rem/1.2 var(--display);color:var(--muted)}
+.badge.got{border-style:solid;border-color:var(--gold);background:var(--gold-soft);color:var(--ink)}
+.badge.got b{color:var(--ink)}
+.badge .seal{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em}
+
+/* dossier */
+.dossier{display:grid;gap:22px;padding-block:24px}
+.back{justify-self:start;background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px clamp(16px,3vw,26px);display:grid;gap:14px;min-width:0}
+.panel>h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel>h3 .eyebrow{color:var(--accent)}
+.brief{display:grid;gap:12px;max-width:70ch}
+.brief .term{font-weight:600}
+.story{border-left:3px solid var(--gold);padding-left:14px;font-style:italic;max-width:70ch}
+.story b{font-style:normal}
+.formula{font-family:var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:.92rem;white-space:pre;line-height:1.5}
+.refs{font-size:.84rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+
+/* labs */
+.labgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:760px){.labgrid{grid-template-columns:1fr}}
+svg text{fill:var(--ink);font-family:var(--mono)}
+.svgbox{width:100%;overflow-x:auto}
+.svgbox svg{display:block;width:100%;height:auto;max-width:100%}
+.svgbox canvas{display:block;width:100%;height:auto;max-width:100%;border-radius:6px}
+.ctrl{display:grid;gap:6px}
+.ctrl label{font-size:.88rem;color:var(--muted)}
+.ctrl output{font-family:var(--mono);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select,input[type=text],input[type=number]{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:8px;padding:8px 14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:5px 10px;font-size:.85rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.readout div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.readout span{font-size:.76rem;color:var(--muted)}
+.readout b{font:600 1.15rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{font:600 .75rem/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--mono)}
+.up{color:var(--fraud);font-weight:600}.down{color:var(--ok);font-weight:600}
+.target{font:700 1.6rem/1.1 var(--mono);color:var(--accent)}
+.regbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.regbtn{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:7px 8px;font-size:.86rem}
+.regbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.door{width:30%;aspect-ratio:3/4;max-width:120px;border:2px solid var(--line);background:var(--sunk);border-radius:8px 8px 2px 2px;
+  font:700 1.4rem/1 var(--display);display:grid;place-items:center}
+.door.pick{border-color:var(--accent);background:var(--accent-soft)}
+.door.open{background:var(--bg);color:var(--muted);border-style:dashed}
+.door.prize{border-color:var(--gold);background:var(--gold-soft)}
+.doors{display:flex;gap:10px;justify-content:flex-start}
+.mixbar{display:grid;gap:6px}
+.mixrow{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.mixtrack{display:flex;height:30px;border-radius:6px;overflow:hidden;background:var(--sunk)}
+.mixtrack i{display:block;height:100%;transition:width .8s ease;font:600 .72rem/30px var(--mono);text-align:center;overflow:hidden;white-space:nowrap;color:var(--ink)}
+.mixtrack i.u{background:var(--accent-soft)}.mixtrack i.c{background:var(--line)}.mixtrack i.n{background:var(--fraud);color:var(--surface)}
+
+/* challenges */
+.q{border-top:1px solid var(--line);padding-top:14px;display:grid;gap:10px}
+.q:first-of-type{border-top:0;padding-top:0}
+.qhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.qhead .eyebrow{white-space:nowrap}
+.qtext{font-weight:500;max-width:70ch}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:9px 12px}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--fraud);background:var(--fraud-soft)}
+.opt[disabled]{cursor:default}
+.numrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.numrow input{width:12em}
+.fb{border-radius:8px;padding:10px 12px;font-size:.93rem;display:grid;gap:4px}
+.fb.ok{background:var(--ok-soft);border:1px solid var(--ok)}
+.fb.no{background:var(--fraud-soft);border:1px solid var(--fraud)}
+.fb.hint{background:var(--gold-soft);border:1px solid var(--gold)}
+.fb b{font-family:var(--display);font-size:1rem}
+
+.toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;z-index:20;max-width:min(320px,calc(100vw - 32px))}
+.toast{background:var(--ink);color:var(--bg);border-radius:8px;padding:10px 14px;font-size:.9rem;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:pop .25s ease}
+.toast b{color:var(--gold-soft)}
+@keyframes pop{from{transform:translateY(10px);opacity:.3}to{transform:none;opacity:1}}
+.foot{margin-top:40px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:6px;font-size:.86rem;color:var(--muted)}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.sheet .formula{font-size:.84rem}
+.sheet h3{font-size:1rem;margin-bottom:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="strip" id="strip">
+    <div class="who"><span class="eyebrow">Analyst rank</span><span class="rank" id="rank">Trainee Analyst</span></div>
+    <div class="xpbox"><div class="xpbar" aria-hidden="true"><i id="xpfill"></i></div>
+      <div class="xpmeta"><span id="xptext">0 XP</span><span id="xpnext"></span></div></div>
+    <span class="chip" id="streakchip" title="Correct first-try answers in a row">Streak <b id="streak">0</b></span>
+    <span class="chip" title="Badges earned">Badges <b id="badgecount">0</b></span>
+    <a class="chip" href="../" id="hublink">All modules</a>
+  </div>
+  <main id="app"></main>
+  <div class="foot">
+    <span>ChargeGrid Tariff Room · part of <a href="../">Statistics, played</a>, a free course you play. Built by <a href="https://aritra.ai" target="_blank" rel="noopener">Aritra Pan</a>. Free to use in teaching.</span>
+    <span>ChargeGrid is a fictional EV-charging operator. Every number comes from one fixed file of 12,083 fictional charging sessions over one quarter, so every answer can be checked.</span>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script>
+(function(){
+"use strict";
+/* ===== Random variables and distributions: ChargeGrid Tariff Room ===== */
+/* ---------- data (all computed from the fixed ChargeGrid file: 12,083 sessions, 3 hubs, 90 days, 06:00–23:00) ---------- */
+const N=12083;
+const HUBS=["Mall","ITPark","Highway"];
+const HUB={Mall:{n:4488,mean:85.566,sd:54.184,med:76.1,gap:19.986,perDay:49.867,wShape:1.6107,wScale:95.444,tw:1514,car:2974},
+  ITPark:{n:5345,mean:139.871,sd:108.476,med:113.6,gap:16.903,perDay:59.389,wShape:1.3016,wScale:151.489,tw:1338,car:4007},
+  Highway:{n:2250,mean:40.555,sd:19.337,med:39.15,gap:39.252,perDay:25.0,wShape:2.2124,wScale:45.772,tw:217,car:2033}};
+const ALL={mean:101.207,sd:88.328};
+// 200 mid-quantiles (0.25%, 0.75%, …, 99.75%) of duration (min) per hub: E[g(D)] ≈ mean of g over these
+const HQ={Mall:[1.9,4.7,6.3,8.0,9.0,10.1,11.1,12.1,13.1,14.4,15.0,15.7,16.4,17.4,18.4,19.0,20.0,20.8,21.5,22.5,23.3,24.1,25.0,25.6,26.4,27.3,28.0,28.7,29.3,30.2,31.1,31.8,32.6,33.3,33.9,34.8,35.2,36.0,36.8,37.2,37.8,38.3,38.9,39.4,40.2,40.6,41.2,41.8,42.4,43.3,44.0,44.7,45.5,46.1,46.7,47.3,48.1,48.9,49.5,50.1,50.7,51.4,52.1,52.8,53.3,53.8,54.5,54.9,55.6,56.3,57.1,58.0,58.6,59.0,59.7,60.5,61.2,61.9,62.4,63.1,63.7,64.4,65.2,65.8,66.5,67.1,67.7,68.2,68.8,69.6,70.2,71.0,71.5,72.2,72.5,73.1,73.7,74.3,75.2,75.7,76.5,77.3,77.9,78.6,79.4,80.2,80.9,81.5,82.3,83.2,83.7,84.3,85.0,85.7,86.5,87.3,88.1,88.4,89.4,90.2,91.2,92.1,93.1,94.1,95.1,95.7,96.4,97.3,98.0,98.9,99.8,100.6,101.4,102.3,103.4,104.3,105.3,106.4,107.1,107.8,108.6,109.7,110.4,111.2,112.2,113.2,114.2,115.2,116.1,116.8,117.7,118.7,120.0,120.9,122.4,123.4,125.1,126.1,127.4,128.4,129.9,131.2,132.7,133.9,135.1,136.5,138.1,139.5,141.2,142.5,143.8,145.3,146.8,148.7,150.5,152.4,154.2,155.2,156.9,158.4,160.0,162.1,163.9,165.7,168.9,171.2,173.8,176.8,180.5,183.8,188.4,192.1,196.8,201.1,207.2,215.1,226.9,236.5,261.3,282.9],
+ITPark:[1.3,3.4,5.5,7.2,8.8,10.0,11.4,12.4,13.3,15.0,16.0,17.2,18.3,19.4,20.7,21.7,22.9,24.2,25.2,26.3,27.7,28.6,29.5,30.8,32.2,33.3,34.3,35.2,36.2,37.1,38.4,39.6,40.8,41.7,42.8,43.8,45.1,45.8,46.8,47.8,48.7,49.7,50.7,51.7,52.7,53.7,54.9,56.1,57.3,58.2,59.2,60.1,61.0,62.0,63.1,64.1,65.1,66.2,67.0,67.7,68.8,69.9,71.3,72.2,73.3,74.6,76.1,77.1,78.1,79.1,80.2,81.2,82.5,83.4,84.5,85.3,86.6,87.6,88.5,89.5,90.7,91.7,92.7,93.8,94.7,95.9,96.9,97.9,99.0,99.8,101.2,102.8,104.0,105.1,106.2,107.6,109.0,110.6,111.7,113.0,114.0,115.4,117.0,118.0,119.2,120.6,122.0,124.0,125.3,126.2,128.1,129.1,130.4,132.1,133.4,134.7,136.3,137.7,139.5,140.7,142.3,143.4,145.2,146.4,147.7,148.9,150.8,152.3,153.8,155.2,157.0,158.6,160.2,161.8,163.9,165.7,167.4,168.6,170.3,172.7,174.4,176.2,177.7,180.0,182.3,184.0,186.1,188.9,191.0,193.6,195.9,198.0,200.3,202.2,204.8,207.8,211.1,214.0,216.5,219.2,222.2,224.6,227.0,229.9,233.2,235.9,238.9,242.2,245.4,248.7,251.9,255.7,258.1,260.9,265.1,268.4,273.3,279.4,283.0,286.9,292.1,295.0,299.7,303.4,309.4,314.3,322.9,331.9,338.4,348.8,359.5,368.4,381.2,389.5,401.5,416.1,441.3,470.4,504.3,594.6],
+Highway:[2.9,4.5,5.9,6.8,8.3,8.9,9.6,10.3,11.0,11.6,11.9,12.5,13.0,13.6,14.1,14.5,15.2,15.6,16.0,16.6,16.9,17.2,17.6,18.0,18.2,18.5,18.8,19.1,19.3,19.9,20.2,20.6,20.9,21.2,21.5,21.8,22.0,22.4,22.8,23.1,23.5,23.8,24.1,24.3,24.7,24.8,25.2,25.4,25.7,25.9,26.0,26.3,26.6,26.8,27.0,27.3,27.6,28.0,28.3,28.4,28.6,28.8,29.2,29.4,29.7,29.9,30.3,30.7,30.9,31.2,31.4,31.9,32.2,32.4,32.8,33.1,33.3,33.5,33.7,34.0,34.3,34.6,34.8,35.1,35.4,35.6,35.9,36.2,36.5,36.7,37.0,37.1,37.3,37.5,37.7,38.0,38.1,38.4,38.7,39.0,39.4,39.5,39.6,39.9,40.2,40.4,40.8,41.1,41.4,41.6,41.8,42.1,42.3,42.7,43.0,43.2,43.5,43.7,44.0,44.2,44.4,44.6,44.9,45.1,45.3,45.5,45.8,46.1,46.3,46.8,47.0,47.2,47.6,47.9,48.2,48.4,48.7,49.1,49.4,49.6,49.9,50.1,50.4,50.8,51.0,51.3,51.4,51.8,52.1,52.5,53.2,53.5,53.9,54.2,54.5,54.8,55.2,55.5,55.9,56.4,56.8,57.2,57.5,57.7,58.1,58.5,59.0,59.7,60.2,60.5,61.0,61.5,62.0,62.9,63.3,63.7,64.4,64.9,65.8,66.2,66.8,67.7,68.2,69.4,70.3,70.9,71.7,72.6,73.7,75.3,76.5,77.4,78.9,80.3,82.2,84.5,85.6,89.0,91.5,100.8]};
+const ITQ=[0.1,5.0,7.8,10.9,12.9,15.6,17.8,20.2,22.3,24.6,27.0,29.1,31.8,33.9,35.7,37.8,40.3,42.3,44.5,46.3,48.5,50.1,52.2,54.3,56.8,58.7,60.5,62.5,64.6,66.6,68.4,70.8,72.7,75.5,77.6,79.5,81.9,83.8,85.9,88.1,89.9,92.5,94.2,96.2,98.3,100.5,103.3,105.6,108.4,111.2,113.6,116.3,118.6,121.3,124.7,127.2,129.8,132.8,135.7,138.5,141.3,144.3,146.9,149.7,153.0,155.8,159.7,162.9,166.6,169.8,173.6,176.8,181.2,184.9,189.9,194.8,199.1,203.5,209.5,215.5,220.8,225.7,231.8,237.5,243.5,249.9,257.3,263.2,271.5,281.1,289.6,297.5,307.2,319.0,335.5,354.4,373.6,397.0,426.6,485.4,906.5]; // percentiles 0..100 of ITPark duration
+const SAMP200=[0.1,0.9,2.5,4.3,5.5,6.0,7.8,9.0,9.5,9.6,11.2,13.1,15.9,16.0,17.3,18.6,19.3,20.4,20.7,21.0,21.1,23.2,24.6,26.2,27.1,27.9,28.3,28.6,28.8,29.1,30.2,30.8,34.8,35.2,38.7,39.2,40.1,41.4,42.0,43.0,43.4,45.3,45.6,45.7,48.6,48.9,50.6,52.3,53.0,53.4,55.1,56.6,57.2,57.6,59.4,59.6,60.1,60.2,60.8,61.8,62.4,63.2,63.6,64.3,64.4,68.6,69.1,71.3,72.2,77.3,77.7,78.9,80.0,80.5,82.0,83.2,84.1,85.2,85.7,86.1,86.6,86.7,87.9,88.9,90.0,90.2,90.2,94.2,95.4,95.7,96.9,99.1,99.3,101.4,102.7,103.3,103.6,103.9,104.1,105.3,106.1,107.6,112.9,112.9,117.0,117.5,121.5,121.5,121.8,123.6,127.7,128.2,129.4,129.6,133.0,133.4,133.8,133.9,135.0,137.7,137.8,141.2,142.4,142.4,143.4,144.6,144.7,147.2,147.2,148.0,148.7,148.8,149.1,149.3,151.1,151.9,152.1,153.6,155.2,155.8,157.0,158.2,158.2,161.9,164.0,164.9,165.0,169.9,174.2,174.2,174.7,175.2,175.5,175.8,176.3,177.8,180.5,190.3,205.8,208.0,209.8,213.8,213.9,218.4,223.0,225.7,226.5,227.5,230.9,232.6,238.5,240.7,241.7,243.3,254.1,260.7,264.0,265.2,278.0,279.6,282.9,306.9,313.2,323.3,324.9,326.7,327.0,332.4,332.8,336.2,339.8,343.1,343.3,359.8,377.3,382.3,410.8,473.0,575.3,673.7]; // 200 ITPark durations drawn without replacement (seed 2026), the bootstrap lab's sample
+const BILLQ=[0.04,3.69,5.65,7.48,9.33,11.0,12.43,14.0,15.48,17.14,18.61,20.03,21.43,22.89,24.65,26.14,27.54,29.1,30.98,32.45,34.04,35.62,37.24,38.84,41.11,42.94,44.86,46.76,48.94,51.13,53.11,55.05,57.21,59.53,62.0,64.36,67.3,70.25,72.52,75.21,77.56,80.11,82.52,85.45,88.1,90.8,93.68,96.46,99.84,102.66,105.47,108.04,111.41,114.49,118.09,122.1,125.59,129.55,133.68,137.58,141.61,146.07,150.65,155.14,160.02,165.39,171.03,176.53,182.63,188.69,195.67,202.26,208.46,215.18,222.46,231.92,240.26,248.66,256.86,265.67,277.5,286.14,297.41,308.65,319.62,332.17,344.67,358.32,371.78,390.27,408.76,429.89,456.84,484.36,513.91,551.81,596.69,654.34,717.45,843.81,1805.26]; // percentiles 0..100 of energy bill (₹)
+const CAFEQ=[14.6,34.3,39.6,43.7,46.3,49.1,51.7,53.8,56.4,59.1,60.8,63.0,65.3,67.3,69.0,71.1,72.9,74.9,77.1,78.7,80.0,81.6,83.8,85.4,87.6,89.3,91.1,92.8,94.6,96.3,97.9,99.8,101.2,103.0,104.6,106.3,108.4,109.8,112.0,113.9,115.6,117.7,119.9,121.5,123.6,125.3,126.9,128.8,131.2,133.4,135.9,138.4,140.4,142.3,144.7,146.8,148.6,150.8,153.0,156.1,158.1,160.5,163.7,166.8,169.7,172.9,175.9,178.1,181.1,183.7,186.4,190.7,194.3,198.4,201.6,206.5,210.3,214.9,220.7,226.8,231.9,236.8,242.9,248.5,254.4,260.8,269.2,277.6,285.6,294.8,305.3,316.6,328.0,342.4,355.0,375.9,400.6,432.0,482.8,571.0,1340.8]; // percentiles 0..100 of cafe spend among the 5,263 spenders
+const RATEQ=[6.13,6.5,6.59,6.64,6.68,6.71,6.74,6.76,6.78,6.8,6.82,6.83,6.85,6.87,6.88,6.89,6.9,6.92,6.93,6.94,6.95,6.96,6.97,6.98,6.99,7.0,7.01,7.01,7.02,7.03,7.04,7.05,7.06,7.07,7.08,7.08,7.09,7.1,7.11,7.11,7.12,7.13,7.14,7.15,7.15,7.16,7.17,7.18,7.18,7.19,7.2,7.21,7.21,7.22,7.23,7.24,7.24,7.25,7.26,7.27,7.27,7.28,7.29,7.3,7.31,7.32,7.32,7.33,7.34,7.35,7.35,7.36,7.37,7.38,7.39,7.4,7.41,7.42,7.43,7.44,7.45,7.47,7.48,7.49,7.5,7.51,7.52,7.53,7.55,7.56,7.58,7.6,7.62,7.64,7.67,7.7,7.73,7.77,7.82,7.91,8.24]; // percentiles 0..100 of car charge rate (kW)
+const GAPQ=[0.01,0.2,0.38,0.52,0.69,0.87,1.02,1.22,1.37,1.58,1.76,1.92,2.12,2.33,2.52,2.74,2.92,3.12,3.35,3.54,3.77,3.98,4.21,4.42,4.64,4.86,5.09,5.31,5.54,5.76,5.98,6.24,6.52,6.77,7.06,7.36,7.62,7.88,8.12,8.36,8.7,8.97,9.33,9.63,9.99,10.29,10.65,10.9,11.21,11.52,11.91,12.23,12.56,12.95,13.26,13.64,13.98,14.39,14.7,15.12,15.5,15.83,16.3,16.82,17.24,17.68,18.25,18.7,19.19,19.59,20.1,20.6,21.31,21.91,22.52,23.16,23.97,24.53,25.4,25.99,26.88,27.74,28.92,29.73,30.7,31.91,33.04,34.42,36.14,37.43,39.2,41.02,43.04,45.27,47.93,50.63,54.85,59.11,66.68,77.74,129.32]; // percentiles 0..100 of ITPark inter-arrival gap (min)
+const HOURLY={"0":43,"1":170,"2":266,"3":341,"4":286,"5":208,"6":130,"7":51,"8":22,"9":10,"10":1,"11":1,"12":1}; // ITPark: number of hub-hours (of 1,530) with k arrivals
+const HOURLY_MEAN=3.4935,HOURLY_VAR=3.3803;
+const OCC_MEAN=[1.59,4.18,5.53,6.42,7.03,7.48,7.83,7.88,8.07,8.07,8.11,8.07,8.35,8.5,8.44,8.32,8.7]; // ITPark mean concurrent sessions by hour (06:00…22:00)
+const OCC_P95=[4,8,10,12,13,13,13,13,13,13,13,13,13,13,13,13,13];
+const OCC_MAX=[8,13,14,18,16,16,19,17,16,16,16,18,17,17,18,18,17];
+const SCAT=[[41.9,4.68,0],[78.7,10.09,0],[56.5,6.05,0],[61.3,7.07,0],[116.1,13.34,0],[188.4,21.89,0],[221.4,27.73,0],[260.3,5.66,1],[83.4,10.85,0],[233.3,4.28,1],[107.0,12.07,0],[178.6,3.23,1],[59.2,7.26,0],[233.3,4.06,1],[140.7,16.45,0],[194.1,23.01,0],[32.9,3.98,0],[76.1,9.16,0],[83.4,1.43,1],[111.0,12.84,0],[215.9,27.56,0],[54.6,6.45,0],[177.8,21.92,0],[46.6,5.54,0],[181.5,23.15,0],[87.2,10.06,0],[260.1,31.9,0],[313.2,37.55,0],[73.7,9.12,0],[127.9,14.44,0],[65.0,7.62,0],[170.7,3.11,1],[34.7,4.26,0],[41.3,5.07,0],[146.1,2.51,1],[21.4,0.39,1],[144.7,17.88,0],[333.8,40.7,0],[79.1,9.89,0],[67.9,8.11,0],[41.5,4.95,0],[211.1,25.48,0],[31.4,3.66,0],[143.0,17.54,0],[57.5,1.06,1],[266.6,5.1,1],[106.4,2.02,1],[63.3,1.11,1],[33.3,4.1,0],[147.5,17.47,0],[43.8,5.52,0],[3.7,0.07,1],[103.9,12.5,0],[120.7,14.5,0],[94.6,1.73,1],[89.1,11.06,0],[156.2,19.12,0],[64.0,1.01,1],[83.4,10.26,0],[267.2,4.93,1],[214.8,3.94,1],[23.0,2.63,0],[40.4,5.11,0],[373.2,45.66,0],[11.4,1.33,0],[52.0,6.38,0],[16.9,2.16,0],[104.4,12.49,0],[90.8,11.46,0],[47.9,5.86,0],[54.7,6.01,0],[154.8,19.52,0],[440.3,8.26,1],[33.1,4.05,0],[199.9,26.14,0],[11.7,1.39,0],[35.5,4.49,0],[231.8,27.34,0],[18.8,2.13,0],[56.8,7.18,0],[29.0,3.44,0],[137.9,15.95,0],[96.4,11.51,0],[7.2,0.89,0],[142.3,15.59,0],[50.7,0.95,1],[81.1,10.29,0],[10.1,1.29,0],[103.3,1.82,1],[370.7,46.97,0],[68.4,8.07,0],[113.1,12.61,0],[50.3,1.05,1],[146.4,17.53,0],[98.3,11.98,0],[59.1,0.93,1],[43.9,5.5,0],[102.1,12.19,0],[40.7,4.84,0],[134.3,16.77,0],[32.4,4.13,0],[338.0,5.65,1],[34.2,4.07,0],[415.1,48.88,0],[72.3,9.06,0],[33.3,4.06,0],[61.7,1.06,1],[15.1,1.79,0],[35.6,4.45,0],[165.7,19.22,0],[95.4,11.81,0],[19.8,2.4,0],[14.8,1.71,0],[25.3,0.5,1],[52.1,6.09,0],[142.8,2.72,1],[63.4,7.97,0],[96.2,12.06,0],[92.3,11.52,0],[85.7,9.23,0],[100.7,1.96,1],[16.2,0.27,1],[179.1,20.49,0],[143.1,16.89,0],[273.9,4.8,1],[133.1,2.76,1],[74.4,8.88,0],[68.4,8.37,0],[43.4,4.72,0],[158.6,18.12,0],[200.8,3.65,1],[92.7,11.01,0],[144.9,18.97,0],[3.8,0.47,0],[25.8,3.05,0],[21.0,2.55,0],[37.3,0.7,1],[249.1,29.58,0],[53.8,6.35,0],[125.3,2.33,1],[38.0,4.79,0],[76.5,9.71,0],[40.4,4.9,0],[74.5,8.75,0],[204.8,4.17,1],[57.5,6.77,0],[46.1,5.75,0],[3.0,0.35,0],[20.1,2.29,0],[107.1,12.48,0],[43.1,4.68,0],[45.0,5.72,0],[100.0,12.22,0],[17.6,0.31,1],[51.9,6.49,0],[212.1,25.64,0],[116.0,2.27,1],[145.5,17.99,0],[209.8,27.08,0],[42.0,5.11,0]]; // 160 sessions: [duration, energy kWh, two-wheeler?]
+const FIT={exponential:{k:1,logL:-31753.15,AIC:63508.3,BIC:63514.9,KS:0.0941,cdf:x=>1-Math.exp(-x/139.871)},
+  weibull:{k:2,logL:-31485.09,AIC:62974.2,BIC:62987.4,KS:0.0076,cdf:x=>1-Math.exp(-Math.pow(x/151.489,1.3016))},
+  gamma:{k:2,logL:-31499.96,AIC:63003.9,BIC:63017.1,KS:0.0149,cdf:x=>gammaCDF(x,1.5213,91.94)},
+  lognormal:{k:2,logL:-31974.17,AIC:63952.3,BIC:63965.5,KS:0.0717,cdf:x=>x<=0?0:normCDF((Math.log(x)-4.5774)/0.9859)},
+  normal:{k:2,logL:-32633.23,AIC:65270.5,BIC:65283.6,KS:0.0991,cdf:x=>normCDF((x-139.871)/108.466)}};
+const PFAULT=475/N;
+const OCC_GT=[0.9821,0.9596,0.9251,0.8699,0.7966,0.7003,0.5814,0.45,0.3345,0.2366,0.1593,0.1013,0.0589,0.0288,0.0142,0.0074,0.0022,0.0006,0.0001,0]; // ITPark: share of minutes with more than k sessions in progress, k = 0..19
+const CAFE={skew:2.4395,kurt:10.5259,mean:71.937,pShare:0.43557,spMean:165.155,spSD:114.583,spMed:135.9,lnMu:4.9135,lnSigma:0.6186,spSkew:2.4979,spKurt:12.0739};
+const RATE={mean:7.2002,sd:0.2986,in1:0.6785,in2:0.9523};
+const NUDGE={a:[73,198],b:[59,190]};
+
+/* ---------- maths helpers (not in the engine) ---------- */
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
+const normCDF=z=>0.5*(1+erf(z/Math.SQRT2));
+function lnGamma(x){const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-lnGamma(1-x);x-=1;let a=c[0];const t=x+7.5;for(let i=1;i<9;i++)a+=c[i]/(x+i);return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);}
+function gammaP(a,x){if(x<=0)return 0;if(x<a+1){let s=1/a,t=1/a;for(let n=1;n<300;n++){t*=x/(a+n);s+=t;if(t<s*1e-13)break;}return s*Math.exp(-x+a*Math.log(x)-lnGamma(a));}
+  let b=x+1-a,c=1e300,dd=1/b,h=dd;for(let i=1;i<300;i++){const an=-i*(i-a);b+=2;dd=an*dd+b;if(Math.abs(dd)<1e-300)dd=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;dd=1/dd;const del=dd*c;h*=del;if(Math.abs(del-1)<1e-13)break;}return 1-Math.exp(-x+a*Math.log(x)-lnGamma(a))*h;}
+const gammaCDF=(x,k,th)=>gammaP(k,x/th);
+const gammaPDF=(x,k,th)=>x<=0?0:Math.exp((k-1)*Math.log(x)-x/th-k*Math.log(th)-lnGamma(k));
+const weibPDF=(x,k,l)=>x<=0?0:(k/l)*Math.pow(x/l,k-1)*Math.exp(-Math.pow(x/l,k));
+const weibCDF=(x,k,l)=>x<=0?0:1-Math.exp(-Math.pow(x/l,k));
+const lnormPDF=(x,m,s)=>x<=0?0:normPDF(Math.log(x),m,s)/x;
+const qsample=(Q,r)=>{const u=r()*100,i=Math.min(99,Math.floor(u)),t=u-i;return Q[i]+(Q[i+1]-Q[i])*t;}; // draw from a 0..100 percentile table
+const qcdf=(Q,x)=>{if(x<=Q[0])return 0;if(x>=Q[100])return 1;let lo=0,hi=100;while(hi-lo>1){const m=(lo+hi)>>1;if(Q[m]<=x)lo=m;else hi=m;}return (lo+(x-Q[lo])/(Q[hi]-Q[lo]))/100;}; // empirical CDF from a percentile table
+const wsample=(k,l,r)=>l*Math.pow(-Math.log(1-r()),1/k);
+const nsample=r=>{const u=1-r(),v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const sdev=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
+const quant=(sorted,p)=>{const h=(sorted.length-1)*p,i=Math.floor(h);return sorted[i]+(sorted[Math.min(sorted.length-1,i+1)]-sorted[i])*(h-i);};
+const planRev=(plan,D,P)=>plan==="A"?P.a:plan==="B"?P.b*D:P.c0+Math.max(D-P.cFree,0)*P.c1;
+const PLANS={a:149,b:1.5,c0:99,cFree:60,c1:1};
+const clock=t=>{const m=Math.floor(t%1020)+360;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");};
+
+/* ---------- the hub simulation (arrivals, chargers, queue, revenue; one minute at a time) ---------- */
+function HubSim(root,opts){
+  const o=Object.assign({hub:"ITPark",chargers:10,plan:"B",seed:9,autoplay:!REDUCED,title:"Live: one hub, one minute at a time"},opts);
+  root.classList.add("flow");
+  root.innerHTML=`<div class="flowbar"><span class="eyebrow">${o.title}</span><div class="ctrls">
+      <select data-hub aria-label="Hub">${HUBS.map(h=>`<option value="${h}" ${h===o.hub?"selected":""}>${h}</option>`).join("")}</select>
+      <select data-plan aria-label="Tariff plan"><option value="A">Plan A · ₹149 flat</option><option value="B" selected>Plan B · ₹1.5/min</option><option value="C">Plan C · ₹99 + ₹1/min after 60</option></select>
+      <label class="note" style="display:inline-flex;gap:6px;align-items:center">chargers <input type="range" data-k min="3" max="20" value="${o.chargers}" style="width:90px"> <output data-ko>${o.chargers}</output></label>
+      <button class="btn small" data-play type="button">${o.autoplay?"Pause":"Play"}</button>
+      <div class="seg" role="group" aria-label="Speed"><button type="button" data-sp="1" aria-pressed="true">1×</button><button type="button" data-sp="4" aria-pressed="false">4×</button><button type="button" data-sp="16" aria-pressed="false">16×</button></div>
+      <button class="btn ghost small" data-reset type="button">Reset</button></div></div>
+    <canvas aria-label="Animated charging hub: vehicles arrive at random gaps, occupy chargers for random durations, and queue when every charger is busy"></canvas>
+    <div class="flowstats"><div><span>Clock</span><b data-clock>06:00</b></div><div><span>Arrivals</span><b data-n>0</b></div><div><span>Arrivals per hour</span><b data-rate>—</b></div><div><span>Mean session (min)</span><b data-md>—</b></div><div><span>Waiting now · longest queue</span><b data-q>0 · 0</b></div><div><span>Minutes with a queue</span><b data-qs>—</b></div><div><span>Revenue (₹)</span><b data-rev>0</b></div><div><span>Revenue per session (₹)</span><b data-rps>—</b></div></div>`;
+  const W=720,H=225,c=root.querySelector("canvas"),g=canvasSetup(c,W,H);
+  let hub=o.hub,K=o.chargers,plan=o.plan,speed=1,playing=o.autoplay,run=null;
+  let r,T,next,slots,queue,n,served,rev,durSum,qMin,qMax,day,flash;
+  const col=()=>({ink:cssVar("--ink"),muted:cssVar("--muted"),line:cssVar("--line"),sunk:cssVar("--sunk"),acc:cssVar("--accent"),accs:cssVar("--accent-soft"),fraud:cssVar("--fraud"),gold:cssVar("--gold"),surf:cssVar("--surface"),ok:cssVar("--ok")});
+  const H0=()=>HUB[hub];
+  function reset(){r=rng(o.seed);T=0;day=1;next=-Math.log(1-r())*H0().gap;slots=Array.from({length:K},()=>null);queue=[];n=served=rev=durSum=qMin=qMax=0;flash=[];draw();stats();}
+  function arrive(){const h=H0();const tw=r()<h.tw/h.n;const d=wsample(h.wShape,h.wScale,r);const v={tw,d};n++;const i=slots.indexOf(null);if(i>=0)start(i,v);else{queue.push(v);qMax=Math.max(qMax,queue.length);}}
+  function start(i,v){slots[i]={tw:v.tw,start:T,end:T+v.d,d:v.d};flash.push({i,t:T});}
+  function step(){T+=1;if(T%1020===0){day++;}
+    while(T>=next){arrive();next+=-Math.log(1-r())*H0().gap;}
+    slots.forEach((s,i)=>{if(s&&T>=s.end){served++;rev+=planRev(plan,s.d,PLANS);durSum+=s.d;slots[i]=null;if(queue.length)start(i,queue.shift());}});
+    if(queue.length)qMin++;flash=flash.filter(f=>T-f.t<6);}
+  function draw(){const C=col();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);
+    g.font="11px IBM Plex Mono, monospace";g.fillStyle=C.muted;
+    g.fillText(`${hub} hub · day ${day} · ${clock(T)} · gaps ~ Exponential(mean ${H0().gap} min) · durations ~ Weibull(${H0().wShape}, ${H0().wScale})`,12,16);
+    // chargers grid
+    const cols=Math.min(K,10),rows=Math.ceil(K/cols),cw=Math.min(62,(W-200)/cols),ch=Math.min(64,(H-110)/rows),x0=150,y0=36;
+    g.fillText("chargers (bar = share of the session completed)",x0,y0-6);
+    for(let i=0;i<K;i++){const x=x0+(i%cols)*cw,y=y0+Math.floor(i/cols)*ch;const s=slots[i];
+      g.fillStyle=s?C.surf:C.sunk;g.strokeStyle=s?C.acc:C.line;g.lineWidth=1;g.fillRect(x+3,y+3,cw-6,ch-8);g.strokeRect(x+3,y+3,cw-6,ch-8);
+      if(s){const p=Math.min(1,(T-s.start)/(s.end-s.start));g.fillStyle=s.tw?C.gold:C.acc;g.fillRect(x+6,y+ch-16,(cw-12)*p,7);
+        g.beginPath();g.arc(x+cw/2,y+ch/2-8,s.tw?6:9,0,7);g.fill();}
+      if(flash.some(f=>f.i===i)){g.strokeStyle=C.gold;g.lineWidth=2;g.strokeRect(x+1,y+1,cw-2,ch-4);g.lineWidth=1;}}
+    // entrance and queue
+    g.fillStyle=C.muted;g.fillText("entrance",12,y0+12);g.fillText("queue →",12,H-52);
+    g.strokeStyle=C.line;g.strokeRect(12,H-44,W-24,24);
+    queue.forEach((v,i)=>{const x=22+i*16;if(x>W-24)return;g.fillStyle=v.tw?C.gold:C.fraud;g.beginPath();g.arc(x,H-32,v.tw?5:7,0,7);g.fill();});
+    g.fillStyle=C.ink;g.fillText(queue.length?`${queue.length} waiting`:"no queue",W-110,H-50);
+    // legend
+    const L=[[C.acc,"car (7.2 kW)"],[C.gold,"two-wheeler (1.1 kW)"],[C.fraud,"waiting"]];let lx=12;L.forEach(([cc,t])=>{g.fillStyle=cc;g.beginPath();g.arc(lx+6,H-8,5,0,7);g.fill();g.fillStyle=C.ink;g.fillText(t,lx+16,H-4);lx+=16+g.measureText(t).width+18;});
+    // utilisation bar
+    const busy=slots.filter(Boolean).length;g.fillStyle=C.muted;g.fillText(`in use ${busy} / ${K}`,x0,H-58);g.fillStyle=C.line;g.fillRect(x0+90,H-66,200,8);g.fillStyle=busy===K?C.fraud:C.acc;g.fillRect(x0+90,H-66,200*busy/K,8);}
+  function stats(){const q=s=>root.querySelector(s);q("[data-clock]").textContent=clock(T);q("[data-n]").textContent=ind(n);q("[data-rate]").textContent=T>0?(60*n/T).toFixed(2):"—";q("[data-md]").textContent=served?(durSum/served).toFixed(1):"—";q("[data-q]").textContent=`${queue.length} · ${qMax}`;q("[data-qs]").textContent=T>0?pct(qMin/T,1):"—";q("[data-rev]").textContent=ind(Math.round(rev));q("[data-rps]").textContent=served?(rev/served).toFixed(1):"—";}
+  function frame(){for(let k=0;k<speed;k++)step();draw();stats();}
+  function play(v){playing=v;root.querySelector("[data-play]").textContent=v?"Pause":"Play";if(v){if(REDUCED){for(let k=0;k<1020;k++)step();draw();stats();playing=false;root.querySelector("[data-play]").textContent="Play";return;}if(!run)run=loop(frame);}else if(run){run.stop();run=null;}}
+  root.querySelector("[data-play]").addEventListener("click",()=>play(!playing));
+  root.querySelector("[data-reset]").addEventListener("click",reset);
+  root.querySelector("[data-hub]").addEventListener("change",e=>{hub=e.target.value;reset();});
+  root.querySelector("[data-plan]").addEventListener("change",e=>{plan=e.target.value;reset();});
+  root.querySelector("[data-k]").addEventListener("input",e=>{K=+e.target.value;root.querySelector("[data-ko]").textContent=K;reset();});
+  root.querySelectorAll("[data-sp]").forEach(b=>b.addEventListener("click",()=>{speed=+b.dataset.sp;root.querySelectorAll("[data-sp]").forEach(x=>x.setAttribute("aria-pressed",x===b));}));
+  reset();if(playing&&!REDUCED)run=loop(frame);else{playing=false;root.querySelector("[data-play]").textContent="Play";}
+  return {stop(){if(run)run.stop();}};
+}
+
+/* ---------- levels ---------- */
+const L=[];
+L.push({id:"l1",badge:"Resampler",code:"File 1",title:"How sure is 139.9?",topics:"Sampling distribution, standard error, the bootstrap, percentile intervals, the √n law",
+story:`<b>Day 1 in the tariff room.</b> The slide says "ITPark sessions average 139.9 minutes". The chair asks the only question that matters: "If we had a different quarter, how different would that number be?" You have one quarter, 5,345 sessions, and no second quarter. You need a way to measure your own uncertainty from the data you have.`,
+brief:`<p>A <span class="term">statistic</span> is a number computed from a sample: the sample mean, a percentile, a standard deviation (SD). Draw a different sample and the statistic changes; the distribution of those changes is its <span class="term">sampling distribution</span>, and its standard deviation is the <span class="term">standard error</span> (SE). For the mean there is a formula, because Var(X̄) = σ²/n:</p>
+<div class="formula">SE(X̄) = σ/√n   estimated by   s/√n
+ITPark: 108.48/√5345 = 1.48 min</div>
+<p>For most other statistics there is no clean formula. The <span class="term">bootstrap</span> (Efron, 1979) replaces the formula with computation: treat the sample as if it were the population, draw n values from it <em>with replacement</em>, compute the statistic, and repeat B times. The standard deviation of the B values estimates the SE, and the 2.5th and 97.5th percentiles give a 95% <span class="term">bootstrap percentile confidence interval</span> (CI).</p>
+<div class="formula">resample x₁*, …, xₙ* with replacement from the data
+θ̂*₍ᵦ₎ = statistic of resample b,  b = 1 … B
+SE_boot = SD(θ̂*₍₁₎, …, θ̂*₍ᵦ₎)
+95% CI ≈ [2.5th, 97.5th percentile of the θ̂*]</div>
+<p>The <span class="term">√n law</span> follows from the formula: quadrupling the sample halves the SE. It also explains why the 90th percentile is harder than the mean. Its asymptotic SE depends on the density of the data at that percentile, which you do not know; the bootstrap does not need it. With the same code you get an SE for the mean (1.49), for the 90th percentile (3.49), or for anything else.</p>`,
+refs:"Efron, <i>Annals of Statistics</i> 7 (1979) 1–26 · Efron & Tibshirani, <i>An Introduction to the Bootstrap</i> (1993), ch. 2, 6 and 13 · Wasserman, <i>All of Statistics</i> (2004), ch. 8 · Rice, <i>Mathematical Statistics and Data Analysis</i> (3rd ed., 2007), §7.3.",
+lab:labBoot,
+qs:[
+{t:"num",ph:"e.g. 0.7",q:"ITPark has n = 5,345 sessions with sample standard deviation s = 108.48 min. What is the formula standard error of the sample mean, s/√n?",a:1.4837,tol:0.01,
+ hint:"Divide 108.48 by the square root of 5,345.",why:"108.48 / √5345 = 108.48 / 73.11 = 1.48 min. The bootstrap with B = 4,000 gives 1.49, the same to two decimals: for the mean the formula and the resampling agree, as they should."},
+{t:"num",ph:"e.g. 3.0",q:"In the lab, run at least 1,000 resamples of the 200-session sample with the statistic set to the mean. What bootstrap standard error do you read off?",a:7.65,tol:0.6,
+ hint:"Press \"Run 1,000\" and read the Bootstrap SE box. It should sit near s/√n for that sample: 108.54/√200.",why:"Resampling 200 sessions with replacement 1,000 times gives a bootstrap SE near 7.65 min; the formula value s/√n = 108.54/√200 = 7.68 agrees. Your exact number wanders by a few percent from run to run because B is finite."},
+{t:"num",ph:"e.g. 800",q:"With n = 400 ITPark sessions the SE of the mean would be about 5.42 min. How many sessions would you need to halve it to 2.71?",a:1600,tol:1,
+ hint:"SE ∝ 1/√n, so halving the SE needs four times the sample.",why:"The √n law: SE halves when n quadruples. 400 × 4 = 1,600, and 108.48/√1600 = 2.71. The whole quarter (5,345) only gets you to 1.48; another halving would need four quarters."},
+{t:"mcq",q:"The bootstrap 95% percentile interval for the ITPark mean duration is 136.9 to 142.8 min. Which reading is right?",opts:["An interval built this way would cover the true mean in about 95% of repeated quarters; planning on 137–143 min is defensible","95% of ITPark sessions last between 136.9 and 142.8 min","There is a 95% chance next quarter's sample mean will fall in 136.9–142.8","The true mean is 139.9 with 95% certainty"],a:0,
+ hint:"The interval is about the mean, not about individual sessions, and its 95% is a property of the procedure.",why:"A confidence interval is a statement about a procedure: intervals built this way capture the parameter about 95% of the time. Individual sessions range from 0.1 to 906 min; the interval says nothing about them."},
+{t:"mcq",q:"Why bootstrap the 90th percentile of duration instead of using s/√n?",opts:["s/√n is the SE of the mean only; the SE of a percentile depends on the density of the data near it, which the bootstrap sidesteps","Percentiles have no sampling distribution","The bootstrap is more accurate than any formula for every statistic","s/√n is only valid for Normal data"],a:0,
+ hint:"What is the formula s/√n derived for?",why:"Var(X̄) = σ²/n is a fact about means. A sample quantile's asymptotic variance is p(1−p)/(n f(q)²), which needs the unknown density f at the quantile. The bootstrap just resamples and recomputes: SE ≈ 3.5 min for ITPark's 90th percentile (289.6 min)."},
+{t:"num",ph:"e.g. 20",q:"The 95% bootstrap interval for ITPark's 90th percentile is 282.3 to 295.5 min. Roughly how wide is it, in minutes?",a:13.2,tol:0.6,
+ hint:"Upper limit minus lower limit.",why:"295.5 − 282.3 = 13.2 min, about ±1.96 × 3.5. Compare the mean's interval, 5.9 min wide: percentiles in the tail are estimated less precisely than the centre, even from 5,345 sessions."}
+]});
+
+L.push({id:"l2",badge:"Expectation Manager",code:"File 2",title:"What a plan is worth",topics:"Expectation of a function (LOTUS), linearity, conditional expectation, the tower property, expected revenue of each tariff",
+story:`<b>Three plans on the table.</b> Plan A charges ₹149 a session, flat. Plan B charges ₹1.5 a minute. Plan C charges ₹99 for the first hour and ₹1 a minute after. Finance wants one number per plan, then one number per plan per hub. Each is an expected value of some function of the session duration D, and the hubs could hardly be more different.`,
+brief:`<p>Revenue is a function of duration: g_A(D) = 149, g_B(D) = 1.5 D, g_C(D) = 99 + max(D − 60, 0). The expected revenue is E[g(D)], computed by the <span class="term">Law of the Unconscious Statistician</span> (LOTUS): average g over the distribution of D, never g of the average unless g is linear.</p>
+<div class="formula">E[g(D)] = Σ g(d) p(d)   or   ∫ g(d) f(d) dd
+linear g:   E[1.5 D] = 1.5 E[D] = 1.5 × 101.21 = 151.81
+non-linear: E[99 + max(D−60, 0)] = 150.86
+            ≠ 99 + max(E[D]−60, 0) = 140.21</div>
+<p><span class="term">Conditional expectation</span> E[D | hub] is the mean duration within a hub: 85.6 at the Mall, 139.9 at ITPark, 40.6 on the Highway. Seen as a function of the hub, E[D | H] is itself a random variable, and averaging it over the hub mix returns the overall mean. That is the <span class="term">tower property</span>, also called the law of iterated expectations, the expectation version of the Law of Total Probability from Module 1:</p>
+<div class="formula">E[D] = E[ E[D | H] ] = Σ_h P(H = h) · E[D | H = h]
+0.3714 × 85.57 + 0.4424 × 139.87 + 0.1862 × 40.56 = 101.21</div>
+<p>Linearity, E[aX + bY] = aE[X] + bE[Y], needs no independence and turns totals into sums of per-session expectations: ITPark serves 59.4 sessions a day, so Plan B expects 59.4 × 209.8 = ₹12,460 a day there. A small illustrative bet shows the same machinery: a game paying +₹1 with probability 0.85 and −₹1 with probability 0.15 has E = 0.70 per play, so 100 plays expect ₹70, by linearity, whether or not the plays are independent.</p>`,
+refs:"Blitzstein & Hwang, <i>Introduction to Probability</i> (2nd ed., 2019), ch. 4 and ch. 9 · Ross, <i>A First Course in Probability</i> (10th ed., 2019), §4.4, §5.2 and ch. 7 · Casella & Berger, <i>Statistical Inference</i> (2nd ed., 2002), §2.2 and §4.4.",
+lab:labTariff,
+qs:[
+{t:"num",ph:"e.g. 120",q:"Mean session duration across all hubs is 101.21 min. What is the expected Plan B revenue per session (₹1.5 a minute)?",a:151.81,tol:0.3,
+ hint:"g is linear here, so E[1.5 D] = 1.5 E[D].",why:"1.5 × 101.21 = ₹151.81. Linearity makes this the one plan you can price from the mean alone."},
+{t:"num",ph:"e.g. 150",q:"Within ITPark, E[D | ITPark] = 139.87 min. What is the expected Plan B revenue per ITPark session?",a:209.81,tol:0.5,
+ hint:"Condition on the hub, then apply the same linear rule.",why:"1.5 × 139.87 = ₹209.81. Conditional expectation is just expectation inside a sub-population; the rules do not change."},
+{t:"num",ph:"e.g. 95",q:"Hub shares are Mall 0.3714, ITPark 0.4424, Highway 0.1862, with mean durations 85.57, 139.87 and 40.56 min. Rebuild E[D] with the tower property.",a:101.21,tol:0.3,
+ hint:"Σ P(hub) × E[D | hub].",why:"0.3714 × 85.57 + 0.4424 × 139.87 + 0.1862 × 40.56 = 31.78 + 61.88 + 7.55 = 101.21 min, the overall mean. E[E[D | H]] = E[D]."},
+{t:"mcq",q:"A colleague prices Plan C as 99 + max(101.21 − 60, 0) = ₹140.21 per session. The data say ₹150.86. What went wrong?",opts:["g_C is not linear, so E[g(D)] ≠ g(E[D]); LOTUS says to average g over the distribution, and the long sessions add more than the short ones remove","Nothing; ₹140.21 is right and the data are wrong","The 60-minute allowance should have been subtracted after multiplying by 1.5","Plan C cannot have an expected value because it has a kink"],a:0,
+ hint:"Plug the mean into g only when g is a straight line.",why:"max(D − 60, 0) is zero for 41% of sessions and large for the long tail; its mean is 51.86, not 41.21. Averaging g(D) over the sessions gives 99 + 51.86 = 150.86. File 7 names the direction of this error: Jensen's inequality."},
+{t:"num",ph:"e.g. 25",q:"Illustrative bet: each play pays +₹1 with probability 0.85 and −₹1 with probability 0.15. What is the expected total after 100 plays?",a:70,tol:0.5,
+ hint:"E per play = 0.85 × 1 + 0.15 × (−1); then linearity.",why:"E[one play] = 0.85 − 0.15 = 0.70, so E[100 plays] = ₹70 by linearity of expectation, no independence needed. File 3 adds the spread: SD = √(100 × 0.51) = 7.1."},
+{t:"mcq",q:"On the Highway, mean duration is 40.6 min. Rank the plans by expected revenue per Highway session.",opts:["A (₹149) > C (₹100.97) > B (₹60.83)","B > C > A","C > A > B","All three are within ₹5 of each other"],a:0,
+ hint:"Short sessions favour the flat fee; use the lab's Highway column.",why:"Highway sessions are short: Plan B earns 1.5 × 40.56 = 60.83, Plan C mostly its ₹99 base (100.97), Plan A its flat 149. At ITPark the order flips (B 209.8 > C 185.9 > A 149). One plan for three hubs is a compromise, which is why the board is arguing."}
+]});
+
+L.push({id:"l3",badge:"Moment Keeper",code:"File 3",title:"Spread, tails, peaks",topics:"Variance of plan revenue, skewness and kurtosis, Markov and Chebyshev inequalities, coefficient of variation, capacity from mean versus peak",
+story:`<b>The same mean, two risks.</b> Plans B and C expect almost the same revenue per session, ₹151.8 and ₹150.9. Finance wants to know which one swings more month to month. Operations has a separate complaint: "ITPark averages 7 cars charging at once, we have 10 chargers, and there is still a queue every evening." Both are questions about spread, not centre.`,
+brief:`<p>The <span class="term">variance</span> Var(X) = E[(X − μ)²] and <span class="term">standard deviation</span> SD = √Var measure spread. Scaling rules: Var(aX + b) = a² Var(X), so Plan B's revenue has SD 1.5 × 88.33 = ₹132.49 per session, while Plan C, which flattens every session under an hour to ₹99, has SD ₹80.23. Plan A has SD 0.</p>
+<p>Higher <span class="term">moments</span> describe shape. <span class="term">Skewness</span> is the standardised third moment, E[(X − μ)³]/σ³: zero for symmetric data, positive for a long right tail. <span class="term">Kurtosis</span> is the standardised fourth moment, E[(X − μ)⁴]/σ⁴; a Normal has kurtosis 3, so <em>excess</em> kurtosis = kurtosis − 3 measures how much heavier the tails are. Cafe spend per session has skewness 2.44 and excess kurtosis 10.5: most sessions spend nothing, a few spend ₹1,000 or more.</p>
+<p>Two inequalities bound tail probabilities from the mean and variance alone, whatever the distribution:</p>
+<div class="formula">Markov (X ≥ 0):      P(X ≥ a) ≤ E[X]/a
+Chebyshev:           P(|X − μ| ≥ kσ) ≤ 1/k²
+durations: Markov gives P(D ≥ 300) ≤ 101.2/300 = 0.337
+           the data give 0.039</div>
+<p>The bounds are loose but universal; use them when you know nothing about the shape. The <span class="term">coefficient of variation</span> CV = σ/μ compares spread across different scales: ITPark durations have CV 0.78, Highway 0.48. For capacity, the mean is the wrong statistic. ITPark has on average 7.2 sessions in progress, but the 95th percentile of the minute-by-minute count is 13 and the maximum is 19. A plan built on the mean queues roughly a third of the time.</p>`,
+refs:"Blitzstein & Hwang (2019), §4.6 and §10.1 · Ross (2019), §4.5 and §8.2 · Casella & Berger (2002), §2.3 and §3.6 · Wasserman (2004), §3.3 and ch. 4.",
+lab:labSpread,
+qs:[
+{t:"num",ph:"e.g. 90",q:"Duration has standard deviation 88.33 min across all sessions. What is the standard deviation of Plan B revenue per session (₹1.5 a minute)?",a:132.49,tol:0.5,
+ hint:"SD(aX) = |a| SD(X).",why:"1.5 × 88.33 = ₹132.49. Plan C's SD is only ₹80.23 because the first hour is a fixed ₹99: same expected revenue, much less spread per session."},
+{t:"num",ph:"e.g. 0.5",q:"Mean duration is 101.21 min. What upper bound does Markov's inequality give for P(D ≥ 300)?",a:0.3374,tol:0.005,
+ hint:"E[D]/a with a = 300.",why:"101.21/300 = 0.337. The data give 0.039, so the bound is almost nine times too generous. Markov uses only the mean; it cannot know the tail is thin."},
+{t:"num",ph:"e.g. 0.3",q:"What is Chebyshev's upper bound for the probability that a duration falls 3 or more standard deviations from its mean?",a:0.1111,tol:0.002,
+ hint:"1/k² with k = 3.",why:"1/9 = 0.111. Empirically 1.9% of sessions are that far out, and a Normal would give 0.27%. Chebyshev is a guarantee, not an estimate."},
+{t:"mcq",q:"Cafe spend has skewness 2.44 and excess kurtosis 10.5. What does that tell the cafe manager?",opts:["A long right tail and heavy tails: a few very large spends dominate, and a Normal model would badly understate them","Spend is roughly symmetric around its mean","Most sessions spend close to the mean of ₹72","Negative skew: the big spenders are rare and small"],a:0,
+ hint:"Positive skew points right; excess kurtosis above 0 means heavier tails than a Normal.",why:"56% of sessions spend nothing and the top 1% of spenders exceed ₹570. The mean (₹72) is pulled up by the tail; the median is ₹0. Positive skewness and large excess kurtosis are the numerical signature of that picture."},
+{t:"num",ph:"e.g. 0.4",q:"ITPark durations have mean 139.87 and standard deviation 108.48 min. What is their coefficient of variation?",a:0.7755,tol:0.01,
+ hint:"σ/μ.",why:"108.48/139.87 = 0.776. Highway's is 0.477 (19.34/40.56): relative to its mean, ITPark is far more variable, which is what makes it hard to size."},
+{t:"mcq",q:"At ITPark the mean number of sessions in progress is 7.2, the 95th percentile is 13 and the maximum is 19. The board accepts a queue in at most 5% of operating minutes. How many chargers?",opts:["13: size to the 95th percentile of concurrent demand","7 or 8: size to the mean","19: size to the maximum","10: a round number between mean and peak"],a:0,
+ hint:"Which statistic answers \"busy more than 5% of the time\"?",why:"Demand exceeds 12 in about 6% of minutes, exceeds 13 in about 3%, and exceeds 8 in 33%, so 13 is the smallest capacity that keeps the queue under the 5% ceiling. The mean describes the average minute; capacity is about the busy ones. Sizing to the maximum (19) would leave six chargers idle almost always."}
+]});
+
+L.push({id:"l4",badge:"Count Keeper",code:"File 4",title:"Faults, arrivals, audits",topics:"Bernoulli and Binomial faults, Poisson hourly arrivals and the mean–variance check, Binomial → Poisson, Geometric and Negative Binomial waits, Hypergeometric sampling without replacement",
+story:`<b>Three counts, one week.</b> Maintenance wants to know how many faults to expect in a batch of sessions and how long until the next one. Operations wants a model for arrivals per hour at ITPark. An auditor wants to inspect 20 of the 100 connectors and asks what she is likely to find. Each is a discrete random variable with a named family.`,
+brief:`<p>A session's fault flag is <span class="term">Bernoulli(p)</span> with p = 475/12,083 = 0.0393. The number of faults in n independent sessions is <span class="term">Binomial(n, p)</span>, with the probability mass function (PMF) below, and when n is large and p small the Binomial is close to <span class="term">Poisson(λ)</span> with λ = np. For 60 sessions, Binomial(60, 0.0393) gives P(X ≥ 3) = 0.421; Poisson(2.36) gives 0.419.</p>
+<div class="formula">Binomial:  P(X=k) = C(n,k) pᵏ (1−p)ⁿ⁻ᵏ
+           E = np,  Var = np(1−p)
+Poisson:   P(X=k) = e⁻λ λᵏ / k!,          E = Var = λ</div>
+<p>E = Var is the Poisson's signature and a cheap diagnostic: the <span class="term">index of dispersion</span> Var/E should be near 1. Over the 1,530 hub-hours at ITPark, arrivals per hour have mean 3.49 and variance 3.38, ratio 0.97. Far above 1 would mean clustering (bursts); far below, something is regulating the arrivals.</p>
+<p>Waiting for a success is also a count. The number of trials up to and including the first success is <span class="term">Geometric(p)</span>; up to and including the r-th success is <span class="term">Negative Binomial(r, p)</span>. The Geometric is memoryless: having gone k sessions without a fault says nothing about the next one.</p>
+<div class="formula">Geometric:  P(X=k) = (1−p)ᵏ⁻¹ p,  E = 1/p
+            P(X > k) = (1−p)ᵏ
+Neg. Bin.:  E = r/p,   Var = r(1−p)/p²</div>
+<p>Sampling <em>without</em> replacement from a finite lot is <span class="term">Hypergeometric</span>: N items, K of them defective, draw n. With N = 100 connectors and K = 8 faulty (illustrative), an audit of 20 finds none with probability C(92,20)/C(100,20) = 0.156; the Binomial approximation with p = 0.08 would say 0.189. The approximation is good when n ≪ N; here n/N = 0.2 and it is noticeably off.</p>
+<div class="formula">P(X=k) = C(K,k) C(N−K, n−k) / C(N,n),   E = nK/N</div>`,
+refs:"Blitzstein & Hwang (2019), §3.3–3.4, §4.3 and §4.7 · Ross (2019), §4.6–4.8 · Casella & Berger (2002), §3.2 · Wasserman (2004), §2.3.",
+lab:labDiscrete,
+qs:[
+{t:"num",ph:"e.g. 0.3",q:"The fault rate is p = 0.0393. What is the probability of at least one fault in a batch of 20 independent sessions?",a:0.5516,tol:0.01,
+ hint:"1 − P(no fault) = 1 − (1 − p)²⁰.",why:"(1 − 0.0393)²⁰ = 0.448, so P(at least one) = 0.552. A fault is rare per session yet more likely than not in every batch of 20."},
+{t:"num",ph:"e.g. 0.2",q:"Model arrivals per hour at ITPark as Poisson(3.49). What is P(X ≥ 7)?",a:0.0648,tol:0.003,
+ hint:"1 − P(X ≤ 6); the lab's Poisson overlay has the PMF values.",why:"Summing e^{−3.49} 3.49ᵏ/k! for k = 0 … 6 gives 0.9352, so P(X ≥ 7) = 0.065. Empirically 5.6% of the 1,530 hub-hours had 7 or more arrivals; the model is a little heavy in the tail but close."},
+{t:"mcq",q:"The index of dispersion for ITPark hourly arrivals is 0.97. Which conclusion is justified?",opts:["Variance ≈ mean, consistent with Poisson arrivals; no evidence of bursts or of regulated spacing","Arrivals are strongly clustered in bursts","Arrivals are almost perfectly regular, like a timetable","The hourly counts cannot be Poisson because 0.97 ≠ 1 exactly"],a:0,
+ hint:"What would clustering do to the variance relative to the mean?",why:"A Poisson count has Var/E = 1. Bursts inflate the variance (ratio well above 1); a schedule deflates it (well below 1). 0.97 from 1,530 hours is as close to 1 as sampling noise allows, so the Poisson model stands, which File 5 will link to exponential gaps."},
+{t:"num",ph:"e.g. 12",q:"Under the Geometric model with p = 0.0393, what is the expected number of sessions up to and including the first fault?",a:25.44,tol:0.5,
+ hint:"E = 1/p.",why:"1/0.0393 = 25.4 sessions. In the file, the average spacing between consecutive faults is 25.4 sessions with SD 23.3; a Geometric(0.0393) has SD √(1−p)/p = 24.9. The model fits."},
+{t:"num",ph:"e.g. 40",q:"How many sessions do you expect up to and including the third fault?",a:76.31,tol:1,
+ hint:"Negative Binomial: E = r/p with r = 3.",why:"3/0.0393 = 76.3 sessions: three Geometric waits of 25.4 each, added by linearity. The SD is √(3 × 0.9607)/0.0393 = 43.2, so the third fault could easily arrive after 40 or after 120 sessions."},
+{t:"num",ph:"e.g. 0.4",q:"Illustrative audit: 100 connectors, 8 faulty; the auditor inspects 20 chosen at random without replacement. What is the probability she finds no faulty connector?",a:0.1558,tol:0.005,
+ hint:"Hypergeometric: C(92, 20)/C(100, 20). The lab calculator has a slider for K = 8.",why:"C(92,20)/C(100,20) = 0.156, so she finds at least one with probability 0.844. The Binomial shortcut 0.92²⁰ = 0.189 overstates the no-find chance because each clean connector drawn makes the next draw slightly more likely to be faulty."}
+]});
+
+L.push({id:"l5",badge:"Shape Reader",code:"File 5",title:"Shapes of time and money",topics:"Exponential gaps and memorylessness, Uniform, Gamma and Erlang, Weibull and the hazard function, Lognormal spend, the Normal 68–95 check",
+story:`<b>Four columns, four shapes.</b> Gaps between arrivals, minutes within the hour, session durations, cafe spend, charging rates: each column has a different silhouette. The board does not care about silhouettes, but it does care about "how long until the queue clears", "how often does a session run past four hours" and "is a ₹500 cafe bill unusual". Each needs a continuous family.`,
+brief:`<p>The <span class="term">Exponential(λ)</span> distribution models the gap between events that happen at a constant rate; it is the continuous partner of the Poisson count. ITPark gaps average 16.9 min, so λ = 1/16.9 = 0.0592 per minute. It is <span class="term">memoryless</span>: having waited s minutes does not change the distribution of the remaining wait. Its density f and cumulative distribution function (CDF) F are:</p>
+<div class="formula">f(x) = λe^(−λx),  F(x) = 1 − e^(−λx),  E = 1/λ,  SD = 1/λ
+P(X > s + t | X > s) = P(X > t)
+ITPark: P(gap > 30) = e^(−30/16.9) = 0.170;  data 0.166</div>
+<p>The <span class="term">Uniform(a, b)</span> has constant density on [a, b], mean (a + b)/2 and SD (b − a)/√12. The minute-within-the-hour of an arrival should be Uniform(0, 60): the data give mean 30.2 and SD 17.26 against 30 and 17.32. The sum of k independent Exponential(λ) gaps is <span class="term">Gamma(k, 1/λ)</span>, the <span class="term">Erlang</span> case; the time until the 5th ITPark arrival has mean 5 × 16.9 = 84.5 min and SD √5 × 16.9 = 37.8.</p>
+<p>The <span class="term">Weibull(k, λ)</span> generalises the Exponential with a shape k. Its <span class="term">hazard function</span> h(t) = f(t)/S(t), the instantaneous rate of ending given survival to t, is decreasing for k &lt; 1, constant for k = 1 (Exponential), increasing for k &gt; 1. The scale λ is the <span class="term">characteristic life</span>: whatever k, F(λ) = 1 − e⁻¹ = 0.632, so λ is always the 63.2nd percentile. ITPark durations fit k = 1.30, λ = 151.5; Highway fits k = 2.21, λ = 45.8.</p>
+<div class="formula">S(t) = exp(−(t/λ)ᵏ),   h(t) = (k/λ)(t/λ)ᵏ⁻¹
+E = λ Γ(1 + 1/k)</div>
+<p>X is <span class="term">Lognormal(μ, σ²)</span> when ln X is Normal(μ, σ²): multiplicative effects, long right tail. Its median is e^μ and its mean e^(μ+σ²/2) &gt; median. Cafe spend among the 5,263 sessions that bought something fits μ = 4.91, σ = 0.62: median e^4.91 = ₹136, mean ₹165. Finally the <span class="term">Normal</span> and its 68–95 rule: car charge rates have mean 7.20 kW and SD 0.30; 67.9% lie within one SD and 95.2% within two, so a Normal is a fair description of that column, and of little else in this file.</p>`,
+refs:"Blitzstein & Hwang (2019), ch. 5 (Uniform, Normal, Exponential) and §8.4 (Gamma) · Ross (2019), §5.5–5.6 (Exponential, hazard rate, Gamma, Weibull) · Casella & Berger (2002), §3.3 · Rice (2007), §2.2–2.3 · Weibull, <i>Journal of Applied Mechanics</i> 18 (1951) 293–297.",
+lab:labFamilies,
+qs:[
+{t:"num",ph:"e.g. 0.4",q:"Model ITPark gaps as Exponential with mean 16.9 min. What is P(gap > 30)?",a:0.1695,tol:0.005,
+ hint:"e^(−30/16.9).",why:"e^(−30/16.9) = e^(−1.775) = 0.170; 16.6% of the recorded gaps exceed 30 min. The exponential fits the gaps, which is the same fact as the Poisson fitting the hourly counts in File 4."},
+{t:"mcq",q:"Under the exponential model, a charger has seen no arrival for 10 minutes. The probability it waits at least another 10 is:",opts:["e^(−10/16.9) = 0.553, the same as from a standing start","Lower than 0.553, because an arrival is \"due\"","Higher than 0.553, because quiet spells persist","0.5, because 10 minutes is close to the median gap"],a:0,
+ hint:"Memorylessness: the past wait is irrelevant.",why:"P(X > 20 | X > 10) = e^(−20/16.9)/e^(−10/16.9) = e^(−10/16.9) = 0.553. The data agree: among gaps longer than 10 min, 53.9% exceed 20, against 55.9% of all gaps exceeding 10. No other continuous distribution has this property; its discrete counterpart is the Geometric of File 4."},
+{t:"num",ph:"e.g. 0.5",q:"ITPark durations are Weibull with scale 151.5 min. What share of sessions does the model say finish within the scale, F(151.5)?",a:0.632,tol:0.005,
+ hint:"At t = λ the exponent is −1 whatever the shape.",why:"F(λ) = 1 − e⁻¹ = 0.632 for every Weibull, which is why the scale is called the characteristic life. In the file, 63.5% of ITPark sessions are shorter than 151.5 min."},
+{t:"num",ph:"e.g. 50",q:"ITPark gaps are Exponential with mean 16.9 min. What is the expected time until the 5th arrival after opening?",a:84.51,tol:1,
+ hint:"A sum of 5 exponential gaps is Erlang; its mean is 5 × 16.9.",why:"5 × 16.9 = 84.5 min, with SD √5 × 16.9 = 37.8. The Gamma(5, 16.9) CDF puts P(5th arrival within 60 min) at 0.284."},
+{t:"mcq",q:"Weibull shape is 1.30 at ITPark and 2.21 on the Highway. What does the difference mean for the hazard of a session ending?",opts:["Both hazards increase with elapsed time, but the Highway's rises much more steeply: Highway sessions end predictably near their scale, ITPark sessions straggle","ITPark's hazard decreases and the Highway's increases","A larger shape means longer sessions","The Highway hazard is constant because 2.21 is close to 2"],a:0,
+ hint:"h(t) ∝ tᵏ⁻¹; compare the exponents 0.30 and 1.21.",why:"Both shapes exceed 1, so both hazards rise, but h(t) ∝ t^0.30 is nearly flat (close to memoryless) while t^1.21 climbs steadily. That is why Highway durations have CV 0.48 and ITPark 0.78. Shape is about predictability; the scale (45.8 vs 151.5) is about length."},
+{t:"num",ph:"e.g. 200",q:"Cafe spend among spenders is Lognormal with μ = 4.9135 and σ = 0.6186 (natural logs). What is the model's median spend in ₹?",a:136.1,tol:1.5,
+ hint:"The median of a Lognormal is e^μ.",why:"e^4.9135 = ₹136.1; the sample median is ₹135.9. The mean, e^(μ+σ²/2) = ₹164.8, is 21% higher because the log-scale spread σ = 0.62 fattens the right tail. For a right-skewed column, report both."}
+]});
+
+L.push({id:"l6",badge:"Model Referee",code:"File 6",title:"The fitting race",topics:"Likelihood versus probability, maximum likelihood for the Exponential and Normal, AIC and BIC, the empirical CDF, kernel density, Q–Q plots, the Kolmogorov–Smirnov distance",
+story:`<b>Five candidates, one column.</b> For ITPark durations you can fit an Exponential, a Weibull, a Gamma, a Lognormal or a Normal. Each will produce a number for "P(session &gt; 4 hours)", and the numbers disagree. The board wants a referee, not a preference. You need a way to estimate parameters, and a score that penalises families for the parameters they spend.`,
+brief:`<p>The <span class="term">likelihood</span> L(θ) = ∏ f(xᵢ; θ) is the joint density of the observed data, read as a function of the parameter θ with the data fixed. Probability runs from parameters to data; likelihood runs the other way. The <span class="term">maximum likelihood estimate</span> (MLE) is the θ that maximises L, equivalently the log-likelihood ℓ(θ) = Σ ln f(xᵢ; θ).</p>
+<div class="formula">Exponential: ℓ(λ) = n ln λ − λ Σxᵢ
+             dℓ/dλ = n/λ − Σxᵢ = 0  ⇒  λ̂ = 1/x̄ = 1/139.87
+Normal:      μ̂ = x̄,  σ̂² = (1/n) Σ(xᵢ − x̄)²</div>
+<p>Adding parameters never lowers the maximised likelihood, so comparing families by ℓ alone rewards complexity. The <span class="term">Akaike information criterion</span> (AIC; Akaike, 1974) and the <span class="term">Bayesian information criterion</span> (BIC; Schwarz, 1978) charge for each parameter k; smaller is better:</p>
+<div class="formula">AIC = 2k − 2ℓ̂          BIC = k ln n − 2ℓ̂
+ITPark durations (n = 5,345):
+Weibull 62,974 · Gamma 63,004 · Exponential 63,508
+Lognormal 63,952 · Normal 65,271   (AIC)</div>
+<p>Scores need pictures. The <span class="term">empirical cumulative distribution function</span> (ECDF) F̂(x) = (number of xᵢ ≤ x)/n is the data's own CDF, no model assumed. A <span class="term">kernel density estimate</span> (KDE) f̂(x) = (1/nh) Σ K((x − xᵢ)/h) smooths the histogram; the bandwidth h sets the trade-off between wiggle and blur. A <span class="term">Q–Q (quantile–quantile) plot</span> puts sample quantiles against model quantiles; a straight line means a good fit. The <span class="term">Kolmogorov–Smirnov distance</span> (KS distance) is the largest vertical gap between F̂ and the fitted F: 0.0076 for the Weibull, 0.0941 for the Exponential, 0.0991 for the Normal.</p>
+<div class="formula">D = max over x of |F̂(x) − F(x)|</div>`,
+refs:"Akaike, <i>IEEE Transactions on Automatic Control</i> 19 (1974) 716–723 · Schwarz, <i>Annals of Statistics</i> 6 (1978) 461–464 · Casella & Berger (2002), §7.2 · Rice (2007), §8.5 and §10.2–10.3 · Wasserman (2004), ch. 7, ch. 9 and ch. 20 · James, Witten, Hastie & Tibshirani, <i>An Introduction to Statistical Learning</i> (2nd ed., 2021), §6.1.3.",
+lab:labFitRace,
+qs:[
+{t:"num",ph:"e.g. 0.05",q:"ITPark durations have mean 139.87 min. What is the maximum likelihood estimate of λ for an Exponential model, per minute?",a:0.00715,tol:0.0002,
+ hint:"Set dℓ/dλ = 0: λ̂ = 1/x̄.",why:"λ̂ = 1/139.87 = 0.00715 per minute. The MLE for the exponential is the reciprocal of the sample mean, a result you can derive in two lines from ℓ(λ) = n ln λ − λ Σxᵢ."},
+{t:"num",ph:"e.g. 60000",q:"The Weibull fit has log-likelihood −31,485.09 with k = 2 parameters. What is its AIC?",a:62974.2,tol:2,
+ hint:"AIC = 2k − 2ℓ̂.",why:"2 × 2 − 2 × (−31,485.09) = 4 + 62,970.18 = 62,974.2. The Gamma, also k = 2, scores 63,003.9: 29.7 higher, which for AIC is a decisive margin."},
+{t:"mcq",q:"Which family wins the fitting race for ITPark durations, on both AIC and BIC?",opts:["Weibull: AIC 62,974 against Gamma 63,004, Exponential 63,508, Lognormal 63,952, Normal 65,271","Exponential: it has only one parameter, so the penalty favours it","Normal: it is the default for continuous data","Lognormal: durations are right-skewed and positive"],a:0,
+ hint:"Smaller is better; the penalty is only 2 points per parameter for AIC.",why:"The Weibull has the highest log-likelihood and the same k as its rivals; the Exponential saves one parameter (2 AIC points) but loses 268 points of fit. Right-skewed and positive is necessary, not sufficient: the Lognormal is right-skewed too and loses by nearly 1,000."},
+{t:"mcq",q:"Which statement about likelihood is correct?",opts:["Likelihood treats the data as fixed and varies the parameter; it is not a probability distribution over the parameter","Likelihood is the probability that the parameter takes the value θ","Likelihood is the probability of the data, so the likelihoods of the five models must sum to 1","Likelihood and probability are the same thing with different names"],a:0,
+ hint:"Which is the variable and which is held fixed?",why:"f(x; θ) with x fixed and θ varying is the likelihood. It need not integrate to 1 over θ, and it is not P(θ | data), which would need a prior and Bayes' theorem."},
+{t:"num",ph:"e.g. 0.02",q:"What is the Kolmogorov–Smirnov distance between the ECDF of ITPark durations and the fitted Exponential CDF? Read it from the lab's race table.",a:0.0941,tol:0.005,
+ hint:"The largest vertical gap between the step curve and the Exponential curve.",why:"D = 0.094: at its worst point the Exponential CDF is 9.4 percentage points off the data. The Weibull's worst gap is 0.0076, less than one point. A KS distance is in probability units, so it is readable without any table."},
+{t:"mcq",q:"The MLE of σ for a Normal divides by n; the usual sample standard deviation s divides by n − 1. For ITPark (n = 5,345) they are 108.466 and 108.476. Which statement is right?",opts:["The MLE is slightly biased downward; with n this large the difference is immaterial","The MLE is unbiased and s is biased","The two formulas estimate different parameters","The difference grows with n"],a:0,
+ hint:"n/(n − 1) is 1.0002 here.",why:"E[σ̂²_MLE] = σ²(n − 1)/n, a downward bias that s² corrects. At n = 5,345 the correction factor is 1.0002: textbooks argue about it because small samples exist, not because it matters here."}
+]});
+
+L.push({id:"l7",badge:"Joint Reader",code:"File 7",title:"Who charges where",topics:"Joint, marginal and conditional distributions, lift, covariance and correlation, a within-group reversal, functions of random variables, Jensen's inequality, the moment generating function",
+story:`<b>Two columns at once.</b> Marketing says two-wheelers "live at the Mall". Engineering says energy and duration are "basically the same variable" and wants to drop one. Finance has just learned that Plan C's expected revenue is ₹10 more than the naive calculation and wants to know whether that error always points the same way. Three questions, each about two variables together.`,
+brief:`<p>For two discrete variables the <span class="term">joint PMF</span> p(h, v) = P(H = h, V = v) is a table. Summing rows or columns gives the <span class="term">marginals</span> p(h) and p(v); dividing a cell by its row total gives the <span class="term">conditional</span> p(v | h). Independence means every cell equals the product of its marginals, and <span class="term">lift</span> = p(h, v)/[p(h) p(v)] measures the departure: Mall and two-wheeler have lift 1.33; Highway and two-wheeler 0.38.</p>
+<p><span class="term">Covariance</span> and <span class="term">correlation</span> measure linear association between numeric variables:</p>
+<div class="formula">Cov(X, Y) = E[XY] − E[X]E[Y]
+ρ = Cov(X, Y) / (σ_X σ_Y),   −1 ≤ ρ ≤ 1
+Var(X + Y) = Var(X) + Var(Y) + 2 Cov(X, Y)</div>
+<p>Across all sessions, duration and energy have ρ = 0.81. Within cars it is 0.998 and within two-wheelers 0.994. The pooled correlation is weaker than either group's because the two groups charge at different rates (7.2 kW against 1.1 kW): a two-wheeler charging for 200 minutes takes less energy than a car charging for 40. Mixing groups can hide, weaken or even reverse a relationship, the correlation cousin of Simpson's paradox from Module 1.</p>
+<p>Energy is a <span class="term">function of random variables</span>: E = R × D / 60. When R and D are independent, E[RD] = E[R]E[D]; for cars, 7.200 × 99.92/60 = 11.99 kWh, matching the observed mean 11.99. For a convex function g (one that curves upward, such as Plan C's revenue with its kink at 60 minutes), <span class="term">Jensen's inequality</span> fixes the direction of the LOTUS error from File 2:</p>
+<div class="formula">g convex  ⇒  E[g(D)] ≥ g(E[D])
+Plan C at ITPark: 185.92 ≥ 178.87</div>
+<p>Finally, the <span class="term">moment generating function</span> (MGF) M(t) = E[e^(tX)] packs every moment into one function: M′(0) = E[X], M″(0) = E[X²]. For an Exponential(λ), M(t) = λ/(λ − t) for t &lt; λ, so M′(0) = 1/λ. MGFs also make sums easy: the MGF of a sum of independent variables is the product of their MGFs, which is how File 8 adds Poissons.</p>`,
+refs:"Blitzstein & Hwang (2019), ch. 7 (joint distributions, covariance), §6.4 (MGF) and §10.1 (Jensen) · Ross (2019), ch. 6 and §7.4, §7.7 · Casella & Berger (2002), §4.1–4.5 and §2.3 · Wasserman (2004), §2.5–2.8, §3.3 and §3.6.",
+lab:labJoint,
+qs:[
+{t:"num",ph:"e.g. 0.2",q:"The Mall had 4,488 sessions, 1,514 of them two-wheelers. What is P(two-wheeler | Mall)?",a:0.3373,tol:0.003,
+ hint:"Cell over row total.",why:"1,514/4,488 = 0.337, against a marginal P(two-wheeler) of 3,069/12,083 = 0.254. Conditioning on the Mall raises the two-wheeler share by a third."},
+{t:"num",ph:"e.g. 0.9",q:"What is the lift between Mall and two-wheeler?",a:1.328,tol:0.01,
+ hint:"p(Mall, two-wheeler) / [p(Mall) p(two-wheeler)], or P(two-wheeler | Mall) / P(two-wheeler).",why:"0.3373/0.2540 = 1.33. On the Highway the lift is 0.38: two-wheelers are over-represented at the Mall and strongly under-represented on the Highway. Marketing is right, with a number attached."},
+{t:"mcq",q:"Correlation between duration and energy is 0.81 overall, 0.998 within cars and 0.994 within two-wheelers. Why is the pooled value lower than both?",opts:["The two vehicle types charge at very different rates, so pooling mixes two steep lines of different slopes into one cloud","Correlation always falls when samples are combined","Within-group correlations are inflated by small samples","The overall figure is a rounding error"],a:0,
+ hint:"Energy = rate × duration / 60, and the rate is 7.2 kW for one group and 1.1 kW for the other.",why:"Within a vehicle type the rate is nearly constant, so energy is almost exactly proportional to duration. Across types, a long two-wheeler session draws less energy than a short car session, which bends the pooled relationship. Engineering should not drop a column based on the pooled 0.81, and should not treat them as interchangeable based on 0.998 either: the right statement is conditional."},
+{t:"num",ph:"e.g. 8",q:"Cars charge at mean rate 7.200 kW for mean duration 99.92 min, with rate and duration independent. What is the expected energy per car session in kWh?",a:11.99,tol:0.05,
+ hint:"E[RD/60] = E[R] E[D] / 60 under independence.",why:"7.200 × 99.92 / 60 = 11.99 kWh; the file's mean for cars is 11.99. The product rule E[RD] = E[R]E[D] needs independence (here the correlation between rate and duration among cars is −0.005), unlike linearity, which never does."},
+{t:"mcq",q:"Plan C revenue g(D) = 99 + max(D − 60, 0) is convex. What does Jensen's inequality say about pricing it from the mean duration?",opts:["g(E[D]) is never above E[g(D)]: pricing from the mean always understates Plan C's expected revenue, by ₹7.05 per session at ITPark","The two agree when D is symmetric","g(E[D]) overstates E[g(D)] because the kink wastes revenue","Jensen's inequality only applies to concave functions"],a:0,
+ hint:"Convex ⇒ E[g(D)] ≥ g(E[D]).",why:"At ITPark, g(E[D]) = 99 + 79.87 = 178.87 while E[g(D)] = 185.92. The shortfall is the ₹7.05 that sessions under 60 minutes would have given back if revenue were a straight line. The direction is fixed by convexity; the size depends on the spread of D."},
+{t:"mcq",q:"An Exponential(λ) variable has MGF M(t) = λ/(λ − t). Differentiating at t = 0 gives E[X] equal to:",opts:["1/λ","λ","1/λ²","λ²"],a:0,
+ hint:"M′(t) = λ/(λ − t)², then set t = 0.",why:"M′(t) = λ/(λ − t)², so M′(0) = λ/λ² = 1/λ, the familiar mean. M″(0) = 2/λ² gives E[X²], hence Var = 2/λ² − 1/λ² = 1/λ²."}
+]});
+
+L.push({id:"l8",badge:"Simulator",code:"File 8",title:"Dress rehearsal",topics:"The Law of Large Numbers in action, Monte Carlo integration and its 1/√n error, sums of Poissons, the Central Limit Theorem for sums, a first look at two proportions",
+story:`<b>The night before the board.</b> Everything so far came from one quarter. The board will ask what happens next quarter under each plan, how long a simulation must run before its answer can be trusted, and, from a side project, whether a new app nudge raised cafe visits: 73 of 198 nudged sessions bought something, against 59 of 190. You have one evening and a random number generator.`,
+brief:`<p>The <span class="term">Law of Large Numbers</span> (LLN) says the running mean of independent draws from a distribution with a finite mean converges to that mean. Watch it on energy bills: the mean bill is ₹169.82 with SD ₹184.77, so after n simulated sessions the running mean has SE 184.77/√n: ₹18.5 at n = 100, ₹5.8 at n = 1,000, ₹1.8 at n = 10,000.</p>
+<p><span class="term">Monte Carlo integration</span> turns any expectation into an average of simulated values, with the same √n law for its error:</p>
+<div class="formula">E[g(X)] ≈ (1/n) Σ g(Xᵢ),   SE ≈ SD(g(X))/√n
+Weibull(1.30, 151.5): E[max(D−60, 0)] = 86.99
+(by numerical integration)
+SD of g = 101.5 (also by integration), so SE = 3.2 at n = 1,000</div>
+<p>To gain one more decimal place you need 100 times the draws. The exact value by numerical integration is 86.99; the quarter's data give 86.92; a 100,000-draw simulation gave 87.04.</p>
+<p><span class="term">Sums of independent Poissons</span> are Poisson: X ~ Poisson(λ₁), Y ~ Poisson(λ₂) independent ⇒ X + Y ~ Poisson(λ₁ + λ₂), as the MGFs of File 7 show in one line. Arrivals across the three hubs in the 17:00 hour have rates 2.94 + 3.86 + 1.58 = 8.38; the network total has mean 8.38 and variance 8.60. The <span class="term">Central Limit Theorem</span> (CLT) does the same for any sum of independent, identically distributed terms with finite variance: Sₙ = X₁ + … + Xₙ is approximately Normal(nμ, nσ²) for large n, which is why a day's revenue, a sum of about 60 session revenues, is far more Normal than any one session.</p>
+<p>The nudge: the rates are 73/198 = 0.369 and 59/190 = 0.311, a difference of 0.058. Simulating both groups many times with those rates shows the difference wandering with SD about 0.048, so the observed gap is about 1.2 of those SDs. Whether that counts as evidence, and how to decide, is where Module 3 begins.</p>`,
+refs:"Blitzstein & Hwang (2019), ch. 10 (LLN, CLT) and ch. 13 (Poisson processes) · Ross (2019), ch. 8 · Wasserman (2004), ch. 5 and §24.2 · Rice (2007), §5.2–5.3 · Efron & Tibshirani (1993), ch. 1.",
+lab:labMC,
+qs:[
+{t:"num",ph:"e.g. 25",q:"Energy bills have SD ₹184.77. What is the standard error of the mean of 100 simulated bills?",a:18.48,tol:0.2,
+ hint:"σ/√n.",why:"184.77/√100 = ₹18.48. Ten times more sessions (1,000) cut it to ₹5.84: the running mean in the lab should sit inside ±2 × 5.84 of ₹169.82 by then."},
+{t:"num",ph:"e.g. 2.5",q:"The values of max(D − 60, 0) under the ITPark Weibull have SD 101.5. What is the Monte Carlo standard error after 10,000 draws?",a:1.015,tol:0.02,
+ hint:"SD/√n.",why:"101.5/√10,000 = 1.015. The estimate 87 ± 1 is good enough to price Plan C at ITPark (99 + 87 = ₹186); getting to ±0.1 would need a million draws."},
+{t:"num",ph:"e.g. 5",q:"In the 17:00 hour, hourly arrival rates are Mall 2.944, ITPark 3.856, Highway 1.578, independent Poissons. What is the mean of the network-wide count in that hour?",a:8.378,tol:0.05,
+ hint:"Sums of independent Poissons add their rates.",why:"2.944 + 3.856 + 1.578 = 8.378, and the total is Poisson(8.378), so its variance should also be about 8.38; the 90 observed totals have variance 8.60. Linearity would give the mean anyway; the Poisson sum result adds the whole distribution."},
+{t:"mcq",q:"A Monte Carlo estimate has standard error 3.2 after 1,000 draws. To bring it down to 0.32 you need:",opts:["100,000 draws: SE falls like 1/√n, so a tenfold cut needs a hundredfold increase","10,000 draws","3,200 draws","A better random number generator; n does not matter"],a:0,
+ hint:"SE ∝ 1/√n.",why:"√(100,000/1,000) = 10, so SE drops from 3.2 to 0.32. The 1/√n law is the price of simulation: each extra digit costs a factor of 100 in computing."},
+{t:"num",ph:"e.g. 0.02",q:"Nudge A: 73 of 198 sessions bought at the cafe. Nudge B: 59 of 190. What is the difference in rates, A minus B?",a:0.0582,tol:0.002,
+ hint:"73/198 − 59/190.",why:"0.3687 − 0.3105 = 0.058, about 5.8 percentage points. The number on its own says nothing about chance; the simulated SE of that difference is 0.048."},
+{t:"mcq",q:"The observed difference is 0.058 and its simulated standard error is 0.048. What can you tell the board tonight?",opts:["The gap is about 1.2 standard errors: not clearly distinguishable from sampling noise with these sample sizes; a formal test comes next","Nudge A works: 0.369 is larger than 0.311","Nudge A does not work: the difference is less than 0.1","Nothing, because proportions cannot be compared without a Normal assumption"],a:0,
+ hint:"Compare the gap with the SE, then resist concluding.",why:"A difference of 1.2 SE would arise by chance quite often if the two nudges were equally effective. Turning \"quite often\" into a probability, and deciding what to do with it, is hypothesis testing, the subject of Module 3."}
+]});
+
+const BOARD=[
+{t:"num",q:"A sample of 900 sessions has standard deviation 90 min. What is the standard error of its mean?",a:3,tol:0.01,why:"90/√900 = 90/30 = 3 min."},
+{t:"mcq",q:"The bootstrap estimates the standard error of a statistic by:",opts:["Resampling the data with replacement many times and taking the SD of the recomputed statistic","Dividing the sample SD by √n for every statistic","Fitting a Normal distribution to the data","Collecting new data from the population"],a:0,why:"Efron's idea: treat the sample as the population, resample with replacement, recompute. It works for percentiles and other statistics that have no s/√n formula."},
+{t:"num",q:"A duration has E[D] = 80 min. A plan charges ₹2 a minute plus a ₹40 connection fee. What is its expected revenue per session?",a:200,tol:0.01,why:"E[2D + 40] = 2 × 80 + 40 = ₹200, by linearity. For a non-linear plan you would need the whole distribution (LOTUS)."},
+{t:"mcq",q:"Which inequality bounds P(|X − μ| ≥ 2σ) for any distribution with finite variance, and what is the bound?",opts:["Chebyshev: at most 1/4","Markov: at most μ/(2σ)","Chebyshev: at most 1/2","The 68–95 rule: about 5%"],a:0,why:"Chebyshev gives P(|X − μ| ≥ kσ) ≤ 1/k² = 0.25 at k = 2. Markov applied to X itself bounds the one-sided P(X ≥ a) by μ/a, needs X ≥ 0, and says nothing about a two-sided deviation. The 5% figure is the Normal's value, not a universal bound."},
+{t:"mcq",q:"Hourly counts at a hub have mean 4.0 and variance 9.5. What does that suggest about a Poisson model?",opts:["Over-dispersion: the variance is far above the mean, so arrivals are clustered and Poisson underestimates busy hours","A good fit, since the mean is a whole number","Under-dispersion: arrivals are too regular","Nothing; Poisson does not constrain the variance"],a:0,why:"Poisson requires Var = E. A dispersion index of 9.5/4 = 2.4 points to bursts (or a rate that changes across hours), and a Negative Binomial count model would be the usual next step."},
+{t:"num",q:"Gaps between arrivals are Exponential with mean 12 min. What is P(gap > 24)?",a:Math.exp(-2),tol:0.003,why:"e^(−24/12) = e^(−2) = 0.135. The exponential tail is e^(−x/mean)."},
+{t:"mcq",q:"Two models fit the same data: model P has log-likelihood −5,000 with 2 parameters; model Q has −4,998 with 5 parameters. By AIC, which is preferred?",opts:["P: AIC 10,004 against Q's 10,006","Q: it has the higher likelihood","They tie","Neither; AIC needs the same number of parameters"],a:0,why:"AIC(P) = 4 + 10,000 = 10,004; AIC(Q) = 10 + 9,996 = 10,006. Q's extra fit (2 log-likelihood points) does not pay for its three extra parameters."},
+{t:"mcq",q:"A function g is convex and D has a non-degenerate distribution. Which is always true?",opts:["E[g(D)] ≥ g(E[D])","E[g(D)] ≤ g(E[D])","E[g(D)] = g(E[D])","Nothing can be said without knowing g"],a:0,why:"Jensen's inequality. For Plan C (convex, with a kink at 60 minutes) that is why pricing from the mean duration understates expected revenue."}
+];
+
+/* ---------- labs ---------- */
+function axisText(g,txt,x,y,align="left"){g.textAlign=align;g.fillText(txt,x,y);g.textAlign="left";}
+
+function labBoot(root){
+  root.innerHTML=`<p class="note">Left: a sample of 200 ITPark sessions (drawn once from the file). Each click resamples 200 of them with replacement, computes the statistic, and drops it into the histogram. Right: the √n law for the mean, using the file's s = 108.48.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="btnrow"><span class="eyebrow">Statistic</span><div class="seg" role="group" aria-label="Statistic"><button type="button" data-st="mean" aria-pressed="true">mean</button><button type="button" data-st="q90" aria-pressed="false">90th percentile</button></div></div>
+    <div class="svgbox"><canvas aria-label="Histogram of bootstrap resample statistics filling in"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="b1" type="button">Resample once</button><button class="btn small" id="b1000" type="button">Run 1,000</button><button class="btn ghost small" id="breset" type="button">Reset</button><span id="bsp"></span></div>
+    <div class="readout"><div><span>Resamples B</span><b id="bn">0</b></div><div><span>Sample statistic</span><b id="bst"></b></div><div><span>Bootstrap SE</span><b id="bse">—</b></div><div><span>95% percentile CI</span><b id="bci">—</b></div><div><span>Formula s/√n (mean only)</span><b id="bf"></b></div></div>`;
+  const W=360,H=210,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);
+  const n=SAMP200.length,sMean=mean(SAMP200),sSD=sdev(SAMP200),sQ90=quant(SAMP200,0.9);
+  let stat="mean",r=rng(31),vals=[],speed=1,anim=null,last=null;
+  const RANGE={mean:[100,166],q90:[220,340]};const NB=33;
+  const statOf=a=>stat==="mean"?mean(a):quant(a.slice().sort((x,y)=>x-y),0.9);
+  function one(){const a=new Array(n);for(let i=0;i<n;i++)a[i]=SAMP200[Math.floor(r()*n)];const v=statOf(a);vals.push(v);last=v;}
+  function stats(){$("#bn",left).textContent=ind(vals.length);$("#bst",left).textContent=(stat==="mean"?sMean:sQ90).toFixed(2)+" min";$("#bf",left).textContent=stat==="mean"?(sSD/Math.sqrt(n)).toFixed(3):"—";
+    if(vals.length>=2){const s=vals.slice().sort((x,y)=>x-y);$("#bse",left).textContent=sdev(vals).toFixed(3);$("#bci",left).textContent=vals.length>=40?`${quant(s,0.025).toFixed(1)} – ${quant(s,0.975).toFixed(1)}`:"need 40+";}else{$("#bse",left).textContent="—";$("#bci",left).textContent="—";}}
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const [lo,hi]=RANGE[stat],m={l:14,r:10,t:22,b:28},bw=(W-m.l-m.r)/NB;
+    const h=new Array(NB).fill(0);vals.forEach(v=>{const k=Math.min(NB-1,Math.max(0,Math.floor((v-lo)/(hi-lo)*NB)));h[k]++;});const mx=Math.max(8,...h);
+    g.fillStyle=cssVar("--accent");h.forEach((c,k)=>{const hh=c/mx*(H-m.t-m.b);g.fillRect(m.l+k*bw+1,H-m.b-hh,bw-2,hh);});
+    if(last!=null){const k=Math.min(NB-1,Math.max(0,Math.floor((last-lo)/(hi-lo)*NB)));g.fillStyle=cssVar("--gold");g.fillRect(m.l+k*bw+1,H-m.b-(h[k]/mx)*(H-m.t-m.b)-10,bw-2,8);}
+    const sx=m.l+((stat==="mean"?sMean:sQ90)-lo)/(hi-lo)*(W-m.l-m.r);g.strokeStyle=cssVar("--fraud");g.setLineDash([4,3]);g.beginPath();g.moveTo(sx,m.t);g.lineTo(sx,H-m.b);g.stroke();g.setLineDash([]);
+    g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";[0,0.25,0.5,0.75,1].forEach(f=>axisText(g,(lo+f*(hi-lo)).toFixed(0),m.l+f*(W-m.l-m.r),H-10,f===0?"left":f===1?"right":"center"));
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText(`bootstrap ${stat==="mean"?"means":"90th pcts"} · red: sample value · gold: latest`,m.l,13);}
+  function reset(){if(anim)anim.stop();r=rng(31);vals=[];last=null;draw();stats();}
+  $("#b1",left).addEventListener("click",()=>{if(anim)anim.stop();one();draw();stats();});
+  $("#b1000",left).addEventListener("click",()=>{if(anim)anim.stop();const target=vals.length+1000;if(REDUCED){while(vals.length<target)one();draw();stats();award("boot");return;}
+    anim=loop(()=>{for(let k=0;k<6*speed&&vals.length<target;k++)one();draw();stats();if(vals.length>=target){anim.stop();award("boot");}});});
+  $("#breset",left).addEventListener("click",reset);
+  left.querySelectorAll("[data-st]").forEach(b=>b.addEventListener("click",()=>{stat=b.dataset.st;left.querySelectorAll("[data-st]").forEach(x=>x.setAttribute("aria-pressed",x===b));reset();}));
+  speedSeg($("#bsp",left),v=>{speed=v;},[1,4,16]);
+  reset();
+  right.innerHTML=`<span class="eyebrow">The √n law</span><label for="rn">Sessions in the sample n: <output id="rno"></output></label><input type="range" id="rn" min="1.4" max="3.8" step="0.01" value="2.3">
+    <div class="readout"><div><span>SE of the mean, 108.48/√n</span><b id="rse"></b></div><div><span>Half-width of a 95% CI, 1.96·SE</span><b id="rhw"></b></div><div><span>n to halve the SE</span><b id="rn4"></b></div></div>
+    <div class="svgbox" id="rchart"></div><p class="note">The whole quarter (5,345 sessions) pins the ITPark mean to ±2.9 min. Halving that would take four quarters. The bootstrap numbers for the full file: SE 1.49 for the mean, 3.49 for the 90th percentile (B = 4,000).</p>`;
+  function drawR(){const nv=Math.round(Math.pow(10,+$("#rn",right).value));$("#rno",right).textContent=ind(nv);const se=108.48/Math.sqrt(nv);$("#rse",right).textContent=se.toFixed(2);$("#rhw",right).textContent=(1.96*se).toFixed(2);$("#rn4",right).textContent=ind(4*nv);
+    const Wc=360,Hc=170,m={l:38,r:12,t:12,b:30},X=v=>m.l+(Math.log10(v)-1.4)/(3.8-1.4)*(Wc-m.l-m.r),Y=v=>Hc-m.b-(v/22)*(Hc-m.t-m.b);
+    const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Standard error against sample size"});
+    [0,5,10,15,20].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:Wc-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-5,y:Y(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+    [25,100,400,1600,5345].forEach(v=>{const t=sv("text",{x:X(v),y:Hc-14,"font-size":10,"text-anchor":"middle"});t.textContent=ind(v);s.appendChild(t);});
+    let d="";for(let i=0;i<=100;i++){const v=Math.pow(10,1.4+2.4*i/100);d+=(i?"L":"M")+X(v).toFixed(1)+","+Y(108.48/Math.sqrt(v)).toFixed(1);}
+    s.appendChild(sv("path",{d,style:"fill:none;stroke:var(--accent);stroke-width:2.5"}));s.appendChild(sv("circle",{cx:X(nv),cy:Y(se),r:5,style:"fill:var(--gold)"}));
+    const lab=sv("text",{x:Wc-m.r,y:Hc-2,"font-size":10,"text-anchor":"end"});lab.textContent="n (log scale) · SE in minutes";s.appendChild(lab);
+    const pc=$("#rchart",right);pc.innerHTML="";pc.appendChild(s);}
+  $("#rn",right).addEventListener("input",drawR);drawR();
+}
+
+function labTariff(root){
+  root.innerHTML=`<p class="note">The tariff calculator. Move the plan parameters; expected revenue per session is E[g(D)] averaged over each hub's duration distribution (200 quantiles from the file), then multiplied by sessions per day. Bold marks the best plan in each column.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<span class="eyebrow">Plan parameters</span>
+    <label for="ta">Plan A flat fee: ₹<output id="tao"></output></label><input type="range" id="ta" min="50" max="300" step="1" value="149">
+    <label for="tb">Plan B per minute: ₹<output id="tbo"></output></label><input type="range" id="tb" min="0.5" max="3" step="0.05" value="1.5">
+    <label for="tc0">Plan C base: ₹<output id="tc0o"></output> for the first <output id="tcfo"></output> min</label><input type="range" id="tc0" min="0" max="200" step="1" value="99"><input type="range" id="tcf" min="0" max="120" step="5" value="60" aria-label="Plan C included minutes">
+    <label for="tc1">Plan C per minute after that: ₹<output id="tc1o"></output></label><input type="range" id="tc1" min="0.25" max="2.5" step="0.05" value="1">
+    <div class="btnrow"><button class="btn ghost small" id="tdef" type="button">Back to the board's plans</button></div>
+    <div class="tbl"><table><thead><tr><th>Hub</th><th>E[D | hub]</th><th>Sessions/day</th><th>Plan A</th><th>Plan B</th><th>Plan C</th></tr></thead><tbody id="ttab"></tbody></table></div>
+    <p class="note" id="tnote"></p>`;
+  const ids=["ta","tb","tc0","tcf","tc1"];const V=()=>({a:+$("#ta",left).value,b:+$("#tb",left).value,c0:+$("#tc0",left).value,cFree:+$("#tcf",left).value,c1:+$("#tc1",left).value});
+  function calc(){const P=V();$("#tao",left).textContent=P.a;$("#tbo",left).textContent=P.b.toFixed(2);$("#tc0o",left).textContent=P.c0;$("#tcfo",left).textContent=P.cFree;$("#tc1o",left).textContent=P.c1.toFixed(2);
+    let rows="",tot={A:0,B:0,C:0},seen={};const allE={A:0,B:0,C:0};
+    HUBS.forEach(h=>{const Q=HQ[h],e={};["A","B","C"].forEach(p=>{e[p]=mean(Q.map(d=>planRev(p,d,P)));tot[p]+=e[p]*HUB[h].perDay;allE[p]+=e[p]*HUB[h].n/N;});const best=["A","B","C"].reduce((x,y)=>e[y]>e[x]?y:x);seen[h]=best;
+      rows+=`<tr><td>${h}</td><td class="num">${HUB[h].mean.toFixed(1)}</td><td class="num">${HUB[h].perDay.toFixed(1)}</td>${["A","B","C"].map(p=>`<td class="num">${p===best?"<b>":""}₹${e[p].toFixed(1)}<br><span class="note">₹${ind(Math.round(e[p]*HUB[h].perDay))}/day</span>${p===best?"</b>":""}</td>`).join("")}</tr>`;});
+    const bestAll=["A","B","C"].reduce((x,y)=>tot[y]>tot[x]?y:x);
+    rows+=`<tr><td><b>All hubs</b></td><td class="num">${ALL.mean.toFixed(1)}</td><td class="num">134.3</td>${["A","B","C"].map(p=>`<td class="num">${p===bestAll?"<b>":""}₹${allE[p].toFixed(1)}<br><span class="note">₹${ind(Math.round(tot[p]))}/day</span>${p===bestAll?"</b>":""}</td>`).join("")}</tr>`;
+    $("#ttab",left).innerHTML=rows;
+    const distinct=new Set(Object.values(seen)).size;$("#tnote",left).textContent=distinct===3?"Three hubs, three different winners. One network-wide tariff must trade one hub against another.":distinct===2?"Two hubs disagree with the third about the best plan.":"With these parameters one plan wins everywhere.";
+    S.tariffMoved=(S.tariffMoved||0)+1;if(S.tariffMoved===25){award("tariff");}save();}
+  ids.forEach(id=>$("#"+id,left).addEventListener("input",calc));
+  $("#tdef",left).addEventListener("click",()=>{$("#ta",left).value=149;$("#tb",left).value=1.5;$("#tc0",left).value=99;$("#tcf",left).value=60;$("#tc1",left).value=1;calc();});
+  calc();
+  right.innerHTML=`<span class="eyebrow">The tower property</span><div class="tbl"><table><thead><tr><th>Hub h</th><th>P(H = h)</th><th>E[D | h]</th><th>product</th></tr></thead><tbody>
+    ${HUBS.map(h=>`<tr><td>${h}</td><td class="num">${(HUB[h].n/N).toFixed(4)}</td><td class="num">${HUB[h].mean.toFixed(2)}</td><td class="num">${(HUB[h].n/N*HUB[h].mean).toFixed(2)}</td></tr>`).join("")}
+    <tr><td><b>Σ = E[D]</b></td><td class="num">1.0000</td><td></td><td class="num"><b>${HUBS.reduce((s,h)=>s+HUB[h].n/N*HUB[h].mean,0).toFixed(2)}</b></td></tr></tbody></table></div>
+    <span class="eyebrow" style="margin-top:10px">The ₹ bet (illustrative)</span><p class="note">Each play: +₹1 with probability 0.85, −₹1 with probability 0.15. E = 0.70 per play, so 100 plays expect ₹70.</p>
+    <div class="btnrow"><button class="btn small" id="bet" type="button">Play 100 rounds</button><button class="btn ghost small" id="betr" type="button">Clear</button></div>
+    <div class="readout"><div><span>Last 100 rounds</span><b id="betl">—</b></div><div><span>Games played</span><b id="betn">0</b></div><div><span>Mean per game</span><b id="betm">—</b></div><div><span>E[total] by linearity</span><b>70</b></div></div>`;
+  let br=rng(77),games=[];
+  $("#bet",right).addEventListener("click",()=>{let t=0;for(let i=0;i<100;i++)t+=br()<0.85?1:-1;games.push(t);$("#betl",right).textContent="₹"+t;$("#betn",right).textContent=games.length;$("#betm",right).textContent="₹"+mean(games).toFixed(2);});
+  $("#betr",right).addEventListener("click",()=>{games=[];$("#betl",right).textContent="—";$("#betn",right).textContent="0";$("#betm",right).textContent="—";});
+}
+
+function labSpread(root){
+  root.innerHTML=`<p class="note">Left: ITPark's concurrent sessions by hour (mean, 95th percentile, maximum over the 90 days) and a capacity slider. Right: Markov and Chebyshev against the ITPark duration data, and the shape of cafe spend.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<label for="cap">Chargers at ITPark: <output id="capo"></output></label><input type="range" id="cap" min="4" max="19" step="1" value="10">
+    <div class="readout"><div><span>Share of minutes with demand above capacity</span><b id="cpq"></b></div><div><span>Mean concurrent sessions</span><b>7.21</b></div><div><span>95th percentile · max</span><b>13 · 19</b></div></div>
+    <div class="svgbox" id="occ"></div><p class="note">Demand builds through the day: the evening mean is 8.4 and the evening 95th percentile 13. Sessions in progress at a minute = arrivals not yet finished, so long ITPark durations stack up.</p>`;
+  function drawOcc(){const K=+$("#cap",left).value;$("#capo",left).textContent=K;$("#cpq",left).textContent=pct(OCC_GT[K],1);
+    const Wc=360,Hc=200,m={l:30,r:10,t:14,b:30},bw=(Wc-m.l-m.r)/17,Y=v=>Hc-m.b-v/20*(Hc-m.t-m.b);
+    const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Concurrent sessions at ITPark by hour: mean bars, 95th percentile and maximum markers, capacity line"});
+    [0,5,10,15,20].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:Wc-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-4,y:Y(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+    OCC_MEAN.forEach((v,i)=>{const x=m.l+i*bw;s.appendChild(sv("rect",{x:x+2,y:Y(v),width:bw-4,height:Y(0)-Y(v),style:"fill:var(--accent)"}));
+      s.appendChild(sv("line",{x1:x+3,x2:x+bw-3,y1:Y(OCC_P95[i]),y2:Y(OCC_P95[i]),style:"stroke:var(--gold);stroke-width:2.5"}));s.appendChild(sv("circle",{cx:x+bw/2,cy:Y(OCC_MAX[i]),r:2.5,style:"fill:var(--fraud)"}));});
+    s.appendChild(sv("line",{x1:m.l,x2:Wc-m.r,y1:Y(K),y2:Y(K),style:"stroke:var(--ink);stroke-dasharray:5 3;stroke-width:1.5"}));
+    [0,4,8,12,16].forEach(h=>{const t=sv("text",{x:m.l+h*bw+bw/2,y:Hc-14,"font-size":10,"text-anchor":"middle"});t.textContent=String(6+h).padStart(2,"0")+":00";s.appendChild(t);});
+    const lg=sv("text",{x:m.l,y:10,"font-size":10});lg.textContent="bars mean · gold 95th pct · red max · dashed capacity";s.appendChild(lg);
+    const o=$("#occ",left);o.innerHTML="";o.appendChild(s);}
+  $("#cap",left).addEventListener("input",drawOcc);drawOcc();
+  right.innerHTML=`<span class="eyebrow">Inequalities vs ITPark durations (μ = 139.87, σ = 108.48)</span>
+    <label for="mk">Markov threshold a: <output id="mko"></output> min</label><input type="range" id="mk" min="150" max="600" step="10" value="300">
+    <div class="readout"><div><span>Markov bound μ/a</span><b id="mkb"></b></div><div><span>Data: share of sessions ≥ a</span><b id="mkd"></b></div></div>
+    <label for="ck">Chebyshev k: <output id="cko"></output></label><input type="range" id="ck" min="1" max="4" step="0.1" value="2">
+    <div class="readout"><div><span>Chebyshev bound 1/k²</span><b id="ckb"></b></div><div><span>Data: share with |D − μ| ≥ kσ</span><b id="ckd"></b></div><div><span>Normal would give</span><b id="ckn"></b></div></div>
+    <span class="eyebrow" style="margin-top:8px">Cafe spend per session</span>
+    <div class="readout"><div><span>Share spending anything</span><b>${pct(CAFE.pShare,1)}</b></div><div><span>Mean · median</span><b>₹${CAFE.mean.toFixed(1)} · ₹0</b></div><div><span>Skewness</span><b>${CAFE.skew.toFixed(2)}</b></div><div><span>Excess kurtosis</span><b>${CAFE.kurt.toFixed(1)}</b></div></div>
+    <div class="svgbox" id="cafe"></div>`;
+  const mu=139.871,sd=108.476;
+  function drawIneq(){const a=+$("#mk",right).value,k=+$("#ck",right).value;$("#mko",right).textContent=a;$("#cko",right).textContent=k.toFixed(1);
+    $("#mkb",right).textContent=Math.min(1,mu/a).toFixed(3);$("#mkd",right).textContent=(1-qcdf(ITQ,a)).toFixed(3);
+    $("#ckb",right).textContent=Math.min(1,1/(k*k)).toFixed(3);const out=qcdf(ITQ,mu-k*sd)+(1-qcdf(ITQ,mu+k*sd));$("#ckd",right).textContent=out.toFixed(3);$("#ckn",right).textContent=(2*(1-normCDF(k))).toFixed(3);}
+  $("#mk",right).addEventListener("input",drawIneq);$("#ck",right).addEventListener("input",drawIneq);drawIneq();
+  // cafe histogram: zeros plus spenders' percentiles, bins of ₹50 to 600
+  (function(){const Wc=360,Hc=120,m={l:8,r:8,t:14,b:26},NB=13,bw=(Wc-m.l-m.r)/NB;const bins=new Array(NB).fill(0);bins[0]=1-CAFE.pShare;
+    for(let b=0;b<NB;b++){const lo=b*50,hi=(b+1)*50;const f=(qcdf(CAFEQ,hi)-qcdf(CAFEQ,lo))*CAFE.pShare;bins[b]+=f;}
+    const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Histogram of cafe spend per session: a tall bar at zero and a long right tail"});const Y=v=>Hc-m.b-v/0.6*(Hc-m.t-m.b);
+    bins.forEach((v,b)=>{s.appendChild(sv("rect",{x:m.l+b*bw+2,y:Y(v),width:bw-4,height:Y(0)-Y(v),style:`fill:${b===0?"var(--muted)":"var(--accent)"}`}));});
+    [0,200,400,600].forEach((v,i)=>{const t=sv("text",{x:m.l+v/50*bw,y:Hc-10,"font-size":10,"text-anchor":i===0?"start":"middle"});t.textContent="₹"+v;s.appendChild(t);});
+    const t=sv("text",{x:m.l,y:10,"font-size":10});t.textContent="grey ₹0 (56.4%) · blue spenders, ₹50 bins · tail to ₹1,341";s.appendChild(t);
+    $("#cafe",right).appendChild(s);})();
+}
+
+function labDiscrete(root){
+  root.innerHTML=`<p class="note">Left: replay the 1,530 ITPark hub-hours. Each hour's arrival count drops into its bar; gold dots are the Poisson(3.49) PMF. Right: calculators for the four counting families.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="svgbox"><canvas aria-label="Bars of hourly arrival counts filling under Poisson dots"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="prun" type="button">Replay 1,530 hours</button><button class="btn ghost small" id="preset" type="button">Reset</button><span id="psp"></span></div>
+    <div class="readout"><div><span>Hours replayed</span><b id="pn">0</b></div><div><span>Mean arrivals/hour</span><b id="pm">—</b></div><div><span>Variance</span><b id="pv">—</b></div><div><span>Dispersion Var/E</span><b id="pd">—</b></div></div>`;
+  const seq=[];Object.keys(HOURLY).forEach(k=>{for(let i=0;i<HOURLY[k];i++)seq.push(+k);});const order=shuffled(seq.length,5);
+  const W=360,H=220,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);let i=0,speed=1,anim=null;const cnt=new Array(13).fill(0);let sum=0,sum2=0;
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const m={l:30,r:10,t:16,b:28},bw=(W-m.l-m.r)/13,Y=v=>H-m.b-Math.min(v,0.26)/0.26*(H-m.t-m.b);
+    g.strokeStyle=cssVar("--line");g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";[0,0.1,0.2].forEach(v=>{g.beginPath();g.moveTo(m.l,Y(v));g.lineTo(W-m.r,Y(v));g.stroke();axisText(g,v.toFixed(1),m.l-4,Y(v)+3,"right");});
+    for(let k=0;k<13;k++){const p=i?cnt[k]/i:0;g.fillStyle=cssVar("--accent");g.fillRect(m.l+k*bw+2,Y(p),bw-4,Y(0)-Y(p));g.fillStyle=cssVar("--gold");g.beginPath();g.arc(m.l+k*bw+bw/2,Y(poisPMF(k,HOURLY_MEAN)),3.2,0,7);g.fill();g.fillStyle=cssVar("--muted");axisText(g,k,m.l+k*bw+bw/2,H-10,"center");}
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText("share of hours with k arrivals · gold: Poisson(3.49) PMF",m.l,11);}
+  function step(){if(i>=seq.length)return false;const v=seq[order[i]];cnt[v]++;sum+=v;sum2+=v*v;i++;return true;}
+  function stats(){$("#pn",left).textContent=ind(i);if(i>=2){const mn=sum/i,va=(sum2-i*mn*mn)/(i-1);$("#pm",left).textContent=mn.toFixed(3);$("#pv",left).textContent=va.toFixed(3);$("#pd",left).textContent=(va/mn).toFixed(3);}else{$("#pm",left).textContent="—";$("#pv",left).textContent="—";$("#pd",left).textContent="—";}}
+  function reset(){if(anim)anim.stop();i=0;cnt.fill(0);sum=sum2=0;draw();stats();}
+  $("#prun",left).addEventListener("click",()=>{reset();if(REDUCED){while(step());draw();stats();award("poisson");return;}anim=loop(()=>{let ok=true;for(let k=0;k<4*speed&&ok;k++)ok=step();draw();stats();if(!ok){anim.stop();award("poisson");}});});
+  $("#preset",left).addEventListener("click",reset);speedSeg($("#psp",left),v=>{speed=v;},[1,4,16]);reset();
+  right.innerHTML=`<label for="dp">Fault probability p: <output id="dpo"></output></label><input type="range" id="dp" min="0.005" max="0.2" step="0.0001" value="${PFAULT.toFixed(4)}">
+    <label for="dn">Batch size n (Binomial): <output id="dno"></output></label><input type="range" id="dn" min="5" max="200" step="1" value="20">
+    <div class="readout"><div><span>Binomial P(at least one fault)</span><b id="db1"></b></div><div><span>Binomial E · SD</span><b id="dbe"></b></div><div><span>Poisson(np) P(at least one)</span><b id="dpo1"></b></div></div>
+    <label for="dr">Faults to wait for, r (Geometric when r = 1): <output id="dro"></output></label><input type="range" id="dr" min="1" max="10" step="1" value="1">
+    <div class="readout"><div><span>E[sessions until r-th fault] = r/p</span><b id="dge"></b></div><div><span>SD = √(r(1−p))/p</span><b id="dgs"></b></div><div><span>P(no fault in first 50)</span><b id="dg50"></b></div></div>
+    <label for="dK">Hypergeometric audit: faulty connectors K of 100, inspect 20: K = <output id="dKo"></output></label><input type="range" id="dK" min="1" max="30" step="1" value="8">
+    <div class="readout"><div><span>P(find none)</span><b id="dh0"></b></div><div><span>Binomial shortcut (1 − K/100)²⁰</span><b id="dhb"></b></div><div><span>E[found] = 20K/100</span><b id="dhe"></b></div></div>`;
+  const lnC=(n,k)=>lnFact(n)-lnFact(k)-lnFact(n-k);
+  function calc(){const p=+$("#dp",right).value,n=+$("#dn",right).value,r=+$("#dr",right).value,K=+$("#dK",right).value;
+    $("#dpo",right).textContent=p.toFixed(4);$("#dno",right).textContent=n;$("#dro",right).textContent=r;$("#dKo",right).textContent=K;
+    $("#db1",right).textContent=(1-Math.pow(1-p,n)).toFixed(4);$("#dbe",right).textContent=`${(n*p).toFixed(2)} · ${Math.sqrt(n*p*(1-p)).toFixed(2)}`;$("#dpo1",right).textContent=(1-Math.exp(-n*p)).toFixed(4);
+    $("#dge",right).textContent=(r/p).toFixed(1);$("#dgs",right).textContent=(Math.sqrt(r*(1-p))/p).toFixed(1);$("#dg50",right).textContent=Math.pow(1-p,50).toFixed(4);
+    const h0=Math.exp(lnC(100-K,20)-lnC(100,20));$("#dh0",right).textContent=h0.toFixed(4);$("#dhb",right).textContent=Math.pow(1-K/100,20).toFixed(4);$("#dhe",right).textContent=(20*K/100).toFixed(2);}
+  ["dp","dn","dr","dK"].forEach(id=>$("#"+id,right).addEventListener("input",calc));calc();
+}
+
+function labFamilies(root){
+  root.innerHTML=`<p class="note">Pick a column. Bars are the file's histogram (from its percentiles); the curve is the named family fitted to it. For the Weibull, move the shape and watch the hazard change while the 63.2% point stays at the scale.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="regbtns" id="fpick">
+    <button class="regbtn" type="button" data-f="exp" aria-pressed="true">Exponential<br><span class="note">ITPark gaps between arrivals</span></button>
+    <button class="regbtn" type="button" data-f="unif" aria-pressed="false">Uniform<br><span class="note">arrival minute within the hour</span></button>
+    <button class="regbtn" type="button" data-f="weib" aria-pressed="false">Weibull<br><span class="note">ITPark session durations</span></button>
+    <button class="regbtn" type="button" data-f="gamma" aria-pressed="false">Gamma (Erlang)<br><span class="note">time until the 5th arrival</span></button>
+    <button class="regbtn" type="button" data-f="lnorm" aria-pressed="false">Lognormal<br><span class="note">cafe spend, spenders only</span></button>
+    <button class="regbtn" type="button" data-f="norm" aria-pressed="false">Normal<br><span class="note">car charge rate (kW)</span></button></div>
+    <div class="svgbox" id="fchart"></div><div class="formula" id="fform"></div>`;
+  right.innerHTML=`<div id="fctl"></div><div class="readout" id="fread"></div><p class="note" id="fnote"></p><div class="svgbox" id="fhaz"></div>`;
+  let fam="exp",shape=1.3016;
+  const FAM={
+    exp:{lo:0,hi:90,NB:30,Q:GAPQ,pdf:x=>Math.exp(-x/16.903)/16.903,cdf:x=>1-Math.exp(-x/16.903),xl:"gap (min)",form:"f(x) = λe^(−λx),  λ = 1/16.90 = 0.0592 per min\nmodel mean 16.90 · SD 16.90   data mean 16.90 · SD 16.84\nmodel median ln2/λ = 11.72      data median 11.91",note:"The SD equals the mean (CV = 1), the median is 69% of the mean, and the tail is e^(−x/16.9). Memorylessness: P(> 20 | > 10) = 0.539 in the data, P(> 10) = 0.559."},
+    unif:{lo:0,hi:60,NB:12,Q:null,pdf:x=>1/60,cdf:x=>x/60,xl:"minute within the hour",form:"f(x) = 1/60 on [0, 60]\nmean (a+b)/2 = 30      SD (b−a)/√12 = 17.32\ndata: mean 30.20, SD 17.26",note:"Arrival minutes within the hour are close to flat: the generating process has no preference for :00 or :30. The bars here are the model (the file's distribution is flat to within sampling noise)."},
+    weib:{lo:0,hi:500,NB:25,Q:ITQ,pdf:x=>weibPDF(x,shape,151.489),cdf:x=>weibCDF(x,shape,151.489),xl:"duration (min)",form:"",note:""},
+    gamma:{lo:0,hi:240,NB:24,Q:null,pdf:x=>gammaPDF(x,5,16.903),cdf:x=>gammaCDF(x,5,16.903),xl:"time to 5th arrival (min)",form:"Gamma(k = 5, θ = 16.90): sum of 5 Exponential gaps\nmean kθ = 84.5     SD √k·θ = 37.8\nP(5th arrival within 60 min) = 0.284",note:"The Erlang shape k is the number of exponential waits added. With k = 1 it is the Exponential; as k grows it becomes bell-shaped (the CLT at work)."},
+    lnorm:{lo:0,hi:600,NB:24,Q:CAFEQ,pdf:x=>lnormPDF(x,CAFE.lnMu,CAFE.lnSigma),cdf:x=>x<=0?0:normCDF((Math.log(x)-CAFE.lnMu)/CAFE.lnSigma),xl:"cafe spend (₹)",form:"ln X ~ Normal(μ = 4.9135, σ = 0.6186)\nmedian e^μ = 136.1    mean e^(μ+σ²/2) = 164.8\ndata: median 135.9, mean 165.2, skewness of ln X = 0.06",note:"On the log scale the spend is symmetric (skewness 0.06); on the rupee scale it has skewness 2.5. P(spend > 300): model 0.101, data 0.105."},
+    norm:{lo:6.1,hi:8.3,NB:22,Q:RATEQ,pdf:x=>normPDF(x,RATE.mean,RATE.sd),cdf:x=>normCDF((x-RATE.mean)/RATE.sd),xl:"charge rate (kW)",form:"Normal(μ = 7.200, σ = 0.299)\nwithin μ ± σ:  model 68.3%   data 67.9%\nwithin μ ± 2σ: model 95.4%   data 95.2%",note:"Charging rates are a sum of many small independent hardware and battery effects, which is the Central Limit Theorem's territory. P(rate > 8 kW): model 0.0037, data 0.0038."}};
+  function weibForm(){const k=shape,l=151.489;const m=l*Math.exp(lnGamma(1+1/k));return `S(t) = exp(−(t/λ)ᵏ),  λ = 151.5,  k = ${k.toFixed(2)}\nF(λ) = 1 − e⁻¹ = 0.632 for every k\nmodel mean λΓ(1+1/k) = ${m.toFixed(1)}   data mean 139.9, median 113.6`;}
+  function draw(){const F=FAM[fam];if(fam==="weib"){F.form=weibForm();F.note=shape<0.98?"Shape below 1: the hazard falls with time, so the longer a session has lasted, the less likely it is to end in the next minute.":shape<1.02?"Shape 1 is the Exponential: constant hazard, memoryless.":`Shape ${shape.toFixed(2)}: hazard rises with elapsed time. The fitted ITPark shape is 1.30 (gentle rise); Highway's is 2.21 (steep). Scale 151.5 is the 63.2nd percentile: 63.5% of ITPark sessions are shorter.`;}
+    const Wc=360,Hc=210,m={l:10,r:10,t:16,b:30},bw=(Wc-m.l-m.r)/F.NB;const bins=[];for(let b=0;b<F.NB;b++){const lo=F.lo+b*(F.hi-F.lo)/F.NB,hi=lo+(F.hi-F.lo)/F.NB;bins.push(F.Q?qcdf(F.Q,hi)-qcdf(F.Q,lo):F.cdf(hi)-F.cdf(lo));}
+    const binw=(F.hi-F.lo)/F.NB;let peak=0;for(let i=0;i<=200;i++)peak=Math.max(peak,F.pdf(F.lo+(F.hi-F.lo)*i/200)*binw);const ymax=Math.max(peak,...bins)*1.15,Y=v=>Hc-m.b-v/ymax*(Hc-m.t-m.b);
+    const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Histogram of the data with the fitted density curve"});
+    bins.forEach((v,b)=>s.appendChild(sv("rect",{x:m.l+b*bw+1,y:Y(v),width:bw-2,height:Y(0)-Y(v),style:"fill:var(--accent-soft);stroke:var(--line)"})));
+    let d="";for(let i=0;i<=200;i++){const x=F.lo+(F.hi-F.lo)*i/200+(fam==="weib"||fam==="gamma"||fam==="exp"||fam==="lnorm"?1e-6:0);const px=m.l+i/200*(Wc-m.l-m.r);d+=(i?"L":"M")+px.toFixed(1)+","+Y(Math.min(ymax,F.pdf(x)*binw)).toFixed(1);}
+    s.appendChild(sv("path",{d,style:"fill:none;stroke:var(--gold);stroke-width:2.5"}));
+    if(fam==="weib"){const x=m.l+(151.489-F.lo)/(F.hi-F.lo)*(Wc-m.l-m.r);s.appendChild(sv("line",{x1:x,x2:x,y1:m.t,y2:Hc-m.b,style:"stroke:var(--fraud);stroke-dasharray:4 3"}));const t=sv("text",{x:x+4,y:m.t+10,"font-size":10});t.textContent="scale = 63.2nd pct";s.appendChild(t);}
+    [0,0.5,1].forEach(f=>{const t=sv("text",{x:m.l+f*(Wc-m.l-m.r),y:Hc-14,"font-size":10,"text-anchor":f===0?"start":f===1?"end":"middle"});t.textContent=(F.lo+f*(F.hi-F.lo)).toFixed(F.hi<20?1:0);s.appendChild(t);});
+    const xl=sv("text",{x:Wc-m.r,y:Hc-2,"font-size":10,"text-anchor":"end"});xl.textContent=F.xl;s.appendChild(xl);
+    const lg=sv("text",{x:m.l,y:11,"font-size":10});lg.textContent=F.Q?"bars: data · curve: fitted family":"bars and curve: the model";s.appendChild(lg);
+    const box=$("#fchart",left);box.innerHTML="";box.appendChild(s);$("#fform",left).textContent=F.form;$("#fnote",right).textContent=F.note;
+    const ctl=$("#fctl",right);const hz=$("#fhaz",right);hz.innerHTML="";
+    if(fam==="weib"){if(!ctl.querySelector("#wsh")){ctl.innerHTML=`<label for="wsh">Weibull shape k: <output id="wsho"></output></label><input type="range" id="wsh" min="0.5" max="3" step="0.01" value="${shape}"><div class="btnrow"><button class="btn ghost small" data-sh="1.3016" type="button">ITPark fit 1.30</button><button class="btn ghost small" data-sh="2.2124" type="button">Highway shape 2.21</button><button class="btn ghost small" data-sh="1" type="button">Exponential 1.00</button></div>`;
+        $("#wsh",ctl).addEventListener("input",e=>{shape=+e.target.value;draw();});ctl.querySelectorAll("[data-sh]").forEach(b=>b.addEventListener("click",()=>{shape=+b.dataset.sh;$("#wsh",ctl).value=shape;draw();}));}
+      $("#wsho",ctl).textContent=shape.toFixed(2);
+      $("#fread",right).innerHTML=`<div><span>Model P(D > 300)</span><b>${weibCDF(300,shape,151.489)<1?(1-weibCDF(300,shape,151.489)).toFixed(3):"0"}</b></div><div><span>Data P(D > 300)</span><b>0.087</b></div><div><span>Hazard at 60 → 240 min (per min)</span><b>${(shape/151.489*Math.pow(60/151.489,shape-1)).toFixed(4)} → ${(shape/151.489*Math.pow(240/151.489,shape-1)).toFixed(4)}</b></div>`;
+      const Wc2=360,Hc2=120,mm={l:36,r:10,t:14,b:26},hmax=0.03,X=v=>mm.l+v/400*(Wc2-mm.l-mm.r),Yh=v=>Hc2-mm.b-Math.min(v,hmax)/hmax*(Hc2-mm.t-mm.b);
+      const s2=sv("svg",{viewBox:`0 0 ${Wc2} ${Hc2}`,role:"img","aria-label":"Hazard function of the Weibull for the chosen shape"});
+      [0,0.01,0.02,0.03].forEach(v=>{s2.appendChild(sv("line",{x1:mm.l,x2:Wc2-mm.r,y1:Yh(v),y2:Yh(v),style:"stroke:var(--line)"}));const t=sv("text",{x:mm.l-4,y:Yh(v)+3,"font-size":9,"text-anchor":"end"});t.textContent=v.toFixed(2);s2.appendChild(t);});
+      let d2="";for(let i=1;i<=100;i++){const t=400*i/100;d2+=(i>1?"L":"M")+X(t).toFixed(1)+","+Yh(shape/151.489*Math.pow(t/151.489,shape-1)).toFixed(1);}
+      s2.appendChild(sv("path",{d:d2,style:"fill:none;stroke:var(--fraud);stroke-width:2.5"}));s2.appendChild(sv("line",{x1:mm.l,x2:Wc2-mm.r,y1:Yh(1/139.871),y2:Yh(1/139.871),style:"stroke:var(--muted);stroke-dasharray:3 3"}));
+      [0,100,200,300,400].forEach(v=>{const t=sv("text",{x:X(v),y:Hc2-12,"font-size":9,"text-anchor":"middle"});t.textContent=v;s2.appendChild(t);});
+      const lg2=sv("text",{x:mm.l,y:10,"font-size":10});lg2.textContent="hazard h(t) = (k/λ)(t/λ)^(k−1) · dotted: exponential 1/139.9";s2.appendChild(lg2);hz.appendChild(s2);}
+    else{ctl.innerHTML="";const R={exp:[["Model P(gap > 30)","0.170"],["Data P(gap > 30)","0.166"],["Model P(> 20 | > 10) = P(> 10)","0.553"],["Data P(> 20 | > 10) · P(> 10)","0.539 · 0.559"]],
+      unif:[["Model mean · SD","30 · 17.32"],["Data mean · SD","30.20 · 17.26"]],
+      gamma:[["Mean of 5 gaps","84.5 min"],["SD √5 × 16.9","37.8 min"],["P(5th arrival < 60 min)","0.284"]],
+      lnorm:[["Model median e^μ","₹136.1"],["Model mean e^(μ+σ²/2)","₹164.8"],["Data median · mean","₹135.9 · ₹165.2"],["P(> 300): model · data","0.101 · 0.105"]],
+      norm:[["Within ±1σ: model · data","68.3% · 67.9%"],["Within ±2σ: model · data","95.4% · 95.2%"],["P(> 8 kW): model · data","0.0037 · 0.0038"]]}[fam];
+      $("#fread",right).innerHTML=R.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");}}
+  left.querySelectorAll("[data-f]").forEach(b=>b.addEventListener("click",()=>{fam=b.dataset.f;left.querySelectorAll("[data-f]").forEach(x=>x.setAttribute("aria-pressed",x===b));draw();}));
+  draw();
+}
+
+function labFitRace(root){
+  root.innerHTML=`<p class="note">Left: the fitting race. The step curve is the empirical CDF (ECDF) of ITPark durations; the five fitted CDFs are drawn as the sweep passes. Right: the referee's table, then a kernel density estimate (KDE) and a Q–Q plot for the winner.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="svgbox"><canvas aria-label="Empirical CDF swept from left to right with five fitted CDFs and the running largest gap"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="frun" type="button">Run the race</button><span id="fsp"></span></div>
+    <div class="readout" id="ksread"></div>
+    <div class="tbl"><table><thead><tr><th>Family</th><th>k</th><th>log-lik</th><th>AIC</th><th>BIC</th><th>KS D</th></tr></thead><tbody id="ftab"></tbody></table></div>`;
+  const W=360,H=240,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);const XMAX=500;let sweep=XMAX,speed=1,anim=null;
+  const fams=Object.keys(FIT),colr={exponential:"--fraud",weibull:"--gold",gamma:"--ok",lognormal:"--muted",normal:"--accent"};
+  const m={l:34,r:10,t:16,b:28},X=x=>m.l+x/XMAX*(W-m.l-m.r),Y=p=>H-m.b-p*(H-m.t-m.b);
+  function ksUpTo(f,x){let d=0;for(let i=0;i<=100;i++){if(ITQ[i]>x)break;d=Math.max(d,Math.abs(i/100-f(ITQ[i])));}return d;}
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);g.strokeStyle=cssVar("--line");g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";
+    [0,0.25,0.5,0.75,1].forEach(p=>{g.beginPath();g.moveTo(m.l,Y(p));g.lineTo(W-m.r,Y(p));g.stroke();axisText(g,p.toFixed(2),m.l-4,Y(p)+3,"right");});
+    [0,100,200,300,400,500].forEach(x=>axisText(g,x,X(x),H-10,"center"));
+    fams.forEach(f=>{g.strokeStyle=cssVar(colr[f]);g.lineWidth=1.6;g.beginPath();for(let i=0;i<=120;i++){const x=sweep*i/120;const y=Y(FIT[f].cdf(x));i?g.lineTo(X(x),y):g.moveTo(X(x),y);}g.stroke();});
+    g.strokeStyle=cssVar("--ink");g.lineWidth=2;g.beginPath();let started=false;for(let i=0;i<=100;i++){const v=Math.min(ITQ[i],XMAX);if(ITQ[i]>sweep)break;if(!started){g.moveTo(X(v),Y(i/100));started=true;}else g.lineTo(X(v),Y(i/100));}g.stroke();g.lineWidth=1;
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText("black ECDF · gold Weibull · green Gamma · red Exp · grey Lognorm · blue Normal",m.l,11);g.font="10px IBM Plex Mono, monospace";
+    g.fillStyle=cssVar("--gold");g.fillRect(X(sweep)-1,m.t,2,H-m.t-m.b);
+    const ks=$("#ksread",left);ks.innerHTML=fams.map(f=>`<div><span>${sweep>=XMAX?"KS distance":"KS so far (approx.)"}: ${f}</span><b>${sweep>=XMAX?FIT[f].KS.toFixed(4):ksUpTo(FIT[f].cdf,sweep).toFixed(4)}</b></div>`).join("");}
+  function table(){const best=Math.min(...fams.map(f=>FIT[f].AIC));$("#ftab",left).innerHTML=fams.slice().sort((a,b)=>FIT[a].AIC-FIT[b].AIC).map(f=>`<tr><td>${f}${FIT[f].AIC===best?" <b>(winner)</b>":""}</td><td class="num">${FIT[f].k}</td><td class="num">${ind(FIT[f].logL)}</td><td class="num">${ind(FIT[f].AIC)}</td><td class="num">${ind(FIT[f].BIC)}</td><td class="num">${FIT[f].KS.toFixed(4)}</td></tr>`).join("");}
+  $("#frun",left).addEventListener("click",()=>{if(anim)anim.stop();sweep=0;draw();if(REDUCED){sweep=XMAX;draw();award("race");return;}anim=loop(()=>{sweep=Math.min(XMAX,sweep+2.5*speed);draw();if(sweep>=XMAX){anim.stop();award("race");}});});
+  speedSeg($("#fsp",left),v=>{speed=v;},[1,4]);draw();table();
+  right.innerHTML=`<span class="eyebrow">Kernel density estimate (200-session sample)</span><label for="kh">Bandwidth h: <output id="kho"></output> min</label><input type="range" id="kh" min="3" max="60" step="1" value="28">
+    <div class="svgbox" id="kde"></div><p class="note">Silverman's rule of thumb, h = 0.9 · min(s, IQR/1.34) · n^(−1/5) with IQR the interquartile range, gives h ≈ 28 for this sample. Small h: every session is its own bump. Large h: the shape blurs into one hump.</p>
+    <span class="eyebrow" style="margin-top:8px">Q–Q plot: data quantiles vs Weibull(1.30, 151.5)</span><div class="svgbox" id="qq"></div>`;
+  function drawKDE(){const h=+$("#kh",right).value;$("#kho",right).textContent=h;const Wc=360,Hc=150,mm={l:10,r:10,t:10,b:26},lo=0,hi=500,Xk=x=>mm.l+(x-lo)/(hi-lo)*(Wc-mm.l-mm.r);
+    const f=x=>SAMP200.reduce((s,xi)=>s+normPDF((x-xi)/h,0,1),0)/(200*h);let pk=0;const ys=[];for(let i=0;i<=160;i++){const v=f(lo+(hi-lo)*i/160);ys.push(v);pk=Math.max(pk,v);}
+    const Yk=v=>Hc-mm.b-v/(pk*1.1)*(Hc-mm.t-mm.b);const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Kernel density estimate of the 200-session sample"});
+    SAMP200.forEach(x=>s.appendChild(sv("line",{x1:Xk(Math.min(x,hi)),x2:Xk(Math.min(x,hi)),y1:Hc-mm.b,y2:Hc-mm.b-6,style:"stroke:var(--muted)"})));
+    let d="";ys.forEach((v,i)=>{d+=(i?"L":"M")+Xk(lo+(hi-lo)*i/160).toFixed(1)+","+Yk(v).toFixed(1);});s.appendChild(sv("path",{d,style:"fill:none;stroke:var(--accent);stroke-width:2.5"}));
+    let d2="";for(let i=0;i<=160;i++){const x=lo+(hi-lo)*i/160+1e-6;d2+=(i?"L":"M")+Xk(x).toFixed(1)+","+Yk(weibPDF(x,1.3016,151.489)).toFixed(1);}s.appendChild(sv("path",{d:d2,style:"fill:none;stroke:var(--gold);stroke-width:1.5;stroke-dasharray:4 3"}));
+    [0,250,500].forEach((x,i)=>{const t=sv("text",{x:Xk(x),y:Hc-10,"font-size":10,"text-anchor":i===0?"start":i===2?"end":"middle"});t.textContent=x;s.appendChild(t);});
+    const k=$("#kde",right);k.innerHTML="";k.appendChild(s);}
+  $("#kh",right).addEventListener("input",drawKDE);drawKDE();
+  (function(){const Wc=360,Hc=200,mm={l:34,r:10,t:10,b:28},mx=500,Xq=v=>mm.l+v/mx*(Wc-mm.l-mm.r),Yq=v=>Hc-mm.b-v/mx*(Hc-mm.t-mm.b);
+    const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Q-Q plot of sample quantiles against Weibull quantiles"});
+    [0,100,200,300,400,500].forEach(v=>{s.appendChild(sv("line",{x1:mm.l,x2:Wc-mm.r,y1:Yq(v),y2:Yq(v),style:"stroke:var(--line)"}));const t=sv("text",{x:mm.l-4,y:Yq(v)+3,"font-size":9,"text-anchor":"end"});t.textContent=v;s.appendChild(t);const t2=sv("text",{x:Xq(v),y:Hc-14,"font-size":9,"text-anchor":"middle"});t2.textContent=v;s.appendChild(t2);});
+    s.appendChild(sv("line",{x1:Xq(0),y1:Yq(0),x2:Xq(mx),y2:Yq(mx),style:"stroke:var(--muted);stroke-dasharray:4 3"}));
+    for(let p=1;p<=99;p++){const q=151.489*Math.pow(-Math.log(1-p/100),1/1.3016);if(q>mx||ITQ[p]>mx)continue;s.appendChild(sv("circle",{cx:Xq(q),cy:Yq(ITQ[p]),r:2.5,style:"fill:var(--accent)"}));}
+    const xl=sv("text",{x:Wc-mm.r,y:Hc-2,"font-size":9,"text-anchor":"end"});xl.textContent="Weibull quantile (min) → ; data quantile ↑";s.appendChild(xl);
+    $("#qq",right).appendChild(s);})();
+}
+
+function labJoint(root){
+  root.innerHTML=`<p class="note">Left: the hub × vehicle table in five readings. Right: 160 sessions from the file, energy against duration, with the correlation inside each vehicle type; below it, Jensen's inequality for Plan C.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="seg" role="group" aria-label="Table reading" id="jmode"><button type="button" data-m="n" aria-pressed="true">counts</button><button type="button" data-m="j">joint p(h,v)</button><button type="button" data-m="r">p(v | h)</button><button type="button" data-m="c">p(h | v)</button><button type="button" data-m="l">lift</button></div>
+    <div class="tbl"><table><thead><tr><th>Hub</th><th>car</th><th>two-wheeler</th><th>total</th></tr></thead><tbody id="jtab"></tbody></table></div><p class="note" id="jnote"></p>
+    <div class="formula" id="jform"></div>`;
+  const TW=3069,CAR=9014;
+  function table(mode){let rows="";HUBS.forEach(h=>{const c=HUB[h].car,t=HUB[h].tw,n=HUB[h].n;const cell=(x,colTot)=>mode==="n"?ind(x):mode==="j"?(x/N).toFixed(4):mode==="r"?(x/n).toFixed(3):mode==="c"?(x/colTot).toFixed(3):((x/N)/((n/N)*(colTot/N))).toFixed(2);
+      rows+=`<tr><td>${h}</td><td class="num">${cell(c,CAR)}</td><td class="num">${cell(t,TW)}</td><td class="num">${mode==="n"?ind(n):mode==="j"?(n/N).toFixed(4):mode==="r"?"1.000":mode==="c"?"":""}</td></tr>`;});
+    rows+=`<tr><td><b>total</b></td><td class="num">${mode==="n"?ind(CAR):mode==="j"?(CAR/N).toFixed(4):mode==="c"?"1.000":mode==="r"?(CAR/N).toFixed(3):""}</td><td class="num">${mode==="n"?ind(TW):mode==="j"?(TW/N).toFixed(4):mode==="c"?"1.000":mode==="r"?(TW/N).toFixed(3):""}</td><td class="num">${mode==="n"?ind(N):mode==="j"?"1.0000":""}</td></tr>`;
+    $("#jtab",left).innerHTML=rows;
+    $("#jnote",left).textContent={n:"Raw counts from the file. Every other reading is this table divided by something.",j:"Joint PMF: each cell divided by 12,083. The margins are the marginal PMFs of hub and of vehicle.",r:"Conditional on the hub: each row divided by its total. Compare each two-wheeler share with the marginal 0.254.",c:"Conditional on the vehicle: each column divided by its total. Where do two-wheelers charge? 49% of them at the Mall.",l:"Lift = joint / (product of marginals). 1 would be independence; 1.33 at the Mall, 0.38 on the Highway."}[mode];
+    $("#jform",left).textContent={n:"p(h, v) = count(h, v) / 12,083",j:"p(h) = Σ_v p(h, v)      p(v) = Σ_h p(h, v)",r:"p(v | h) = p(h, v) / p(h)\nMall: 1,514 / 4,488 = 0.337",c:"p(h | v) = p(h, v) / p(v)\ntwo-wheelers at the Mall: 1,514 / 3,069 = 0.493",l:"lift = p(h, v) / [p(h) p(v)]\nMall × two-wheeler: 0.1253 / (0.3714 × 0.2540) = 1.33"}[mode];}
+  left.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{left.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));table(b.dataset.m);}));table("n");
+  right.innerHTML=`<div class="btnrow"><span class="eyebrow">Energy vs duration</span><label class="confirm note"><input type="checkbox" id="jcol" checked> colour by vehicle</label></div><div class="svgbox" id="jsc"></div>
+    <div class="readout"><div><span>ρ, all sessions</span><b>0.811</b></div><div><span>ρ within cars</span><b>0.998</b></div><div><span>ρ within two-wheelers</span><b>0.994</b></div><div><span>Cov(D, E), all</span><b>735.3</b></div></div>
+    <span class="eyebrow" style="margin-top:8px">Jensen: Plan C at ITPark</span><div class="svgbox" id="jen"></div><p class="note">The curve is g(D) = 99 + max(D − 60, 0). The chord from the mean sits above the curve at E[D]: g(E[D]) = 178.87, E[g(D)] = 185.92.</p>`;
+  function scatter(){const colour=$("#jcol",right).checked;const Wc=360,Hc=220,mm={l:34,r:10,t:10,b:28},Xs=v=>mm.l+Math.min(v,450)/450*(Wc-mm.l-mm.r),Ys=v=>Hc-mm.b-Math.min(v,50)/50*(Hc-mm.t-mm.b);
+    const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Scatter of energy against duration for 160 sessions"});
+    [0,10,20,30,40,50].forEach(v=>{s.appendChild(sv("line",{x1:mm.l,x2:Wc-mm.r,y1:Ys(v),y2:Ys(v),style:"stroke:var(--line)"}));const t=sv("text",{x:mm.l-4,y:Ys(v)+3,"font-size":9,"text-anchor":"end"});t.textContent=v;s.appendChild(t);});
+    [0,150,300,450].forEach(v=>{const t=sv("text",{x:Xs(v),y:Hc-14,"font-size":9,"text-anchor":"middle"});t.textContent=v;s.appendChild(t);});
+    s.appendChild(sv("line",{x1:Xs(0),y1:Ys(0),x2:Xs(416),y2:Ys(416*7.2/60),style:`stroke:var(--accent);stroke-dasharray:3 3;opacity:${colour?1:0}`}));s.appendChild(sv("line",{x1:Xs(0),y1:Ys(0),x2:Xs(450),y2:Ys(450*1.1/60),style:`stroke:var(--gold);stroke-dasharray:3 3;opacity:${colour?1:0}`}));
+    SCAT.forEach(([dd,e,tw])=>s.appendChild(sv("circle",{cx:Xs(dd),cy:Ys(e),r:3,style:`fill:${colour?(tw?"var(--gold)":"var(--accent)"):"var(--muted)"};opacity:.8`})));
+    const xl=sv("text",{x:Wc-mm.r,y:Hc-2,"font-size":9,"text-anchor":"end"});xl.textContent="x: duration (min) · y: energy (kWh)"+(colour?" · blue cars, gold two-wheelers":"");s.appendChild(xl);
+    const b=$("#jsc",right);b.innerHTML="";b.appendChild(s);}
+  $("#jcol",right).addEventListener("change",scatter);scatter();
+  (function(){const Wc=360,Hc=160,mm={l:34,r:10,t:10,b:26},Xj=v=>mm.l+v/400*(Wc-mm.l-mm.r),Yj=v=>Hc-mm.b-(v-80)/360*(Hc-mm.t-mm.b);const gC=d=>99+Math.max(d-60,0);
+    const s=sv("svg",{viewBox:`0 0 ${Wc} ${Hc}`,role:"img","aria-label":"Convex Plan C revenue curve with the mean duration marked"});
+    [100,200,300,400].forEach(v=>{s.appendChild(sv("line",{x1:mm.l,x2:Wc-mm.r,y1:Yj(v),y2:Yj(v),style:"stroke:var(--line)"}));const t=sv("text",{x:mm.l-4,y:Yj(v)+3,"font-size":9,"text-anchor":"end"});t.textContent="₹"+v;s.appendChild(t);});
+    [0,100,200,300,400].forEach(v=>{const t=sv("text",{x:Xj(v),y:Hc-12,"font-size":9,"text-anchor":"middle"});t.textContent=v;s.appendChild(t);});
+    s.appendChild(sv("path",{d:`M${Xj(0)},${Yj(99)}L${Xj(60)},${Yj(99)}L${Xj(400)},${Yj(gC(400))}`,style:"fill:none;stroke:var(--accent);stroke-width:2.5"}));
+    const ED=139.871;s.appendChild(sv("line",{x1:Xj(ED),x2:Xj(ED),y1:mm.t,y2:Hc-mm.b,style:"stroke:var(--muted);stroke-dasharray:3 3"}));
+    s.appendChild(sv("circle",{cx:Xj(ED),cy:Yj(gC(ED)),r:4,style:"fill:var(--accent)"}));s.appendChild(sv("circle",{cx:Xj(ED),cy:Yj(185.92),r:4,style:"fill:var(--gold)"}));
+    const t1=sv("text",{x:Xj(ED)+8,y:Yj(gC(ED))+14,"font-size":9});t1.textContent="g(E[D]) = 178.9";s.appendChild(t1);const t2=sv("text",{x:Xj(ED)-8,y:Yj(185.92)-8,"font-size":9,"text-anchor":"end"});t2.textContent="E[g(D)] = 185.9";s.appendChild(t2);
+    const xl=sv("text",{x:Wc-mm.r,y:Hc-1,"font-size":9,"text-anchor":"end"});xl.textContent="duration D (min), E[D] = 139.9 dashed";s.appendChild(xl);
+    $("#jen",right).appendChild(s);})();
+}
+
+function labMC(root){
+  root.innerHTML=`<p class="note">Left: Monte Carlo, one draw at a time. The running mean is drawn against the target with a ±2·SD/√n band. Right: Poisson sums, a day's revenue by the CLT, and the nudge comparison that Module 3 will settle.</p>`;
+  const grid=el("div",{class:"labgrid"});root.appendChild(grid);
+  const left=el("div",{class:"ctrl"});grid.appendChild(left);const right=el("div",{class:"ctrl"});grid.appendChild(right);
+  left.innerHTML=`<div class="seg" role="group" aria-label="What to simulate" id="mcmode"><button type="button" data-m="bill" aria-pressed="true">energy bills (₹)</button><button type="button" data-m="exc" aria-pressed="false">max(D − 60, 0), Weibull</button></div>
+    <div class="svgbox"><canvas aria-label="Running mean of simulated draws converging to the target"></canvas></div>
+    <div class="btnrow"><button class="btn small" id="mcrun" type="button">Run 10,000 draws</button><button class="btn ghost small" id="mcnew" type="button">New seed</button><span id="mcsp"></span></div>
+    <div class="readout"><div><span>Draws n</span><b id="mcn">0</b></div><div><span>Running mean</span><b id="mcm">—</b></div><div><span>Target</span><b id="mct"></b></div><div><span>SE estimate s/√n</span><b id="mcse">—</b></div></div>`;
+  const W=360,H=220,cv=left.querySelector("canvas"),g=canvasSetup(cv,W,H);const NMAX=10000;
+  const MODES={bill:{target:169.82,sd:184.77,lo:120,hi:220,draw:r=>qsample(BILLQ,r),label:"mean energy bill ₹169.82"},exc:{target:86.99,sd:101.46,lo:50,hi:125,draw:r=>Math.max(wsample(1.3016,151.489,r)-60,0),label:"E[max(D−60,0)] = 86.99 by integration"}};
+  let mode="bill",seed=5,r=rng(seed),n=0,sum=0,sum2=0,pts=[],speed=1,anim=null;
+  const m={l:40,r:10,t:14,b:26},X=i=>m.l+Math.log10(Math.max(1,i))/4*(W-m.l-m.r);
+  function draw(){const M=MODES[mode],Y=v=>H-m.b-(Math.min(M.hi,Math.max(M.lo,v))-M.lo)/(M.hi-M.lo)*(H-m.t-m.b);g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);
+    g.strokeStyle=cssVar("--line");g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";const step=(M.hi-M.lo)/5;for(let k=0;k<=5;k++){const v=M.lo+k*step;g.beginPath();g.moveTo(m.l,Y(v));g.lineTo(W-m.r,Y(v));g.stroke();axisText(g,v.toFixed(0),m.l-4,Y(v)+3,"right");}
+    [1,10,100,1000,10000].forEach(v=>axisText(g,ind(v),X(v),H-8,"center"));
+    g.fillStyle=cssVar("--accent-soft");g.beginPath();for(let i=1;i<=NMAX;i*=1.1)g.lineTo(X(i),Y(M.target+2*M.sd/Math.sqrt(i)));for(let i=NMAX;i>=1;i/=1.1)g.lineTo(X(i),Y(M.target-2*M.sd/Math.sqrt(i)));g.closePath();g.fill();
+    g.strokeStyle=cssVar("--gold");g.setLineDash([4,3]);g.beginPath();g.moveTo(m.l,Y(M.target));g.lineTo(W-m.r,Y(M.target));g.stroke();g.setLineDash([]);
+    g.strokeStyle=cssVar("--accent");g.lineWidth=2;g.beginPath();pts.forEach((v,i)=>{const x=X(i+1),y=Y(v);i?g.lineTo(x,y):g.moveTo(x,y);});g.stroke();g.lineWidth=1;
+    if(pts.length){g.fillStyle=cssVar("--fraud");g.beginPath();g.arc(X(pts.length),Y(pts[pts.length-1]),4,0,7);g.fill();}
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText("running mean (log-scale n) · gold: target",m.l,10);}
+  function step(){if(n>=NMAX)return false;const v=MODES[mode].draw(r);n++;sum+=v;sum2+=v*v;if(n<=1000||n%10===0)pts.push(sum/n);return true;}
+  function stats(){$("#mcn",left).textContent=ind(n);$("#mct",left).textContent=MODES[mode].target.toFixed(2);if(n>=2){const mn=sum/n,s=Math.sqrt(Math.max(0,(sum2-n*mn*mn)/(n-1)));$("#mcm",left).textContent=mn.toFixed(2);$("#mcse",left).textContent=(s/Math.sqrt(n)).toFixed(2);}else{$("#mcm",left).textContent="—";$("#mcse",left).textContent="—";}}
+  function reset(){if(anim)anim.stop();r=rng(seed);n=0;sum=sum2=0;pts=[];draw();stats();}
+  $("#mcrun",left).addEventListener("click",()=>{reset();if(REDUCED){while(step());draw();stats();award("mc");return;}anim=loop(()=>{let ok=true;for(let k=0;k<Math.max(1,Math.round(speed*(1+n/60)))&&ok;k++)ok=step();draw();stats();if(!ok){anim.stop();award("mc");}});});
+  $("#mcnew",left).addEventListener("click",()=>{seed=Math.floor(Math.random()*1e6);reset();});
+
+  left.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{mode=b.dataset.m;left.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));reset();}));
+  speedSeg($("#mcsp",left),v=>{speed=v;},[1,4,16]);reset();
+  right.innerHTML=`<span class="eyebrow">Sums of Poissons · 17:00–18:00</span><div class="readout"><div><span>Mall · ITPark · Highway rates</span><b>2.94 · 3.86 · 1.58</b></div><div><span>Network total ~ Poisson(λ)</span><b>λ = 8.38</b></div><div><span>Observed 90 totals: mean · variance</span><b>8.38 · 8.60</b></div></div>
+    <span class="eyebrow" style="margin-top:8px">CLT for a day's Plan B revenue at ITPark</span><div class="readout"><div><span>60 sessions × 1.5 × 139.87</span><b>₹12,588</b></div><div><span>SD by CLT √60 × 1.5 × 108.48</span><b>₹1,260</b></div><div><span>Observed daily revenue: mean · SD</span><b>₹12,460 · ₹2,121</b></div></div>
+    <p class="note">The observed SD is larger than the CLT's because the number of sessions per day also varies (SD 7.7 around 59.4); the CLT line fixes n at 60.</p>
+    <span class="eyebrow" style="margin-top:8px">The nudge (cliff-hanger)</span><div class="readout"><div><span>Nudge A: cafe visits</span><b>73 / 198 = ${(73/198).toFixed(4)}</b></div><div><span>Nudge B: cafe visits</span><b>59 / 190 = ${(59/190).toFixed(4)}</b></div><div><span>Difference A − B</span><b>${(73/198-59/190).toFixed(4)}</b></div><div><span>SE of the difference (formula)</span><b>${Math.sqrt((73/198)*(1-73/198)/198+(59/190)*(1-59/190)/190).toFixed(4)}</b></div></div>
+    <div class="btnrow"><button class="btn small" id="nsim" type="button">Simulate 2,000 repeats</button></div><div class="readout"><div><span>Simulated SD of the difference</span><b id="nsd">—</b></div><div><span>Repeats with |diff| ≥ 0.0582 if both rates were 0.340</span><b id="nbig">—</b></div></div>
+    <p class="note">Formula: SE = √(p₁(1−p₁)/n₁ + p₂(1−p₂)/n₂). The last box simulates both groups with the pooled rate 132/388 = 0.340 and counts how often chance alone produces a gap at least as large as the one observed. Naming that count is Module 3's first job.</p>`;
+  $("#nsim",right).addEventListener("click",()=>{const rr=rng(Date.now()%100000);const diffs=[];let big=0;const pA=73/198,pB=59/190,pp=132/388;
+    for(let k=0;k<2000;k++){let a=0,b=0;for(let i=0;i<198;i++)if(rr()<pA)a++;for(let i=0;i<190;i++)if(rr()<pB)b++;diffs.push(a/198-b/190);
+      let a2=0,b2=0;for(let i=0;i<198;i++)if(rr()<pp)a2++;for(let i=0;i<190;i++)if(rr()<pp)b2++;if(Math.abs(a2/198-b2/190)>=0.0582)big++;}
+    $("#nsd",right).textContent=sdev(diffs).toFixed(4);$("#nbig",right).textContent=`${big} of 2,000 (${pct(big/2000,1)})`;});
+}
+
+const COURSE={
+  key:"distributions",
+  title:"ChargeGrid Tariff Room",
+  eyebrow:"Statistics, played · 2 · Random variables and distributions",
+  lede:"You are the new analyst in the tariff room of ChargeGrid, an electric-vehicle charging operator with three hubs: a Mall, an IT Park and a Highway stop. The board must choose one tariff out of three, decide how many chargers the IT Park needs, and learn how far one quarter of data can be trusted. Eight case files take you from the bootstrap to Monte Carlo, through every distribution a charging hub produces.",
+  meta:"For graduate students of statistics, data science, economics and business. Module 1 (probability foundations) is assumed. First-try answers earn full XP; hints cost 25. Progress is saved in this browser only.",
+  hero:root=>HubSim(root,{}),
+  heroNote:"This is the whole module in one picture. Vehicles arrive with Exponential gaps (File 5) at a Poisson rate (File 4), hold a charger for a Weibull duration fitted to the hub (Files 5 and 6), and queue when every charger is busy (File 3). The revenue counter prices each finished session under the selected plan (File 2); its per-session average settles towards the plan's expected value as sessions pile up (File 8). Change the hub, the plan or the number of chargers and watch what the board is arguing about.",
+  ranks:[[0,"Trainee Analyst"],[600,"Tariff Analyst"],[1500,"Senior Analyst"],[2600,"Pricing Lead"],[3600,"Principal Analyst"]],
+  topRank:"Head of Pricing",
+  boardTitle:"The tariff board",
+  boardCard:"Face the tariff board",
+  boardPass:7, boardUnlock:5,
+  badges:[["boot","Thousand Resamples","Ran 1,000 bootstrap resamples"],["tariff","Tariff Tinkerer","Explored the tariff calculator"],["poisson","Hour Counter","Replayed all 1,530 hub-hours"],["race","Race Steward","Ran the fitting race to the finish"],["mc","Monte Carlo","Watched 10,000 simulated draws"]],
+  freshExtra:()=>({tariffMoved:0}),
+  settingsNote:"Teaching with this page? The files follow the order of a second course on probability and distributions, and every number can be reproduced from the fixed data set of 12,083 fictional sessions.",
+  formulas:[
+   ["Standard error and bootstrap","SE(X̄) = σ/√n ≈ s/√n\nresample n with replacement, B×\nSE_boot = SD of the B statistics\n95% CI ≈ [2.5th, 97.5th pct]"],
+   ["Expectation","E[g(X)] = Σ g(x)p(x) (LOTUS)\nE[aX+bY] = aE[X]+bE[Y]\nE[X] = Σ_h P(H=h) E[X|H=h]\ng convex ⇒ E[g(X)] ≥ g(E[X])"],
+   ["Variance and inequalities","Var(aX+b) = a²Var(X)\nskew = E[(X−μ)³]/σ³\nkurt = E[(X−μ)⁴]/σ⁴\nP(X ≥ a) ≤ E[X]/a   (X ≥ 0)\nP(|X−μ| ≥ kσ) ≤ 1/k²"],
+   ["Discrete families","Binomial: C(n,k)pᵏ(1−p)ⁿ⁻ᵏ\n  E = np, Var = np(1−p)\nPoisson: e⁻λλᵏ/k!, E = Var = λ\nGeometric: (1−p)ᵏ⁻¹p, E = 1/p\nNeg.Bin.: E = r/p\nHypergeom.: E = nK/N"],
+   ["Continuous families","Exp: F = 1−e^(−λx), E = SD = 1/λ\nUnif(a,b): (a+b)/2, (b−a)/√12\nGamma(k,θ): kθ, kθ²\nWeibull: S = exp(−(t/λ)ᵏ)\n  F(λ) = 0.632\nLognormal: med e^μ\n  mean e^(μ+σ²/2)"],
+   ["Likelihood and model choice","ℓ(θ) = Σ ln f(xᵢ;θ)\nExp: λ̂ = 1/x̄\nNormal: μ̂ = x̄, σ̂² = Σ(x−x̄)²/n\nAIC = 2k − 2ℓ̂\nBIC = k ln n − 2ℓ̂\nKS: D = max |F̂(x) − F(x)|"],
+   ["Joint distributions","p(v|h) = p(h,v)/p(h)\nlift = p(h,v)/[p(h)p(v)]\nCov = E[XY] − E[X]E[Y]\nρ = Cov/(σ_X σ_Y)\nM(t) = E[e^(tX)], M′(0) = E[X]"],
+   ["Simulation","(1/n)Σ g(Xᵢ) → E[g(X)]  (LLN)\nSE_MC = SD(g)/√n\nPois(λ₁)+Pois(λ₂) = Pois(λ₁+λ₂)\nSₙ ≈ N(nμ, nσ²)  (CLT)\nSE(p̂₁−p̂₂)\n = √(p₁q₁/n₁ + p₂q₂/n₂)"]],
+  L, BOARD
+};
+
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const el=(tag,attrs={},html)=>{const e=document.createElement(tag);for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),attrs[k]);else e.setAttribute(k,attrs[k]);}if(html!==undefined)e.innerHTML=html;return e;};
+const fmt=(x,d=4)=>Number(x).toFixed(d);
+const pct=(x,d=1)=>(100*x).toFixed(d)+"%";
+const ind=x=>Number(x).toLocaleString("en-US");
+const SVGNS="http://www.w3.org/2000/svg";
+const sv=(tag,attrs={})=>{const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;};
+const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const REDUCED=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function rng(seed){let a=(seed*2654435761)>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function shuffled(n,seed){const o=[...Array(n).keys()];const r=rng(seed);for(let k=n-1;k>0;k--){const j=Math.floor(r()*(k+1));[o[k],o[j]]=[o[j],o[k]];}return o;}
+const lnFact=n=>{let s=0;for(let i=2;i<=n;i++)s+=Math.log(i);return s;};
+const binomPMF=(k,n,p)=>Math.exp(lnFact(n)-lnFact(k)-lnFact(n-k)+k*Math.log(p)+(n-k)*Math.log(1-p));
+const poisPMF=(k,l)=>Math.exp(k*Math.log(l)-l-lnFact(k));
+const normPDF=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
+function sampleAmount(r){const u=r()*100;let lo=0,hi=AMTK.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(AMTK[m]<=u)lo=m;else hi=m;}const t=(u-AMTK[lo])/(AMTK[hi]-AMTK[lo]);return AMTV[lo]+(AMTV[hi]-AMTV[lo])*t;}
+function sampleDaily(r){const u=r()*90;let c=0;for(const x of Object.keys(DAILY)){c+=DAILY[x];if(u<c)return +x;}return 17;}
+function canvasSetup(c,w,h){const dpr=Math.min(2,window.devicePixelRatio||1);c.width=w*dpr;c.height=h*dpr;c.style.aspectRatio=`${w} / ${h}`;const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);return g;}
+const runners=new Set(); // active animation loops, stopped on navigation
+function loop(fn){let id,on=true;const step=()=>{if(!on)return;fn();id=requestAnimationFrame(step);};id=requestAnimationFrame(step);const h={stop(){on=false;cancelAnimationFrame(id);runners.delete(h);}};runners.add(h);return h;}
+function stopAll(){[...runners].forEach(r=>r.stop());}
+
+/* ---------- state ---------- */
+const KEY="stats-play-"+COURSE.key;
+const fresh=()=>Object.assign({xp:0,streak:0,best:0,badges:[],ans:{},board:null,unlockAll:false,lab:{}},COURSE.freshExtra?COURSE.freshExtra():{});
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.parse(raw));}catch(e){}
+const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+
+const RANKS=COURSE.ranks;
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+
+function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
+function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}
+function award(id){if(S.badges.includes(id))return;S.badges.push(id);save();const b=BADGES.find(x=>x[0]===id);toast(`Badge earned: <b>${b[1]}</b>`);renderStrip();}
+function rankOf(){if(S.badges.includes("board"))return [COURSE.topRank,null];let r=RANKS[0],nx=null;for(let i=0;i<RANKS.length;i++){if(S.xp>=RANKS[i][0]){r=RANKS[i];nx=RANKS[i+1]||null;}}return [r[1],nx];}
+function renderStrip(){const [r,nx]=rankOf();$("#rank").textContent=r;$("#xptext").textContent=ind(S.xp)+" XP";
+  if(nx){const lo=RANKS.find(x=>x[1]===r)[0];$("#xpfill").style.width=Math.min(100,100*(S.xp-lo)/(nx[0]-lo))+"%";$("#xpnext").textContent=ind(nx[0]-S.xp)+" XP to "+nx[1];}
+  else{$("#xpfill").style.width="100%";$("#xpnext").textContent=S.badges.includes("board")?"Top rank reached":"Pass the board meeting for "+COURSE.topRank;}
+  $("#streak").textContent=S.streak;$("#streakchip").classList.toggle("hot",S.streak>=3);$("#badgecount").textContent=S.badges.length+" / "+BADGES.length;}
+
+function speedSeg(root,onchange,opts=[1,4,16]){const s=el("div",{class:"seg",role:"group","aria-label":"Speed"});opts.forEach((v,i)=>{const b=el("button",{type:"button","aria-pressed":i===0},v+"×");b.addEventListener("click",()=>{s.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));onchange(v);});s.appendChild(b);});root.appendChild(s);return s;}
+
+/* ---------- unlocking and progress ---------- */
+function qstate(lid,i){S.ans[lid]=S.ans[lid]||{};S.ans[lid][i]=S.ans[lid][i]||{tries:0,done:false,first:false,hint:false,got:0};return S.ans[lid][i];}
+function levelDone(lv){return lv.qs.every((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].done);}
+function levelStars(lv){if(!levelDone(lv))return 0;const f=lv.qs.filter((q,i)=>S.ans[lv.id][i].first).length;return f===lv.qs.length?3:(f>=lv.qs.length/2?2:1);}
+function attempted(lv){return lv.qs.every((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].tries>0);}
+function unlocked(idx){if(S.unlockAll||idx===0)return true;const prev=L[idx-1];return levelDone(prev)||attempted(prev);}
+function boardUnlocked(){return S.unlockAll||L.filter(levelDone).length>=COURSE.boardUnlock;}
+
+/* ---------- views ---------- */
+function home(){
+  stopAll();const app=$("#app");app.innerHTML="";
+  const cleared=L.filter(levelDone).length;
+  const hero=el("section",{class:"hero"});
+  hero.innerHTML=`<div class="herotop"><div><p class="eyebrow">${COURSE.eyebrow}</p>
+    <h1>${COURSE.title}</h1>
+    <p class="lede">${COURSE.lede}</p>
+    <p class="meta">${COURSE.meta||"First-try answers earn full XP; hints cost 25. Progress is saved in this browser only."}</p></div>
+    <div class="ticket" aria-label="Your desk">
+      <div class="row"><span>Case files cleared</span><span>${cleared} / ${L.length}</span></div>
+      <div class="row"><span>Stars</span><span>${L.reduce((s,l)=>s+levelStars(l),0)} / ${3*L.length}</span></div>
+      <div class="row"><span>Best streak</span><span>${S.best}</span></div>
+      <div class="row"><span>Board meeting</span><span>${S.board?S.board.score+" / "+BOARD.length:(boardUnlocked()?"Ready":"Locked")}</span></div>
+    </div></div>`;
+  if(COURSE.hero){const hz=el("div");hero.appendChild(hz);app.appendChild(hero);COURSE.hero(hz);if(COURSE.heroNote)hero.appendChild(el("p",{class:"note"},COURSE.heroNote));}
+  else app.appendChild(hero);
+  const g=el("div",{class:"cases"});
+  L.forEach((lv,i)=>{
+    const ok=unlocked(i),done=levelDone(lv),st=levelStars(lv);
+    const b=el("button",{class:"case",type:"button"});if(!ok)b.disabled=true;
+    b.innerHTML=`<div class="top"><span class="tag">CASE FILE ${i+1}</span>
+      <span class="stamp ${done?"ok":ok?"open":"lock"}">${done?"CLEARED":ok?"OPEN":"LOCKED"}</span></div>
+      <h3>${lv.title}</h3><div class="stars" aria-label="${st} of 3 stars">${"★".repeat(st)}<span class="off">${"★".repeat(3-st)}</span></div>
+      <p class="topics">${lv.topics}</p>`;
+    b.addEventListener("click",()=>{location.hash=lv.id;});
+    g.appendChild(b);
+  });
+  const bb=el("button",{class:"case boss",type:"button"});if(!boardUnlocked())bb.disabled=true;
+  bb.innerHTML=`<div class="top"><span class="tag">FINAL · ${(COURSE.boardTitle||"The board meeting").toUpperCase()}</span><span class="stamp">${S.board?S.board.score+" / 8":boardUnlocked()?"READY":"LOCKED"}</span></div>
+    <h3>${COURSE.boardCard||"Face the board"}</h3><p class="nick">${BOARD.length} questions, one attempt each. Score ${COURSE.boardPass} or more to become ${COURSE.topRank}.</p>
+    <p class="topics">Unlocks after ${COURSE.boardUnlock} case files are cleared.</p>`;
+  bb.addEventListener("click",()=>{location.hash="board";});
+  g.appendChild(bb);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Case files</h2><span class="note">Each file unlocks when you have answered every question in the one before.</span>`));
+  app.appendChild(g);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Badges</h2><span class="note">${S.badges.length} of ${BADGES.length} earned</span>`));
+  const bg=el("div",{class:"badges"});
+  BADGES.forEach(([id,name,desc])=>{const got=S.badges.includes(id);bg.appendChild(el("div",{class:"badge"+(got?" got":"")},`<span class="seal">${got?"EARNED":"NOT YET"}</span><b>${name}</b><span>${desc}</span>`));});
+  app.appendChild(bg);
+  app.appendChild(el("div",{class:"section-h"},`<h2>Formula sheet</h2><span class="note">Everything the ${L.length} files use, on one card.</span>`));
+  app.appendChild(formulaSheet());
+  app.appendChild(el("div",{class:"section-h"},`<h2>Desk settings</h2>`));
+  const t=el("div",{class:"panel"});
+  t.innerHTML=`<label class="confirm"><input type="checkbox" id="unlockall" ${S.unlockAll?"checked":""}> Open every case file now (for revision; XP still counts)</label>
+    <div class="confirm" id="resetbox"><button class="btn ghost small" id="reset" type="button">Reset my progress</button></div>
+    <p class="note">${COURSE.settingsNote||"Teaching with this page? Students can play on their own, and every number can be reproduced from the fixed data set."}</p>`;
+  app.appendChild(t);
+  $("#unlockall").addEventListener("change",e=>{S.unlockAll=e.target.checked;save();home();});
+  $("#reset").addEventListener("click",()=>{const box=$("#resetbox");box.innerHTML=`<span>Erase all XP, badges and answers?</span>`;
+    const y=el("button",{class:"btn small",type:"button"},"Yes, reset");const n=el("button",{class:"btn ghost small",type:"button"},"Keep my progress");
+    y.addEventListener("click",()=>{S=fresh();save();renderStrip();home();toast("Progress reset");});n.addEventListener("click",home);box.append(y,n);});
+  window.scrollTo(0,0);
+}
+
+function formulaSheet(){
+  const s=el("div",{class:"sheet"});
+  COURSE.formulas.forEach(([h,f])=>{const d=el("div",{class:"panel"});d.innerHTML=`<h3>${h}</h3><div class="formula">${f}</div>`;s.appendChild(d);});
+  return s;
+}
+function level(lv){
+  stopAll();const idx=L.indexOf(lv);
+  if(!unlocked(idx)){location.hash="";return;}
+  const app=$("#app");app.innerHTML="";
+  const d=el("div",{class:"dossier"});
+  const back=el("button",{class:"back",type:"button"},"← Back to the desk");back.addEventListener("click",()=>{location.hash="";});
+  d.appendChild(back);
+  d.appendChild(el("div",{},`<p class="eyebrow">Case file ${idx+1} of ${L.length}</p><h1 style="margin-top:8px">${lv.title}</h1><p class="note" style="margin-top:8px">${lv.topics}</p>`));
+  const p0=el("section",{class:"panel"});p0.innerHTML=`<h3><span class="eyebrow">The case</span></h3><p class="story">${lv.story}</p>`;d.appendChild(p0);
+  const p1=el("section",{class:"panel"});p1.innerHTML=`<h3><span class="eyebrow">Theory, briefly</span></h3><div class="brief">${lv.brief}</div><p class="refs">Further reading: ${lv.refs}</p>`;d.appendChild(p1);
+  const p2=el("section",{class:"panel"});p2.innerHTML=`<h3><span class="eyebrow">Lab</span></h3>`;const lb=el("div");p2.appendChild(lb);d.appendChild(p2);
+  const p3=el("section",{class:"panel"});p3.innerHTML=`<h3><span class="eyebrow">Challenges</span> <span class="note" id="qprog"></span></h3>`;
+  lv.qs.forEach((q,i)=>p3.appendChild(question(lv,q,i)));
+  d.appendChild(p3);
+  const nx=el("div",{class:"btnrow"});
+  if(idx<L.length-1){const b=el("button",{class:"btn",type:"button"},"Next case file →");b.addEventListener("click",()=>{if(unlocked(idx+1))location.hash=L[idx+1].id;else toast("Answer every question here to unlock the next file");});nx.appendChild(b);}
+  else{const b=el("button",{class:"btn",type:"button"},"Go to the board meeting →");b.addEventListener("click",()=>{if(boardUnlocked())location.hash="board";else toast("Clear "+COURSE.boardUnlock+" case files to unlock the board");});nx.appendChild(b);}
+  d.appendChild(nx);
+  app.appendChild(d);
+  lv.lab(lb);
+  updProg(lv);
+  window.scrollTo(0,0);
+}
+function updProg(lv){const n=lv.qs.filter((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].done).length;const e=$("#qprog");if(e)e.textContent=`${n} of ${lv.qs.length} solved`;}
+
+function parseNum(s){if(s==null)return NaN;s=String(s).trim().replace(/[₹,\s]/g,"");let isPct=false;if(s.endsWith("%")){isPct=true;s=s.slice(0,-1);}let v=parseFloat(s);if(isPct)v/=100;return v;}
+function numOK(v,q){if(Number.isNaN(v))return false;if(Math.abs(v-q.a)<=q.tol)return true;if(q.a<1&&v>1&&Math.abs(v/100-q.a)<=q.tol)return true;return false;}
+
+function question(lv,q,i){
+  const st=qstate(lv.id,i);
+  const box=el("div",{class:"q"});
+  box.innerHTML=`<div class="qhead"><span class="eyebrow">Challenge ${i+1}</span><span class="eyebrow" data-x></span></div><p class="qtext">${q.q}</p>`;
+  const fb=el("div");
+  const tag=box.querySelector("[data-x]");
+  const setTag=()=>{tag.textContent=st.done?`+${st.got} XP`:(st.hint?"hint used · 75 XP":"100 XP");};
+  setTag();
+  const solve=(correct)=>{
+    st.tries++;
+    if(correct){
+      st.done=true;st.first=(st.tries===1&&!st.hint);
+      let gain=st.tries===1?100:st.tries===2?50:20; if(st.hint)gain=Math.max(0,gain-25); st.got=gain;
+      if(st.tries===1){S.streak++;S.best=Math.max(S.best,S.streak);if(S.streak>=5)award("streak5");}
+      save(); addXP(gain,"Challenge "+(i+1));
+      fb.innerHTML=`<div class="fb ok"><b>Correct.</b><span>${q.why}</span></div>`;
+      setTag(); updProg(lv); checkLevel(lv); const hbx=box.querySelector("[data-hint]"); if(hbx)hbx.hidden=true;
+    } else {
+      S.streak=0;save();renderStrip();
+      fb.innerHTML=`<div class="fb no"><b>Not yet.</b><span>${st.tries>=2?"Look at the hint, or rework it in the lab, then try again.":"Try again; the lab above has what you need."}</span></div>`;
+    }
+  };
+  if(q.t==="mcq"){
+    const order=shuffled(q.opts.length,lv.id.charCodeAt(1)*31+i*17);
+    const opts=el("div",{class:"opts"});
+    order.forEach(k=>{const b=el("button",{class:"opt",type:"button"},q.opts[k]);
+      if(st.done){b.disabled=true;if(k===q.a)b.classList.add("right");}
+      b.addEventListener("click",()=>{if(st.done)return;const c=(k===q.a);b.classList.add(c?"right":"wrong");if(c)opts.querySelectorAll("button").forEach(x=>x.disabled=true);else b.disabled=true;solve(c);});
+      opts.appendChild(b);});
+    box.appendChild(opts);
+  } else {
+    const row=el("div",{class:"numrow"});
+    const inp=el("input",{type:"text",inputmode:"decimal",id:`in-${lv.id}-${i}`,"aria-label":"Your answer",placeholder:q.ph||"e.g. 0.123"});
+    const go=el("button",{class:"btn small",type:"button"},"Check");
+    if(st.done){inp.disabled=true;go.disabled=true;inp.value=String(+q.a.toFixed(4));}
+    const check=()=>{if(st.done)return;const v=parseNum(inp.value);if(Number.isNaN(v)){fb.innerHTML=`<div class="fb no"><b>Enter a number.</b><span>Decimals (0.25) and percentages (25%) both work.</span></div>`;return;}const c=numOK(v,q);if(c){inp.disabled=true;go.disabled=true;}solve(c);};
+    go.addEventListener("click",check);inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+    row.append(inp,go);box.appendChild(row);
+  }
+  if(q.hint){const hb=el("button",{class:"btn ghost small",type:"button","data-hint":"1"},"Show hint (−25 XP)");
+    if(st.done)hb.hidden=true;
+    hb.addEventListener("click",()=>{st.hint=true;save();setTag();hb.hidden=true;fb.innerHTML=`<div class="fb hint"><b>Hint.</b><span>${q.hint}</span></div>`;});
+    const r=el("div",{class:"btnrow"});r.appendChild(hb);box.appendChild(r);
+    if(st.hint&&!st.done){hb.hidden=true;fb.innerHTML=`<div class="fb hint"><b>Hint.</b><span>${q.hint}</span></div>`;}
+  }
+  if(st.done)fb.innerHTML=`<div class="fb ok"><b>Solved.</b><span>${q.why}</span></div>`;
+  box.appendChild(fb);
+  return box;
+}
+function checkLevel(lv){if(!levelDone(lv))return;const was=S.badges.includes(lv.id);award(lv.id);
+  if(lv.qs.every((q,i)=>S.ans[lv.id][i].first))award("clean");
+  if(!was){addXP(150,"Case file cleared");}}
+
+function board(){
+  stopAll();if(!boardUnlocked()){location.hash="";return;}
+  const app=$("#app");app.innerHTML="";
+  const d=el("div",{class:"dossier"});
+  const back=el("button",{class:"back",type:"button"},"← Back to the desk");back.addEventListener("click",()=>{location.hash="";});d.appendChild(back);
+  d.appendChild(el("div",{},`<p class="eyebrow">Final</p><h1 style="margin-top:8px">${COURSE.boardTitle||"The board meeting"}</h1><p class="note" style="margin-top:8px">${BOARD.length} questions from across the files. One attempt each, no hints. Score ${COURSE.boardPass} or more to earn ${COURSE.topRank}. XP is awarded on your first sitting only.</p>`));
+  const p=el("section",{class:"panel"});d.appendChild(p);app.appendChild(d);
+  const run={i:0,score:0,first:!S.board};
+  const show=()=>{
+    if(run.i>=BOARD.length){
+      const pass=run.score>=COURSE.boardPass;
+      S.board={score:Math.max(run.score,S.board?S.board.score:0)};save();
+      if(run.first)addXP(run.score*100,"Board meeting");
+      if(pass)award("board");
+      p.innerHTML=`<h2>${pass?"The board is satisfied.":"The board wants another look."}</h2><p>You scored <b class="mono">${run.score} / ${BOARD.length}</b>. ${pass?"You are now "+COURSE.topRank+".":"Revisit the case files, then reconvene."}</p>`;
+      const r=el("div",{class:"btnrow"});const a=el("button",{class:"btn",type:"button"},"Reconvene");a.addEventListener("click",board);const b=el("button",{class:"btn ghost",type:"button"},"Back to the desk");b.addEventListener("click",()=>{location.hash="";});r.append(a,b);p.appendChild(r);renderStrip();return;}
+    const q=BOARD[run.i];p.innerHTML=`<div class="qhead"><span class="eyebrow">Question ${run.i+1} of ${BOARD.length}</span><span class="eyebrow">Score ${run.score}</span></div><p class="qtext">${q.q}</p>`;
+    const fb=el("div");const next=el("button",{class:"btn",type:"button"},run.i<BOARD.length-1?"Next question →":"See the verdict");next.hidden=true;next.addEventListener("click",()=>{run.i++;show();});
+    const done=(c)=>{if(c)run.score++;fb.innerHTML=`<div class="fb ${c?"ok":"no"}"><b>${c?"Correct.":"Not quite."}</b><span>${q.why}</span></div>`;next.hidden=false;};
+    if(q.t==="mcq"){const o=el("div",{class:"opts"});const order=shuffled(q.opts.length,run.i*7+3);
+      order.forEach(k=>{const b=el("button",{class:"opt",type:"button"},q.opts[k]);b.addEventListener("click",()=>{o.querySelectorAll("button").forEach((x,ix)=>{x.disabled=true;if(order[ix]===q.a)x.classList.add("right");});if(k!==q.a)b.classList.add("wrong");done(k===q.a);});o.appendChild(b);});p.appendChild(o);}
+    else{const r=el("div",{class:"numrow"});const inp=el("input",{type:"text",inputmode:"decimal",id:"board-in-"+run.i,"aria-label":"Your answer",placeholder:"e.g. 0.5"});const g=el("button",{class:"btn small",type:"button"},"Submit");
+      const sub=()=>{const v=parseNum(inp.value);if(Number.isNaN(v))return;inp.disabled=true;g.disabled=true;done(numOK(v,q));};g.addEventListener("click",sub);inp.addEventListener("keydown",e=>{if(e.key==="Enter")sub();});r.append(inp,g);p.appendChild(r);}
+    p.appendChild(fb);p.appendChild(next);
+  };
+  show();window.scrollTo(0,0);
+}
+/* ---------- router ---------- */
+function route(){const h=location.hash.replace("#","");const lv=L.find(x=>x.id===h);if(lv)level(lv);else if(h==="board")board();else home();}
+window.addEventListener("hashchange",route);
+renderStrip();route();
+
+})();
+</script>
+</body>
+</html>

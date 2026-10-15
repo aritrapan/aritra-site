@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Statistics, played</title>
+<meta property="og:image" content="https://aritra.ai/play/thumbs/statistics.svg">
+<meta name="description" content="A free graduate-level statistics and data-science course you play: seven modules, six fictional organisations, labs that run in front of you, challenges, XP and badges.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root{--bg:#EAEFF4;--surface:#FFFFFF;--sunk:#F3F6F9;--ink:#13233A;--muted:#566880;--line:#C9D3DF;--accent:#1F5FA8;--accent-soft:#DCE7F5;--gold:#A86E06;--gold-soft:#F6E7C8;--ok:#1B7349;--ok-soft:#D7EFE2;
+  --display:"IBM Plex Sans Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;--body:"IBM Plex Sans","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--r:10px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0F1722;--surface:#172232;--sunk:#121C29;--ink:#E3E9F1;--muted:#97A7BB;--line:#2B3B51;--accent:#73AAE9;--accent-soft:#1C3150;--gold:#E3AA3E;--gold-soft:#3A2C12;--ok:#52C78E;--ok-soft:#14352A;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1722;--surface:#172232;--sunk:#121C29;--ink:#E3E9F1;--muted:#97A7BB;--line:#2B3B51;--accent:#73AAE9;--accent-soft:#1C3150;--gold:#E3AA3E;--gold-soft:#3A2C12;--ok:#52C78E;--ok-soft:#14352A;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1000px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.2rem,6vw,3.4rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:700}
+h3{font-size:1.3rem;font-weight:600}
+p{margin:0}
+.eyebrow{font:600 .75rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:var(--accent)}
+.hero{padding-block:44px 24px;display:grid;gap:14px;max-width:70ch}
+.lede{font-size:1.12rem}
+.note{font-size:.9rem;color:var(--muted)}
+.path{display:grid;gap:14px;margin-top:10px}
+.mod{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:18px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;text-decoration:none;color:inherit;transition:transform .15s,border-color .15s}
+.mod:hover{transform:translateY(-2px);border-color:var(--accent)}
+.mod .num{font:700 2.4rem/1 var(--display);color:var(--accent)}
+.mod .num small{display:block;font:600 .7rem/1.4 var(--mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.mod .body{display:grid;gap:6px;min-width:0}
+.mod .short{color:var(--muted);font-size:.95rem}
+.mod .topics{font-size:.88rem;color:var(--muted)}
+.mod .prog{display:grid;gap:4px;justify-items:end;font:600 .8rem/1.3 var(--mono);color:var(--muted);white-space:nowrap}
+.pill{border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.pill.on{border-color:var(--ok);background:var(--ok-soft);color:var(--ink)}
+.pill.gold{border-color:var(--gold);background:var(--gold-soft);color:var(--ink)}
+@media (max-width:640px){.mod{grid-template-columns:1fr}.mod .prog{justify-items:start}}
+.section-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:38px 0 12px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;display:grid;gap:8px}
+.card h3{font-size:1.05rem}
+.card p{font-size:.93rem}
+.total{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.total div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 12px;display:grid;gap:2px}
+.total span{font-size:.76rem;color:var(--muted)}
+.total b{font:600 1.2rem/1.2 var(--mono)}
+.foot{margin-top:44px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:6px;font-size:.86rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p style="padding-top:18px;margin:0"><a href="../../play.html" style="font:600 .85rem/1 var(--mono);text-decoration:none">← All courses</a></p>
+  <section class="hero">
+    <p class="eyebrow">Free · graduate level · no sign-in</p>
+    <h1>Statistics, played</h1>
+    <p class="lede">Six fictional organisations, seven modules, one way of learning: read a short case, see the theory with its equations, run a lab where the mechanism moves in front of you, then earn XP by answering challenges on real numbers from a fixed data set. Every answer can be checked; every module ends with a board meeting.</p>
+    <p class="note">Written for M.Sc., MS and MBA students of statistics, data science, economics and business, and for anyone who learns better by doing. Modules build on each other, so start at 0 unless you already know the earlier material. Progress is saved in your browser only.</p>
+  </section>
+
+  <div class="section-h"><h2>The seven modules</h2><span class="note" id="overall"></span></div>
+  <div class="path" id="path"></div>
+
+  <div class="section-h"><h2>Your desk</h2><span class="note">Read from this browser's saved progress.</span></div>
+  <div class="total" id="totals"></div>
+
+  <div class="section-h"><h2>How it works</h2></div>
+  <div class="grid">
+    <div class="card"><h3>One story per module</h3><p>A grocery-delivery start-up, a payments company, an EV-charging network, a village council, a ride-hailing firm, a microfinance lender. Each case file is a problem someone there actually has, and the statistics is what solves it.</p></div>
+    <div class="card"><h3>Theory, briefly</h3><p>Three to five paragraphs with the equations, textbook terms first, then a line of further reading to standard texts (Tukey, Tufte, Blitzstein &amp; Hwang, Ross, Wasserman, Casella &amp; Berger, Rice, James et al., Hastie et al., Wooldridge) and the original papers.</p></div>
+    <div class="card"><h3>Labs that move</h3><p>Orders onto a live histogram, transactions through a rule engine, cars through a charging hub, surveys through a sampling machine, trips through a regression line, loans down a decision tree, customers pulled toward cluster centres. Most labs simulate unit by unit; all have Play, speed and Reset.</p></div>
+    <div class="card"><h3>Challenges and XP</h3><p>First-try answers earn 100 XP, hints cost 25, each cleared file earns a badge, and five cleared files unlock the board meeting. Ranks rise with XP. Nothing is graded by anyone but you.</p></div>
+    <div class="card"><h3>Fixed, checkable data</h3><p>Each module uses one fictional data set that never changes, so the numbers in the challenges are reproducible by hand, in R or in Python.</p></div>
+    <div class="card"><h3>For teachers</h3><p>Use it as pre-reading, as a lab hour, or as revision. Modules 0–4 follow a first graduate statistics course; 5 and 6 add the core of a first machine-learning course. Each goes a little beyond the usual syllabus.</p></div>
+  </div>
+
+  <div class="foot">
+    <span>Statistics, played · built by <a href="https://aritra.ai" target="_blank" rel="noopener">Aritra Pan</a>. Free to use in teaching; a link back is appreciated.</span>
+    <span>All companies, villages and people in the modules are fictional. The data sets were generated for teaching.</span>
+  </div>
+</div>
+<script>
+(function(){
+  const MODS=[
+    {slug:"descriptive",n:0,title:"BasketBolt Data Room",short:"Descriptive analytics and visualisation · start here",topics:"Kinds of data and scales · centre · spread · shape and histograms · five-number summary and box plots · outlier rules · two variables and time series · honest charts"},
+    {slug:"probability",n:1,title:"VeloPay Risk Desk",short:"Probability foundations",topics:"Sets and events · axioms and counting · conditioning and Simpson's paradox · independence and lift · Bayes · random variables · expectation and the Law of Large Numbers · Binomial, Poisson, Normal and the Central Limit Theorem"},
+    {slug:"distributions",n:2,title:"ChargeGrid Tariff Room",short:"Random variables and distributions",topics:"Bootstrap and standard errors · expectation and the tower property · variance, moments and inequalities · discrete and continuous families · maximum likelihood, AIC and BIC · joint distributions and Jensen · Monte Carlo"},
+    {slug:"inference",n:3,title:"Kanchanpur Register",short:"Sampling, estimation and testing",topics:"Sampling designs · CLT and confidence intervals · hypothesis tests and power · two-sample tests · ANOVA · goodness of fit and nonparametrics · multiple testing · a first look at Bayesian estimation"},
+    {slug:"regression",n:4,title:"NimbusRide Pricing Lab",short:"Regression and prediction",topics:"Correlation · least squares · inference for regression · multiple regression and dummies · diagnostics · cross-validation and model selection · logistic regression · causality and experiments"},
+    {slug:"trees",n:5,title:"Sahyog Credit Committee",short:"Classification trees and ensembles",topics:"Recursive splitting · Gini and entropy · CART and pruning · CHAID · evaluating classifiers and costs · bagging and random forests · variable importance, partial dependence and boosting · responsible credit models"},
+    {slug:"unsupervised",n:6,title:"BasketBolt Insights Lab",short:"Market baskets, PCA and clustering",topics:"Support, confidence, lift · the Apriori algorithm · from rules to decisions · distances and scaling · principal component analysis · k-means · hierarchical clustering · validating segments"}];
+  const path=document.getElementById("path");let xp=0,cleared=0,total=0,badges=0,boards=0;
+  MODS.forEach(m=>{
+    let s=null;try{const raw=localStorage.getItem("stats-play-"+m.slug);if(raw)s=JSON.parse(raw).summary||null;}catch(e){}
+    const a=document.createElement("a");a.className="mod";a.href=m.slug+"/";
+    const done=s&&s.cleared===s.total,board=s&&s.board!=null&&s.board>=7;
+    a.innerHTML=`<div class="num">${m.n}<small>Module</small></div><div class="body"><h3>${m.title}</h3><p class="short">${m.short}</p><p class="topics">${m.topics}</p></div>
+      <div class="prog"><span class="pill ${s?(done?"on":""):""}">${s?`${s.cleared} / ${s.total} files`:"not started"}</span>${s?`<span class="pill">${s.xp.toLocaleString()} XP</span>`:""}${board?`<span class="pill gold">board passed</span>`:""}</div>`;
+    path.appendChild(a);
+    if(s){xp+=s.xp;cleared+=s.cleared;total+=s.total;badges+=s.badges;if(board)boards++;}else total+=8;
+  });
+  document.getElementById("totals").innerHTML=`<div><span>Total XP</span><b>${xp.toLocaleString()}</b></div><div><span>Case files cleared</span><b>${cleared} / ${total}</b></div><div><span>Badges</span><b>${badges}</b></div><div><span>Boards passed</span><b>${boards} / ${MODS.length}</b></div>`;
+  document.getElementById("overall").textContent=cleared?`${cleared} of ${total} case files cleared across the course`:`${MODS.length*8} case files, ${MODS.length} board meetings`;
+})();
+</script>
+</body>
+</html>
