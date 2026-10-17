@@ -197,6 +197,17 @@ td.num{font-family:var(--mono)}
 .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .sheet .formula{font-size:.84rem}
 .sheet h3{font-size:1rem;margin-bottom:6px}
+.sandbox{border:1px dashed var(--accent);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;background:var(--sunk);min-width:0;margin-top:14px}
+.sb-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.sb-head .eyebrow{color:var(--accent)}
+.sb-tabs button{border:0;background:transparent;padding:5px 12px;font:600 .8rem/1.2 var(--mono)}
+.sb-tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.sb-pane{display:grid;gap:10px;min-width:0}
+.sb-params{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.sb-params label{display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.sb-params input,.sb-params select{width:9.5em;max-width:100%}
+.sandbox textarea{width:100%;max-width:100%;font:400 .88rem/1.4 var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+.sandbox input[type=file]{font-size:.82rem;max-width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -646,6 +657,7 @@ function labApriori(root){
   speedSeg($("#aspeed",bar),v=>{speed=v;},[1,8,64]);
   $("#amc",rr).addEventListener("input",rules);
   setup();
+  sbAprioriPanel(root);
 }
 
 /* File 3 */
@@ -772,6 +784,7 @@ function labPCA(root){
       const an=Math.atan2(by-y,x-bx);bg.beginPath();bg.moveTo(x,y);bg.lineTo(x-7*Math.cos(an-0.4),y+7*Math.sin(an-0.4));bg.lineTo(x-7*Math.cos(an+0.4),y+7*Math.sin(an+0.4));bg.closePath();bg.fillStyle=K.bad;bg.fill();
       const len=Math.hypot(x-bx,y-by);if(len<20)return;bg.fillStyle=K.ink;axisText(bg,f,x+Math.cos(an)*8,y-Math.sin(an)*8+4,Math.cos(an)>0.3?"start":Math.cos(an)<-0.3?"end":"middle");});
     bg.lineWidth=1;bg.fillStyle=K.muted;axisText(bg,"PC1 →",BW-22,by-6,"end");axisText(bg,"PC2 ↑",bx+6,BH-26,"start");axisText(bg,"grey: 300 customers · red: loadings × 2.5 (short arrows load on PC3–PC4)",BW/2,BH-6,"middle");})();
+  sbPCAPanel(root);
 }
 
 /* File 6 */
@@ -862,6 +875,7 @@ function labKmeans(root){
     ${FEATS.map((f,j)=>`<tr><td>${f}</td>${names.map(n=>`<td class="num" style="${heat(ZPROF5[n][j])}">${PROF5[n][j]}</td>`).join("")}</tr>`).join("")}
     <tr><td><b>Customers</b></td>${names.map(n=>`<td class="num"><b>${PROF5[n][10]}</b></td>`).join("")}</tr></tbody></table></div>
     <p class="note">Names describe behaviour in the columns, nothing else. scikit-learn KMeans(n_clusters = 5, n_init = 10, random_state = 112) on StandardScaler z-scores.</p>`;
+  sbKmeansPanel(root);
 }
 
 /* File 7 */
@@ -910,6 +924,7 @@ function labDendro(root){
   wireSeg(top,"lk",v=>{play(false);lk=v;setup();});
   speedSeg($("#hspeed",top),v=>{speed=v;},[1,4,16]);
   setup();
+  sbDendroPanel(root);
 }
 
 /* File 8 */
@@ -951,6 +966,473 @@ function labValidate(root){
   $("#vm",right).addEventListener("change",show);
 }
 
+/* ===================== Sandboxes (free play: no XP, challenges untouched) =====================
+   User text (item names, column headers, row labels) is shown ONLY through textContent
+   (SB.text, SB.table, element.textContent, SVG <text>.textContent). Never innerHTML, never attributes. */
+/* SBCORE-BEGIN */
+const SB_MAXI=50,SB_MAXB=5000,SB_MAXF=20000,SB_MAXC=300000,SB_MAXK=12;
+function sbClean(s){s=String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u200b\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g,"").trim();return s.length>40?s.slice(0,40)+"…":s;}
+function sbNorm(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+/* baskets text → {B (sorted item indices), names, notes} */
+function sbParseBaskets(str){
+  str=String(str||"");const notes=[];if(str.length>2097152){str=str.slice(0,2097152);notes.push("Only the first 2 MB were read.");}
+  let lines=str.replace(/\r\n?/g,"\n").split("\n").filter(l=>l.trim().length);
+  if(lines.length>SB_MAXB){lines=lines.slice(0,SB_MAXB);notes.push(`Only the first ${ind(SB_MAXB)} baskets were read.`);}
+  const raw=lines.map(l=>{const s=new Set();l.split(",").forEach(x=>{const c=sbClean(x);if(c)s.add(c);});return [...s];});
+  const freq=new Map(),first=new Map();raw.forEach(b=>b.forEach(x=>{freq.set(x,(freq.get(x)||0)+1);if(!first.has(x))first.set(x,first.size);}));
+  let names=[...freq.keys()].sort((a,b)=>freq.get(b)-freq.get(a)||first.get(a)-first.get(b));
+  if(names.length>SB_MAXI){notes.push(`${ind(names.length)} distinct items found; only the ${SB_MAXI} most frequent were kept.`);names=names.slice(0,SB_MAXI);}
+  const idx=new Map(names.map((x,i)=>[x,i]));
+  const B=raw.map(b=>b.filter(x=>idx.has(x)).map(x=>idx.get(x)).sort((a,b)=>a-b));
+  return {B,names,notes};
+}
+/* Apriori on vertical bit-sets (tid-lists), any number of items ≤ 50 */
+function sbApriori(B,m,minsup){
+  const n=B.length,W=Math.max(1,Math.ceil(n/32)),minc=Math.max(1,Math.ceil(minsup*n-1e-9));
+  const tid=[];for(let j=0;j<m;j++)tid.push(new Uint32Array(W));
+  B.forEach((b,i)=>b.forEach(j=>{tid[j][i>>>5]|=(1<<(i&31));}));
+  const pc=a=>{let c=0;for(let w=0;w<a.length;w++)c+=popc(a[w]);return c;};
+  const freq=new Map(),levels=[];let Lk=[],cap=false;
+  let lv={k:1,joined:m,pruned:0,counted:m,frequent:0};
+  for(let j=0;j<m;j++){const c=pc(tid[j]);if(c>=minc){Lk.push({s:[j],t:tid[j]});freq.set(String(j),c);lv.frequent++;}}
+  levels.push(lv);
+  for(let k=2;Lk.length&&k<=SB_MAXK&&!cap;k++){
+    const keys=new Set(Lk.map(x=>x.s.join(",")));const next=[];lv={k,joined:0,pruned:0,counted:0,frequent:0};
+    for(let a=0;a<Lk.length&&!cap;a++){const A=Lk[a].s;
+      for(let b=a+1;b<Lk.length;b++){const Bs=Lk[b].s;let same=true;for(let t=0;t<k-2;t++)if(A[t]!==Bs[t]){same=false;break;}if(!same)break;
+        lv.joined++;const c=A.concat([Bs[k-2]]);let ok=true;
+        for(let d=0;d<k-2&&ok;d++){if(!keys.has(c.filter((_,i)=>i!==d).join(",")))ok=false;}
+        if(!ok){lv.pruned++;continue;}
+        const T=new Uint32Array(W),ta=Lk[a].t,tb=tid[Bs[k-2]];for(let w=0;w<W;w++)T[w]=ta[w]&tb[w];
+        lv.counted++;const cnt=pc(T);if(cnt>=minc){lv.frequent++;next.push({s:c,t:T});freq.set(c.join(","),cnt);}
+        if(freq.size>SB_MAXF||lv.joined>SB_MAXC){cap=true;break;}}}
+    levels.push(lv);Lk=next;}
+  return {levels,freq,minc,n,cap};
+}
+function sbRules(res,minconf,minlift){const out=[];const n=res.n;let capped=false;
+  for(const [key,c] of res.freq){const set=key.split(",").map(Number);const m=set.length;if(m<2||m>12)continue;
+    for(let mask=1;mask<(1<<m)-1;mask++){const a=[],cs=[];set.forEach((x,i)=>(mask&(1<<i)?a:cs).push(x));
+      const conf=c/res.freq.get(a.join(","));if(conf<minconf-1e-12)continue;const lift=conf/(res.freq.get(cs.join(","))/n);if(lift<minlift-1e-12)continue;
+      out.push({a,c:cs,cnt:c,sup:c/n,conf,lift});if(out.length>=50000){capped=true;break;}}
+    if(capped)break;}
+  return {rules:out,capped};}
+/* baskets with a planted pair: product 1 → product 2 with strength q */
+function sbGenBaskets(n,m,q,seed){const r=rng(seed);const p=[];for(let j=0;j<m;j++)p.push(0.03+0.17*r());const B=[];
+  for(let i=0;i<n;i++){const b=[];for(let j=0;j<m;j++)if(r()<p[j])b.push(j);if(b[0]===0&&b[1]!==1&&r()<q)b.splice(1,0,1);B.push(b);}
+  return {B,names:[...Array(m)].map((_,j)=>"product "+(j+1)),p};}
+/* clusters in two dimensions */
+function sbGenClusters(g,spread,n,seed){const r=rng(seed);const C=[];for(let j=0;j<g;j++)C.push([-5+10*r(),-3+6*r()]);const X=[],lab=[];
+  for(let i=0;i<n;i++){const j=i%g;X.push([C[j][0]+spread*sbNorm(r),C[j][1]+spread*sbNorm(r)]);lab.push(j);}return {X,C,lab};}
+/* one-factor data for PCA: x_j = s·f + √(1 − s²)·e_j */
+function sbGenFactor(p,n,s,seed,scale1){const r=rng(seed);const X=[];const e=Math.sqrt(Math.max(0,1-s*s));
+  for(let i=0;i<n;i++){const f=sbNorm(r);const row=[];for(let j=0;j<p;j++)row.push(s*f+e*sbNorm(r));if(scale1)row[0]*=100;X.push(row);}return X;}
+function sbStandardise(X,scale){const n=X.length,p=X[0].length;const mu=new Array(p).fill(0),sd=new Array(p).fill(0);
+  X.forEach(x=>x.forEach((v,j)=>mu[j]+=v/n));X.forEach(x=>x.forEach((v,j)=>sd[j]+=(v-mu[j])**2/(n-1)));for(let j=0;j<p;j++)sd[j]=Math.sqrt(sd[j]);
+  return {Z:X.map(x=>x.map((v,j)=>scale?(sd[j]>0?(v-mu[j])/sd[j]:0):v-mu[j])),mu,sd};}
+/* symmetric eigen-decomposition by cyclic Jacobi rotations */
+function sbJacobi(A0){const p=A0.length;const a=A0.map(r=>r.slice());const V=[...Array(p)].map((_,i)=>{const r=new Array(p).fill(0);r[i]=1;return r;});
+  for(let sweep=0;sweep<100;sweep++){let off=0,diag=0;for(let i=0;i<p;i++){diag+=a[i][i]*a[i][i];for(let j=i+1;j<p;j++)off+=a[i][j]*a[i][j];}
+    if(off<=1e-30*Math.max(1e-300,diag))break;
+    for(let P=0;P<p-1;P++)for(let Q=P+1;Q<p;Q++){const apq=a[P][Q];if(Math.abs(apq)<1e-300)continue;
+      const th=(a[Q][Q]-a[P][P])/(2*apq);const t=(th>=0?1:-1)/(Math.abs(th)+Math.sqrt(th*th+1));const c=1/Math.sqrt(t*t+1),s=t*c;
+      for(let k=0;k<p;k++){const akp=a[k][P],akq=a[k][Q];a[k][P]=c*akp-s*akq;a[k][Q]=s*akp+c*akq;}
+      for(let k=0;k<p;k++){const apk=a[P][k],aqk=a[Q][k];a[P][k]=c*apk-s*aqk;a[Q][k]=s*apk+c*aqk;}
+      for(let k=0;k<p;k++){const vkp=V[k][P],vkq=V[k][Q];V[k][P]=c*vkp-s*vkq;V[k][Q]=s*vkp+c*vkq;}}}
+  const ord=[...Array(p).keys()].sort((i,j)=>a[j][j]-a[i][i]);
+  const vals=ord.map(i=>Math.max(0,a[i][i])),vecs=ord.map(i=>{const v=V.map(r=>r[i]);let b=0;v.forEach((x,j)=>{if(Math.abs(x)>Math.abs(v[b]))b=j;});return v[b]<0?v.map(x=>-x):v;});
+  return {vals,vecs};}
+function sbPCA(X,scale){const n=X.length,p=X[0].length;const {Z,mu,sd}=sbStandardise(X,scale);
+  const C=[...Array(p)].map(()=>new Array(p).fill(0));Z.forEach(z=>{for(let i=0;i<p;i++)for(let j=i;j<p;j++)C[i][j]+=z[i]*z[j]/(n-1);});for(let i=0;i<p;i++)for(let j=0;j<i;j++)C[i][j]=C[j][i];
+  const {vals,vecs}=sbJacobi(C);const tot=vals.reduce((s,v)=>s+v,0)||1;const q=Math.min(p,2);
+  const scores=Z.map(z=>vecs.slice(0,q).map(v=>v.reduce((s,w,j)=>s+w*z[j],0)));
+  return {vals,vecs,pve:vals.map(v=>v/tot),tot,scores,mu,sd};}
+/* k-means (Lloyd) pieces */
+function sbSampleN(p){return Math.min(1500,Math.floor(Math.sqrt(4e7/Math.max(1,p))));}  // rows used for silhouette (cost ∝ n²·p)
+function kmD2(a,b){let s=0;for(let j=0;j<a.length;j++){const d=a[j]-b[j];s+=d*d;}return s;}
+function kmAssign(X,C){const l=new Int32Array(X.length);let w=0;X.forEach((x,i)=>{let b=0,bd=Infinity;for(let j=0;j<C.length;j++){const d=kmD2(x,C[j]);if(d<bd){bd=d;b=j;}}l[i]=b;w+=bd;});return {l,w};}
+function kmUpdate(X,l,C){const p=X[0].length;const S=C.map(()=>new Array(p).fill(0)),N=new Array(C.length).fill(0);
+  X.forEach((x,i)=>{N[l[i]]++;for(let j=0;j<p;j++)S[l[i]][j]+=x[j];});return S.map((s,j)=>N[j]?s.map(v=>v/N[j]):C[j].slice());}
+function kmPP(X,k,r){const n=X.length;const idx=[Math.floor(r()*n)];const dd=X.map(x=>kmD2(x,X[idx[0]]));
+  while(idx.length<Math.min(k,n)){const tot=dd.reduce((a,b)=>a+b,0);let i=0;if(tot>0){let u=r()*tot;while(i<n-1&&u>=dd[i]){u-=dd[i];i++;}}else i=Math.floor(r()*n);idx.push(i);X.forEach((x,q)=>{const d=kmD2(x,X[i]);if(d<dd[q])dd[q]=d;});}
+  return idx.map(i=>X[i].slice());}
+function kmSolve(X,C,maxIt){let l=null,w=0,it=0;for(;it<maxIt;it++){const a=kmAssign(X,C);const same=l&&a.l.every((v,i)=>v===l[i]);l=a.l;w=a.w;if(same)break;C=kmUpdate(X,l,C);}return {C,l,w,it};}
+function kmSil(X,l,k){const n=X.length;if(k<2||n<3)return null;const s=new Float64Array(n);const cnt=new Array(k).fill(0);for(let i=0;i<n;i++)cnt[l[i]]++;
+  if(cnt.filter(c=>c>0).length<2)return null;
+  for(let i=0;i<n;i++){const sum=new Array(k).fill(0);for(let j=0;j<n;j++){if(j===i)continue;sum[l[j]]+=Math.sqrt(kmD2(X[i],X[j]));}
+    const own=l[i];if(cnt[own]<=1){s[i]=0;continue;}const a=sum[own]/(cnt[own]-1);let b=Infinity;for(let c=0;c<k;c++)if(c!==own&&cnt[c]>0)b=Math.min(b,sum[c]/cnt[c]);s[i]=(b-a)/Math.max(a,b);}
+  return s.reduce((t,v)=>t+v,0)/n;}
+/* agglomerative clustering, Lance–Williams updates; returns scipy-style rows [a, b, height, size] */
+function sbHclust(X,method){const n=X.length;const D=new Float64Array(n*n);for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=Math.sqrt(kmD2(X[i],X[j]));D[i*n+j]=d;D[j*n+i]=d;}
+  const act=new Uint8Array(n).fill(1),sz=new Array(n).fill(1),cid=[...Array(n).keys()];const Z=[];
+  for(let step=0;step<n-1;step++){let bi=-1,bj=-1,bd=Infinity;for(let i=0;i<n;i++){if(!act[i])continue;for(let j=i+1;j<n;j++){if(act[j]&&D[i*n+j]<bd){bd=D[i*n+j];bi=i;bj=j;}}}
+    const ni=sz[bi],nj=sz[bj];
+    for(let k=0;k<n;k++){if(!act[k]||k===bi||k===bj)continue;const dik=D[bi*n+k],djk=D[bj*n+k],nk=sz[k];let d;
+      if(method==="single")d=Math.min(dik,djk);else if(method==="complete")d=Math.max(dik,djk);else if(method==="average")d=(ni*dik+nj*djk)/(ni+nj);
+      else d=Math.sqrt(Math.max(0,((ni+nk)*dik*dik+(nj+nk)*djk*djk-nk*bd*bd)/(ni+nj+nk)));D[bi*n+k]=d;D[k*n+bi]=d;}
+    Z.push([Math.min(cid[bi],cid[bj]),Math.max(cid[bi],cid[bj]),bd,ni+nj]);act[bj]=0;sz[bi]=ni+nj;cid[bi]=n+step;}
+  return Z;}
+function sbCophCorr(X,Z){const n=X.length;const mem=[];for(let i=0;i<n;i++)mem.push([i]);const C=new Float64Array(n*n);
+  Z.forEach((r,s)=>{const A=mem[r[0]],B=mem[r[1]];A.forEach(i=>B.forEach(j=>{C[i*n+j]=r[2];C[j*n+i]=r[2];}));mem.push(A.concat(B));});
+  let sx=0,sy=0,sxx=0,syy=0,sxy=0,m=0;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const x=Math.sqrt(kmD2(X[i],X[j])),y=C[i*n+j];sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;m++;}
+  const cv=sxy-sx*sy/m,vx=sxx-sx*sx/m,vy=syy-sy*sy/m;return vx>0&&vy>0?cv/Math.sqrt(vx*vy):NaN;}
+/* SBCORE-END */
+
+/* ---------- small UI helpers for the sandboxes ---------- */
+function sbBtn(t,cls){const b=el("button",{class:cls||"btn small",type:"button"});b.textContent=t;return b;}
+function sbNum(label,val,min,max,step){const lab=el("label");lab.appendChild(SB.text("span",label));const i=el("input",{type:"number",min:String(min),max:String(max),step:String(step||1),value:String(val)});lab.appendChild(i);
+  return {lab,inp:i,get(){let v=parseFloat(i.value);if(!Number.isFinite(v))v=val;return Math.max(min,Math.min(max,v));}};}
+function sbCheck(label,on){const lab=el("label",{style:"display:flex;gap:6px;align-items:center;color:var(--ink)"});const i=el("input",{type:"checkbox",style:"width:auto"});i.checked=!!on;lab.appendChild(i);lab.appendChild(SB.text("span",label));return {lab,inp:i,get:()=>i.checked};}
+function sbSel(label,opts,val){const lab=el("label");lab.appendChild(SB.text("span",label));const s=el("select");opts.forEach(([v,t])=>{const o=el("option",{value:v});o.textContent=t;s.appendChild(o);});s.value=val;lab.appendChild(s);return {lab,inp:s,get:()=>s.value};}
+function sbRow(...kids){const r=el("div",{class:"sb-params"});kids.forEach(k=>r.appendChild(k.lab||k));return r;}
+function sbStat(host,pairs){host.textContent="";pairs.forEach(([k,v])=>{const d=el("div");d.appendChild(SB.text("span",k));d.appendChild(SB.text("b",v));host.appendChild(d);});}
+function sbSeg(label,vals,sel,fn){const s=el("div",{class:"seg",role:"group","aria-label":label});vals.forEach(([v,t])=>{const b=el("button",{type:"button","aria-pressed":String(v===sel)});b.textContent=t;b.addEventListener("click",()=>{s.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));fn(v);});s.appendChild(b);});return s;}
+/* sortable table; cells: string or {t: shown text, v: sort value}; all text via textContent */
+function sbSortTable(host,headers,rows,o){o=o||{};let col=o.sort!=null?o.sort:-1,desc=true;const limit=o.limit||40;
+  function render(){host.textContent="";const w=el("div",{class:"tbl"});const t=document.createElement("table");const th=document.createElement("thead");const tr=document.createElement("tr");
+    headers.forEach((h,i)=>{const c=document.createElement("th");if((o.sortable||[]).includes(i)){const b=el("button",{type:"button",style:"all:unset;cursor:pointer;font-weight:700;text-decoration:underline dotted","aria-label":"Sort by "+h});b.textContent=h+(i===col?(desc?" ▼":" ▲"):"");b.addEventListener("click",()=>{if(col===i)desc=!desc;else{col=i;desc=true;}render();});c.appendChild(b);}else c.textContent=h;tr.appendChild(c);});
+    th.appendChild(tr);t.appendChild(th);const tb=document.createElement("tbody");const V=c=>c&&typeof c==="object"?c.v:c,T=c=>c&&typeof c==="object"?c.t:c;
+    const rs=rows.slice();if(col>=0)rs.sort((a,b)=>{const x=V(a[col]),y=V(b[col]);return (x<y?-1:x>y?1:0)*(desc?-1:1);});
+    const tc=o.textCols||1;tr.querySelectorAll("th").forEach((c,i)=>{if(i<tc)c.style.textAlign="left";});
+    rs.slice(0,limit).forEach(r=>{const rr=document.createElement("tr");r.forEach((c,i)=>{const d=SB.text("td",T(c),i>=tc?"num":"");if(i<tc)d.style.textAlign="left";rr.appendChild(d);});tb.appendChild(rr);});
+    t.appendChild(tb);w.appendChild(t);host.appendChild(w);if(rows.length>limit)host.appendChild(SB.text("p",`Showing the top ${limit} of ${ind(rows.length)} rows in the current order. Tap a column heading to sort.`,"note"));}
+  render();}
+/* textarea + example + file → text */
+function sbTextBox(pane,help,ph,example,onText){const wrap=el("div",{class:"ctrl"});wrap.appendChild(SB.text("p",help,"note"));
+  const ta=el("textarea",{rows:"6","aria-label":"Paste your data",spellcheck:"false",placeholder:ph});
+  const row=el("div",{class:"btnrow"});const go=sbBtn("Use this data"),ex=sbBtn("Load an example","btn ghost small");const file=el("input",{type:"file",accept:".csv,.tsv,.txt,text/csv,text/plain","aria-label":"Choose a file"});row.append(go,ex,file);
+  const extra=el("div",{class:"ctrl"});const msg=el("p",{class:"note",role:"status"});wrap.append(ta,row,extra,msg);pane.appendChild(wrap);
+  go.addEventListener("click",()=>onText(ta.value));ex.addEventListener("click",()=>{ta.value=example;onText(example);});
+  file.addEventListener("change",()=>SB.readFile(file.files[0],(txt,err)=>{if(err){msg.textContent=err;return;}ta.value=txt.length>20000?txt.slice(0,20000)+"\n…":txt;onText(txt);}));
+  return {msg,extra,say:s=>{msg.textContent=s;}};}
+/* numeric table form: pick numeric columns, standardise toggle, first text column as row labels */
+function sbNumForm(pane,onData,o){o=o||{};
+  const box=sbTextBox(pane,o.help||"Paste a table with a header row: two or more numeric columns (comma, tab or semicolon separated), or choose a CSV file. A text column, if any, is used as row labels. Your data stays in this browser: it is not uploaded, saved or shared.",
+    "e.g.\nname,x1,x2\nA,1.2,3.4\nB,2.0,1.1",o.example,txt=>{table=SB.parse(txt);build();});
+  let table=null,boxes=[],std=null;
+  function build(){box.extra.textContent="";boxes=[];if(!table||!table.rows.length||!table.header.length){box.say("No rows found.");return;}
+    const numCols=table.header.map((_,i)=>i).filter(i=>SB.isNumericCol(table,i));
+    if(numCols.length<2){box.say(`Found ${numCols.length} numeric column(s); at least 2 are needed.`);return;}
+    box.extra.appendChild(SB.text("span","Columns to use","eyebrow"));const r=el("div",{class:"sb-params"});box.extra.appendChild(r);
+    boxes=numCols.map(i=>{const c=sbCheck(table.header[i],true);c.inp.addEventListener("change",emit);r.appendChild(c.lab);return [i,c];});
+    std=sbCheck("Standardise each column (z-scores)",o.std!==false);std.inp.addEventListener("change",emit);box.extra.appendChild(std.lab);emit();}
+  function emit(){const cols=boxes.filter(b=>b[1].get()).map(b=>b[0]);if(cols.length<2){box.say("Tick at least two numeric columns.");return;}
+    const labCol=table.header.findIndex((_,i)=>!SB.isNumericCol(table,i));let rows=[],dropped=0;
+    table.rows.forEach(rw=>{const v=cols.map(i=>SB.num(rw[i]));if(v.every(Number.isFinite))rows.push({v,l:labCol>=0?String(rw[labCol]):""});else dropped++;});
+    let cut=0;if(o.maxRows&&rows.length>o.maxRows){cut=rows.length-o.maxRows;rows=rows.slice(0,o.maxRows);}
+    const minR=o.minRows||3;if(rows.length<minR){box.say(`Only ${rows.length} usable row(s); at least ${minR} are needed.`);return;}
+    let names=cols.map(i=>table.header[i]),X=rows.map(r=>r.v);const notes=[];
+    const sd=names.map((_,j)=>SB.st.sd(X.map(x=>x[j])));const keep=sd.map(s=>s>1e-12);
+    if(keep.some(k=>!k)){notes.push(`Dropped ${keep.filter(k=>!k).length} column(s) with no variation.`);names=names.filter((_,j)=>keep[j]);X=X.map(x=>x.filter((_,j)=>keep[j]));}
+    if(names.length<2){box.say("Fewer than two columns vary; nothing to compare.");return;}
+    box.say(`Read ${ind(table.rows.length)} row(s); using ${ind(rows.length)} on ${names.length} columns`+(dropped?`, skipped ${ind(dropped)} with blank or non-numeric values`:"")+(cut?`, kept the first ${ind(o.maxRows)} (limit)`:"")+". "+notes.join(" ")+(table.note?" "+table.note:""));
+    SB.used();onData({X,names,labels:labCol>=0?rows.map(r=>r.l):null,scale:std.get()});}
+}
+
+/* ---------- Sandbox 1: Apriori (File 2) ---------- */
+const SB_BASKET_EX=`milk, bread, eggs
+milk, bread, butter
+tea, biscuits, milk
+pasta, pasta sauce, cheese
+rice, dal, onions
+milk, bread, eggs, butter
+tea, biscuits
+chips, soda
+pasta, pasta sauce
+rice, dal, onions, tomatoes
+milk, eggs
+bread, butter, jam
+tea, biscuits, milk, sugar
+chips, soda, chocolate
+pasta, pasta sauce, cheese, tomatoes
+onions, tomatoes, potatoes
+milk, bread, eggs, tea
+rice, dal
+chips, soda, instant noodles
+bread, jam
+tea, sugar, milk
+pasta, cheese
+onions, tomatoes, rice
+milk, bread, butter, eggs
+biscuits, tea, sugar
+soda, chips, ice cream
+dal, rice, cooking oil
+pasta sauce, pasta, onions
+milk, curd
+bread, eggs, butter
+tea, biscuits, bread
+chips, soda
+rice, dal, onions, cooking oil
+milk, bread, jam
+instant noodles, soda
+pasta, pasta sauce, cheese
+tomatoes, onions, potatoes, cooking oil
+milk, tea, sugar, biscuits
+eggs, bread
+chocolate, ice cream, soda`;
+function sbAprioriShow(out,data,ms,mc,ml){
+  out.textContent="";const res=sbApriori(data.B,data.names.length,ms);const R=sbRules(res,mc,ml);const nm=data.names;
+  const rd=el("div",{class:"readout"});out.appendChild(rd);
+  const nf=res.freq.size,levels=res.levels.slice();if(!res.cap&&levels[levels.length-1].frequent>0)levels.push({k:levels.length+1,joined:0,pruned:0,counted:0,frequent:0});
+  sbStat(rd,[["Baskets",ind(res.n)],["Distinct items",ind(nm.length)],["Minimum count",`${ind(res.minc)} baskets`],["Frequent itemsets",ind(nf)],["Rules kept",ind(R.rules.length)]]);
+  if(res.cap)out.appendChild(SB.text("p","Stopped early: too many candidates at this minimum support. Raise the minimum support.","note"));
+  const box=el("div",{class:"svgbox"});out.appendChild(box);const tbl=el("div");out.appendChild(tbl);
+  const W=720,rowH=42,H=28+levels.length*rowH,mx=Math.max(1,...levels.map(l=>l.joined));const X=v=>v<=0?0:Math.sqrt(v/mx)*(W-90);
+  let t=REDUCED?levels.length+1:0,run=null;
+  function draw(){const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Apriori levels: candidates joined, pruned, counted and frequent at each level"});
+    const h=sv("text",{x:8,y:16,"font-size":11});h.textContent="bar length ∝ √count · outline: joined · grey: counted · blue: frequent · red tick: pruned";h.style.fill="var(--muted)";s.appendChild(h);
+    levels.forEach((l,i)=>{if(i>=Math.ceil(t))return;const f=Math.min(1,t-i);const y=28+i*rowH;
+      const lt=sv("text",{x:8,y:y+14,"font-size":11});lt.textContent=`Level ${l.k}`;s.appendChild(lt);
+      const x0=70;s.appendChild(sv("rect",{x:x0,y:y+2,width:X(l.joined)*f,height:16,style:"fill:none;stroke:var(--line)"}));
+      s.appendChild(sv("rect",{x:x0,y:y+2,width:X(l.counted)*f,height:16,style:"fill:var(--muted);opacity:.35"}));
+      s.appendChild(sv("rect",{x:x0,y:y+2,width:X(l.frequent)*f,height:16,style:"fill:var(--accent)"}));
+      if(l.pruned)s.appendChild(sv("rect",{x:x0+X(l.counted)*f,y:y+2,width:Math.max(2,(X(l.joined)-X(l.counted))*f),height:3,style:"fill:var(--fraud)"}));
+      const nt=sv("text",{x:70,y:y+32,"font-size":11});nt.style.fill="var(--muted)";nt.textContent=l.joined?`joined ${ind(l.joined)} · pruned ${ind(l.pruned)} · counted ${ind(l.counted)} · frequent ${ind(l.frequent)}`:"no candidates: stop";s.appendChild(nt);});
+    box.textContent="";box.appendChild(s);}
+  function rules(){const rows=R.rules.map(r=>[r.a.map(j=>nm[j]).join(", "),r.c.map(j=>nm[j]).join(", "),{t:ind(r.cnt),v:r.cnt},{t:r.sup.toFixed(4),v:r.sup},{t:r.conf.toFixed(3),v:r.conf},{t:r.lift.toFixed(2),v:r.lift}]);
+    tbl.textContent="";tbl.appendChild(SB.text("span","Rules (antecedent → consequent)","eyebrow"));
+    if(!rows.length){tbl.appendChild(SB.text("p","No rule passes these thresholds. Lower the minimum support, confidence or lift.","note"));return;}
+    const host=el("div");tbl.appendChild(host);sbSortTable(host,["If a basket has","it also has","Baskets","Support","Confidence","Lift"],rows,{sortable:[2,3,4,5],sort:5,textCols:2});
+    if(R.capped)tbl.appendChild(SB.text("p","Only the first 50,000 rules were generated.","note"));
+    if(data.after)data.after(tbl,R,res);}
+  draw();if(t>levels.length)rules();else{run=loop(()=>{t+=0.03;draw();if(t>levels.length){run.stop();run=null;rules();}});}
+}
+function sbAprioriThresholds(d){const ms=sbNum("Minimum support (%)",d[0],0.1,100,0.1),mc=sbNum("Minimum confidence",d[1],0,1,0.05),ml=sbNum("Minimum lift",d[2],0,100,0.1);
+  return {row:sbRow(ms,mc,ml),get:()=>[ms.get()/100,mc.get(),ml.get()]};}
+function sbAprioriPanel(root){
+  SB.panel(root,"Apriori",{
+    controls:pane=>{const N=sbNum("Baskets N (of 3,000)",3000,20,3000,1),seed=sbNum("Seed",1,1,999999,1);const th=sbAprioriThresholds([1,0.5,1]);
+      const go=sbBtn("Run Apriori");pane.append(sbRow(N,seed),th.row,go);const out=el("div",{class:"ctrl"});pane.appendChild(out);
+      const run=()=>{const n=Math.round(N.get());const idx=n>=3000?[...Array(3000).keys()]:shuffled(3000,Math.round(seed.get())).slice(0,n);const [a,b,c]=th.get();
+        sbAprioriShow(out,{B:idx.map(i=>itemList(BMASK[i])),names:ITEMS},a,b,c);};
+      go.addEventListener("click",run);run();},
+    generate:pane=>{const n=sbNum("Baskets",2000,20,5000,1),m=sbNum("Products",20,2,50,1),q=sbNum("Planted pair strength q (0–1)",0.5,0,1,0.05),seed=sbNum("Seed",7,1,999999,1);
+      const th=sbAprioriThresholds([2,0.3,1.5]);const go=sbBtn("Generate and run");
+      pane.append(SB.text("p","Each product enters a basket independently with its own probability between 3% and 20%. The planted pair: when a basket has product 1, product 2 is added with probability q. So conf(product 1 → product 2) ≈ p₂ + (1 − p₂)·q, and with q = 0 every lift should hover near 1.","note"),sbRow(n,m,q,seed),th.row,go);
+      const out=el("div",{class:"ctrl"});pane.appendChild(out);
+      const run=()=>{const g=sbGenBaskets(Math.round(n.get()),Math.round(m.get()),q.get(),Math.round(seed.get()));const [a,b,c]=th.get();
+        g.after=(host,R)=>{const cnt=[0,0,0];g.B.forEach(bk=>{const h0=bk.includes(0),h1=bk.includes(1);if(h0)cnt[0]++;if(h1)cnt[1]++;if(h0&&h1)cnt[2]++;});const N0=g.B.length;
+          const conf=cnt[0]?cnt[2]/cnt[0]:NaN,lift=cnt[0]&&cnt[1]?conf/(cnt[1]/N0):NaN;const sorted=R.rules.slice().sort((x,y)=>y.lift-x.lift);
+          const rk=sorted.findIndex(r=>r.a.length===1&&r.a[0]===0&&r.c.length===1&&r.c[0]===1);
+          host.appendChild(SB.text("p",`Planted rule product 1 → product 2 in these baskets: ${ind(cnt[2])} baskets, support ${(cnt[2]/N0).toFixed(4)}, confidence ${Number.isFinite(conf)?conf.toFixed(3):"—"}, lift ${Number.isFinite(lift)?lift.toFixed(2):"—"}. `+(rk>=0?`It ranks ${rk+1} of ${ind(R.rules.length)} kept rules by lift.`:"It did not pass the thresholds."),"note"));};
+        sbAprioriShow(out,g,a,b,c);};
+      go.addEventListener("click",run);run();},
+    own:pane=>{const th=sbAprioriThresholds([10,0.5,1]);let data=null;const out=el("div",{class:"ctrl"});
+      const box=sbTextBox(pane,"Paste one basket per line, items separated by commas (for example: milk, bread, eggs), or choose a text file in that layout. Labels are trimmed and cut at 40 characters; repeats within a basket count once. Up to 5,000 baskets and the 50 most frequent items. Your data stays in this browser: it is not uploaded, saved or shared.",
+        "e.g.\nmilk, bread, eggs\npasta, pasta sauce, cheese\ntea, biscuits",SB_BASKET_EX,txt=>{const d=sbParseBaskets(txt);
+          if(d.B.length<2||d.names.length<2){data=null;out.textContent="";box.say(`Found ${d.B.length} basket(s) and ${d.names.length} distinct item(s); at least 2 of each are needed.`);return;}
+          data=d;const empty=d.B.filter(b=>!b.length).length;box.say(`Read ${ind(d.B.length)} baskets with ${ind(d.names.length)} distinct items`+(empty?` (${empty} basket(s) left empty after trimming)`:"")+". "+d.notes.join(" "));SB.used();run();});
+      const go=sbBtn("Run Apriori");pane.append(th.row,go,out);
+      const run=()=>{if(!data){box.say("Paste baskets first, or load the example.");return;}const [a,b,c]=th.get();sbAprioriShow(out,data,a,b,c);};
+      go.addEventListener("click",run);}
+  },"Your own minimum support, confidence and lift on the 3,000 sampled orders, on generated baskets with a planted pair, or on your own baskets. Rules table sortable by any score.");
+}
+
+/* ---------- Sandbox 2: k-means playground (File 6) ---------- */
+function sbKmeansUI(pane,o){o=o||{};
+  let X=[],names=["x","y"],proj=null,k=o.k||3,C=[],Cold=[],l=null,it=0,w=NaN,changed=0,phase="none",conv=false,t=0,run=null,speed=1,starts=0,sil=null,seed=o.seed||1;
+  const bar=el("div",{class:"btnrow"});const kseg=sbSeg("Number of clusters k",[1,2,3,4,5,6,7,8].map(v=>[v,String(v)]),k,v=>{k=v;newStart();});
+  const bNew=sbBtn("New start","btn ghost small"),bStep=sbBtn("One step","btn ghost small"),bRun=sbBtn(REDUCED?"Run to the end":"Run"),bElb=sbBtn("Elbow and silhouette","btn ghost small");
+  bar.append(SB.text("span","k","eyebrow"),kseg);const bar2=el("div",{class:"btnrow"});bar2.append(bRun,bStep,bNew,bElb);speedSeg(bar2,v=>{speed=v;});
+  const W=720,H=o.H||400,cv=el("canvas",{"aria-label":o.tap?"Tap or click to add points; k-means centroids move step by step":"k-means on your points, step by step"});cv.style.touchAction="manipulation";
+  const cb=el("div",{class:"svgbox"});cb.appendChild(cv);const g=canvasSetup(cv,W,H);const cap=el("p",{class:"note"});const rd=el("div",{class:"readout"});const elb=el("div",{class:"svgbox"});
+  pane.append(bar,bar2,cb,cap,rd,elb);
+  const pad=24;let dom=o.domain||null;
+  function setProj(){if(!X.length){proj=null;return;}if(X[0].length===2){proj={f:x=>x,lab:[names[0],names[1]]};}
+    else{const P=sbPCA(X,false);const v1=P.vecs[0],v2=P.vecs[1],mu=P.mu;proj={f:x=>[v1.reduce((s,w,j)=>s+w*(x[j]-mu[j]),0),v2.reduce((s,w,j)=>s+w*(x[j]-mu[j]),0)],lab:["PC1","PC2"],pc:true};}
+    if(!o.domain){const P=X.map(proj.f);let x0=Math.min(...P.map(q=>q[0])),x1=Math.max(...P.map(q=>q[0])),y0=Math.min(...P.map(q=>q[1])),y1=Math.max(...P.map(q=>q[1]));
+      if(x1-x0<1e-9){x0-=1;x1+=1;}if(y1-y0<1e-9){y0-=1;y1+=1;}const mx=(x1-x0)*0.06,my=(y1-y0)*0.08;dom=[x0-mx,x1+mx,y0-my,y1+my];}}
+  const SX=v=>pad+(v-dom[0])/(dom[1]-dom[0])*(W-2*pad),SY=v=>H-pad-(v-dom[2])/(dom[3]-dom[2])*(H-2*pad);
+  function draw(){const K=KC(),pal=PAL();g.clearRect(0,0,W,H);g.fillStyle=K.sunk;g.fillRect(0,0,W,H);g.strokeStyle=K.line;g.strokeRect(pad,pad,W-2*pad,H-2*pad);
+    if(!X.length){g.fillStyle=K.muted;axisText(g,o.tap?"Tap or click here to place points, or press Generate":"No data yet",W/2,H/2,"middle");return;}
+    const P=X.map(proj.f);const r=X.length>1500?1.8:X.length>400?2.6:3.6;
+    P.forEach((q,i)=>{g.beginPath();g.arc(SX(q[0]),SY(q[1]),r,0,Math.PI*2);g.fillStyle=l&&l[i]>=0?pal[l[i]%8]:K.muted;g.globalAlpha=l?0.85:0.6;g.fill();});g.globalAlpha=1;
+    C.forEach((c,j)=>{let a=proj.f(c);if(phase==="update"&&t<1&&Cold[j]){const b=proj.f(Cold[j]);a=[b[0]+(a[0]-b[0])*t,b[1]+(a[1]-b[1])*t];}const x=SX(a[0]),y=SY(a[1]);
+      g.beginPath();g.arc(x,y,8,0,Math.PI*2);g.fillStyle=pal[j%8];g.fill();g.strokeStyle=K.ink;g.lineWidth=2;g.stroke();g.lineWidth=1;g.beginPath();g.moveTo(x-4,y);g.lineTo(x+4,y);g.moveTo(x,y-4);g.lineTo(x,y+4);g.stroke();});
+    g.fillStyle=K.ink;axisText(g,`k = ${k} · iteration ${it}${conv?" · converged":""}`,W-pad-4,pad+14,"end");}
+  function stats(){sbStat(rd,[["Points",ind(X.length)],["Iteration",String(it)],["WCSS",Number.isNaN(w)?"—":w.toFixed(3)],["Reassigned last step",it?ind(changed):"—"],["Status",!X.length?"no data":conv?"converged":phase==="none"?"press Run":phase==="assign"?"points assigned":"centroids moved"],["Mean silhouette",sil==null?"—":sil.toFixed(3)]]);
+    cap.textContent=!X.length?"":proj&&proj.pc?`Drawn on the first two principal components of ${X[0].length} columns (${names.join(", ")}); k-means uses all of them.`:`Horizontal: ${names[0]} · vertical: ${names[1]}. Colours: cluster; ringed discs: centroids.`;}
+  function newStart(){stop();starts++;l=null;it=0;w=NaN;changed=0;conv=false;sil=null;phase="none";t=1;C=X.length?kmPP(X,Math.min(k,X.length),rng(seed*7919+starts)):[];Cold=C.map(c=>c.slice());draw();stats();}
+  function oneStep(){if(!X.length||conv)return;if(!C.length)newStart();
+    if(phase==="none"||phase==="update"){const a=kmAssign(X,C);changed=l?a.l.reduce((s,v,i)=>s+(v!==l[i]?1:0),0):X.length;const was=phase;l=a.l;w=a.w;phase="assign";it++;
+      if(was==="update"&&changed===0){conv=true;const n=X.length,ns=sbSampleN(X[0].length);sil=n<=ns?kmSil(X,l,C.length):null;if(sil==null&&n>ns){const id=shuffled(n,seed).slice(0,ns);sil=kmSil(id.map(i=>X[i]),id.map(i=>l[i]),C.length);}}}
+    else{Cold=C.map(c=>c.slice());C=kmUpdate(X,l,C);phase="update";t=REDUCED?1:0;}
+    if(it>300)conv=true;draw();stats();}
+  function stop(){if(run){run.stop();run=null;}bRun.textContent=REDUCED?"Run to the end":"Run";}
+  function play(){if(run){stop();return;}if(!X.length)return;if(conv)newStart();if(REDUCED){let g2=0;while(!conv&&g2++<700)oneStep();return;}
+    bRun.textContent="Pause";let acc=0;run=loop(()=>{if(phase==="update"&&t<1){t=Math.min(1,t+0.05*speed);draw();return;}acc+=0.06*speed;if(acc>=1){acc=0;oneStep();}if(conv)stop();});}
+  function elbow(){if(!X.length)return;let Xe=X,note="";const ns=sbSampleN(X[0].length);if(X.length>ns){const id=shuffled(X.length,seed).slice(0,ns);Xe=id.map(i=>X[i]);note=` (a random ${ind(ns)} of the points)`;}
+    const K=Math.min(8,Xe.length),nst=Xe.length*Xe[0].length<=30000?10:5;const res=[];for(let kk=1;kk<=K;kk++){let best=null;for(let s=0;s<nst;s++){const r=kmSolve(Xe,kmPP(Xe,kk,rng(seed*31+kk*101+s)),100);if(!best||r.w<best.w)best=r;}res.push([kk,best.w,kk>1?kmSil(Xe,best.l,kk):null]);}
+    const grid=el("div",{class:"labgrid"});let s=null;
+    const panel=(x0,title,vals,fm)=>{x0=0;s=sv("svg",{viewBox:"0 0 360 230",role:"img","aria-label":title+" for k = 1 to 8"});const bx=el("div",{class:"svgbox"});bx.appendChild(s);grid.appendChild(bx);const vv=vals.filter(v=>v[1]!=null);if(!vv.length)return;const lo=Math.min(...vv.map(v=>v[1])),hi=Math.max(...vv.map(v=>v[1]));const span=hi-lo||1;
+      const PX=kk=>x0+30+(kk-1)/7*(300),PY=v=>40+(1-(v-lo)/span)*140;const tt=sv("text",{x:x0+10,y:20,"font-size":12});tt.textContent=title;s.appendChild(tt);
+      s.appendChild(sv("line",{x1:x0+20,x2:x0+340,y1:190,y2:190,style:"stroke:var(--line)"}));
+      s.appendChild(sv("path",{d:vv.map((v,i)=>(i?"L":"M")+PX(v[0]).toFixed(1)+","+PY(v[1]).toFixed(1)).join(""),style:"fill:none;stroke:var(--accent);stroke-width:2"}));
+      vv.forEach((v,i)=>{s.appendChild(sv("circle",{cx:PX(v[0]),cy:PY(v[1]),r:v[0]===k?6:3.5,style:`fill:${v[0]===k?"var(--gold)":"var(--accent)"}`}));
+        const lt=sv("text",{x:PX(v[0]),y:206,"font-size":10,"text-anchor":"middle"});lt.textContent=v[0];s.appendChild(lt);
+        const vt=sv("text",{x:PX(v[0])+(i%2?0:0),y:PY(v[1])+(i%2?16:-8),"font-size":10,"text-anchor":"middle"});vt.textContent=fm(v[1]);s.appendChild(vt);});
+      const kl=sv("text",{x:x0+190,y:224,"font-size":10,"text-anchor":"middle"});kl.textContent="k (gold: current k)";s.appendChild(kl);};
+    panel(0,`WCSS (elbow), best of ${nst} starts`+note,res,v=>v>=1000?ind(Math.round(v)):v.toFixed(v>=10?1:2));panel(360,"Mean silhouette",res.map(r=>[r[0],r[2]]),v=>v.toFixed(3));
+    elb.textContent="";elb.appendChild(grid);}
+  bNew.addEventListener("click",newStart);bStep.addEventListener("click",()=>{stop();oneStep();});bRun.addEventListener("click",play);bElb.addEventListener("click",elbow);
+  if(o.tap)cv.addEventListener("pointerdown",e=>{if(X.length>=2000)return;const rc=cv.getBoundingClientRect();if(!rc.width)return;const px=(e.clientX-rc.left)/rc.width*W,py=(e.clientY-rc.top)/rc.height*H;
+    if(px<pad||px>W-pad||py<pad||py>H-pad)return;e.preventDefault();X.push([dom[0]+(px-pad)/(W-2*pad)*(dom[1]-dom[0]),dom[2]+(H-pad-py)/(H-2*pad)*(dom[3]-dom[2])]);names=["x","y"];setProj();elb.textContent="";newStart();});
+  const api={set(X2,names2){X=X2;names=names2||names;setProj();elb.textContent="";newStart();},clear(){X=[];setProj();elb.textContent="";newStart();},get n(){return X.length;}};
+  draw();stats();return api;
+}
+function sbKmeansPanel(root){
+  SB.panel(root,"k-means playground",{
+    controls:pane=>{const N=sbNum("Customers N (of 300)",300,10,300,1),seed=sbNum("Seed",1,1,999999,1);
+      const cols=FEATS.map((f,j)=>sbCheck(f,j===3||j===6));const go=sbBtn("Use these customers");
+      pane.append(SB.text("p","The 300 sampled customers, already in z-scores. Tick two columns to see them directly, or more to cluster on all of them (drawn on PC1 and PC2).","note"),sbRow(N,seed),sbRow(...cols),go);
+      const ui=sbKmeansUI(pane,{k:3});const msg=el("p",{class:"note",role:"status"});pane.insertBefore(msg,go.nextSibling);
+      const use=()=>{const js=cols.map((c,j)=>c.get()?j:-1).filter(j=>j>=0);if(js.length<2){msg.textContent="Tick at least two columns.";return;}msg.textContent="";
+        const n=Math.round(N.get());const id=n>=300?[...Array(300).keys()]:shuffled(300,Math.round(seed.get())).slice(0,n);ui.set(id.map(i=>js.map(j=>SUBZ[i][j])),js.map(j=>FEATS[j]+" (z)"));};
+      go.addEventListener("click",use);use();},
+    generate:pane=>{const g=sbNum("Clusters",3,1,8,1),sp=sbNum("Spread (sd)",0.8,0.05,4,0.05),n=sbNum("Points n",300,2,2000,1),seed=sbNum("Seed",3,1,999999,1);
+      const go=sbBtn("Generate"),clr=sbBtn("Clear points","btn ghost small");const br=el("div",{class:"btnrow"});br.append(go,clr);
+      pane.append(SB.text("p","Generate clusters with chosen centres' count and spread, or clear the board and tap or click the picture to place points yourself (up to 2,000).","note"),sbRow(g,sp,n,seed),br);
+      const ui=sbKmeansUI(pane,{k:3,tap:true,domain:[-7,7,-4.6,4.6],H:460});
+      go.addEventListener("click",()=>{const d=sbGenClusters(Math.round(g.get()),sp.get(),Math.round(n.get()),Math.round(seed.get()));ui.set(d.X,["x","y"]);});clr.addEventListener("click",()=>ui.clear());
+      const d=sbGenClusters(3,0.8,300,3);ui.set(d.X,["x","y"]);},
+    own:pane=>{let ui=null;sbNumForm(pane,d=>{const X=d.scale?sbStandardise(d.X,true).Z:d.X;ui.set(X,d.names.map(nm=>nm+(d.scale?" (z)":"")));},{example:SB_NUM_EX});ui=sbKmeansUI(pane,{k:3});}
+  },"Lloyd's algorithm step by step on the customers, on generated or hand-placed points, or on your own table; choose k, then check the elbow and silhouette.");
+}
+const SB_NUM_EX=`customer,orders,avg basket,snack share,fresh share
+C01,21,487,0.59,0.0
+C02,18,462,0.52,0.19
+C03,24,499,0.75,0.04
+C04,14,1353,0.24,0.34
+C05,19,1338,0.15,0.38
+C06,21,1369,0.23,0.38
+C07,21,494,0.58,0.09
+C08,12,1724,0.12,0.35
+C09,10,624,0.17,0.75
+C10,12,824,0.2,0.64
+C11,20,466,0.47,0.2
+C12,11,1791,0.11,0.37
+C13,10,1538,0.03,0.3
+C14,11,1274,0.08,0.25
+C15,13,630,0.21,0.62
+C16,9,1212,0.16,0.49
+C17,21,435,0.65,0.14
+C18,22,2209,0.26,0.41
+C19,22,444,0.61,0.06
+C20,7,673,0.06,0.52
+C21,5,892,0.27,0.63
+C22,24,430,0.58,0.12
+C23,25,527,0.54,0.15
+C24,20,419,0.64,0.16
+C25,24,573,0.55,0.19
+C26,15,1222,0.1,0.34
+C27,13,1564,0.24,0.31
+C28,10,967,0.21,0.71
+C29,11,745,0.15,0.67
+C30,2,797,0.27,0.58
+C31,23,408,0.54,0.2
+C32,8,727,0.2,0.72
+C33,7,830,0.13,0.53
+C34,11,1015,0.13,0.43
+C35,11,1652,0.19,0.21
+C36,9,938,0.14,0.44`;
+
+/* ---------- Sandbox 3: PCA (File 5) ---------- */
+function sbPCAShow(out,X,names,scale){out.textContent="";const n=X.length,p=X[0].length;
+  if(n<3){out.appendChild(SB.text("p","At least 3 rows are needed.","note"));return;}
+  const P=sbPCA(X,scale);const rd=el("div",{class:"readout"});out.appendChild(rd);
+  sbStat(rd,[["Rows",ind(n)],["Columns",String(p)],[scale?"Total variance (= p, correlation matrix)":"Total variance (covariance matrix)",P.tot.toFixed(3)],["PC1 share",pct(P.pve[0],1)],["Components with λ > mean λ",String(P.vals.filter(v=>v>P.tot/p+1e-12).length)]]);
+  const grid=el("div",{class:"labgrid"});out.appendChild(grid);const L1=el("div",{class:"ctrl"}),R1=el("div",{class:"ctrl"});grid.append(L1,R1);
+  // scree
+  const W2=360,H2=220,mg={l:40,r:30,t:12,b:34},q=Math.min(p,12);const vmax=Math.max(...P.vals)*1.08||1;
+  const X2=j=>mg.l+(j+0.5)/q*(W2-mg.l-mg.r),Y2=v=>H2-mg.b-v/vmax*(H2-mg.t-mg.b),Yc=v=>H2-mg.b-v*(H2-mg.t-mg.b);
+  const s=sv("svg",{viewBox:`0 0 ${W2} ${H2}`,role:"img","aria-label":"Scree plot: eigenvalues and cumulative proportion of variance explained"});
+  [0,0.5,1].forEach(f=>{const v=f*vmax;s.appendChild(sv("line",{x1:mg.l,x2:W2-mg.r,y1:Y2(v),y2:Y2(v),style:"stroke:var(--line)"}));const t=sv("text",{x:mg.l-5,y:Y2(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=v>=100?ind(Math.round(v)):v.toFixed(2);s.appendChild(t);});
+  s.appendChild(sv("path",{d:P.vals.slice(0,q).map((e,j)=>(j?"L":"M")+X2(j).toFixed(1)+","+Y2(e).toFixed(1)).join(""),style:"fill:none;stroke:var(--accent);stroke-width:2"}));
+  let cum=0;const cp=P.pve.slice(0,q).map((e,j)=>{cum+=e;return [X2(j),Yc(cum)];});s.appendChild(sv("path",{d:cp.map((c,j)=>(j?"L":"M")+c[0].toFixed(1)+","+c[1].toFixed(1)).join(""),style:"fill:none;stroke:var(--gold);stroke-width:2"}));
+  P.vals.slice(0,q).forEach((e,j)=>{s.appendChild(sv("circle",{cx:X2(j),cy:Y2(e),r:3.5,style:"fill:var(--accent)"}));const t=sv("text",{x:X2(j),y:H2-18,"font-size":10,"text-anchor":"middle"});t.textContent=j+1;s.appendChild(t);});
+  const lb=sv("text",{x:(W2+mg.l)/2,y:H2-3,"font-size":11,"text-anchor":"middle"});lb.textContent="component (blue: λ · gold: cumulative share)";s.appendChild(lb);
+  const hp=sv("text",{x:W2-2,y:Yc(1)+4,"font-size":10,"text-anchor":"end"});hp.textContent="100%";hp.style.fill="var(--gold)";s.appendChild(hp);
+  L1.appendChild(SB.text("span","Scree plot","eyebrow"));const sb=el("div",{class:"svgbox"});sb.appendChild(s);L1.appendChild(sb);
+  cum=0;R1.appendChild(SB.text("span","Eigenvalues","eyebrow"));R1.appendChild(SB.table(["PC","λ","PVE","Cumulative"],P.vals.slice(0,q).map((e,j)=>{cum+=P.pve[j];return ["PC"+(j+1),e.toFixed(4),P.pve[j].toFixed(4),cum.toFixed(4)];})));
+  if(p>12)R1.appendChild(SB.text("p",`First 12 of ${p} components shown.`,"note"));
+  const nc=Math.min(p,5);out.appendChild(SB.text("span","Loadings (eigenvectors; sign fixed so each one's largest entry is positive)","eyebrow"));
+  out.appendChild(SB.table(["Column",...[...Array(nc)].map((_,k)=>"PC"+(k+1))],names.map((nm,j)=>[nm,...[...Array(nc)].map((_,k)=>(P.vecs[k][j]>=0?"+":"")+P.vecs[k][j].toFixed(3))])));
+  // scores scatter with loading arrows
+  const BW=720,BH=380,bx=BW/2,by=BH/2;const S2=P.scores;const ext=Math.max(1e-9,...S2.map(z=>Math.max(Math.abs(z[0]),Math.abs(z[1]||0))));const sc=Math.min((BW/2-30),(BH/2-24))/ext;
+  const b=sv("svg",{viewBox:`0 0 ${BW} ${BH}`,role:"img","aria-label":"Scores of every row on PC1 and PC2 with an arrow for each column's loadings"});
+  b.appendChild(sv("rect",{x:0,y:0,width:BW,height:BH,style:"fill:var(--sunk)"}));b.appendChild(sv("line",{x1:20,x2:BW-20,y1:by,y2:by,style:"stroke:var(--line)"}));b.appendChild(sv("line",{x1:bx,x2:bx,y1:12,y2:BH-12,style:"stroke:var(--line)"}));
+  const show=n>2000?shuffled(n,1).slice(0,2000):[...Array(n).keys()];
+  show.forEach(i=>b.appendChild(sv("circle",{cx:(bx+S2[i][0]*sc).toFixed(1),cy:(by-(S2[i][1]||0)*sc).toFixed(1),r:n>500?1.8:2.6,style:"fill:var(--muted);opacity:.6"})));
+  if(p>=2){const A=Math.min(BW,BH)*0.42;names.forEach((nm,j)=>{const x=bx+P.vecs[0][j]*A,y=by-P.vecs[1][j]*A;b.appendChild(sv("line",{x1:bx,y1:by,x2:x.toFixed(1),y2:y.toFixed(1),style:"stroke:var(--fraud);stroke-width:1.6"}));
+    b.appendChild(sv("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:3,style:"fill:var(--fraud)"}));if(Math.hypot(x-bx,y-by)<14)return;
+    const an=Math.atan2(by-y,x-bx);const t=sv("text",{x:(x+Math.cos(an)*8).toFixed(1),y:(y-Math.sin(an)*8+4).toFixed(1),"font-size":11,"text-anchor":Math.cos(an)>0.3?"start":Math.cos(an)<-0.3?"end":"middle"});t.textContent=nm;b.appendChild(t);});}
+  const ft=sv("text",{x:BW-12,y:BH-8,"font-size":10,"text-anchor":"end"});ft.textContent=`grey: ${show.length<n?ind(show.length)+" of ":""}${ind(n)} rows on PC1 (→) and PC2 (↑) · red: loadings`;b.appendChild(ft);
+  out.appendChild(SB.text("span","Scores on PC1 and PC2 with loading arrows","eyebrow"));const bb=el("div",{class:"svgbox"});bb.appendChild(b);out.appendChild(bb);
+}
+function sbPCAPanel(root){
+  SB.panel(root,"PCA",{
+    controls:pane=>{const N=sbNum("Customers N (of 300)",300,5,300,1),seed=sbNum("Seed",1,1,999999,1);const cols=FEATS.map(f=>sbCheck(f,true));const std=sbCheck("Standardise (correlation matrix)",true);
+      const go=sbBtn("Run PCA");const msg=el("p",{class:"note",role:"status"});const out=el("div",{class:"ctrl"});
+      pane.append(SB.text("p","The 300 sampled customers (z-scores rounded to two decimals). With all ten columns and all 300 rows the eigenvalues come close to the full-data scree on the left, not exactly: this is a sample.","note"),sbRow(N,seed),sbRow(...cols),std.lab,go,msg,out);
+      const run=()=>{const js=cols.map((c,j)=>c.get()?j:-1).filter(j=>j>=0);if(js.length<2){msg.textContent="Tick at least two columns.";out.textContent="";return;}msg.textContent="";
+        const n=Math.round(N.get());const id=n>=300?[...Array(300).keys()]:shuffled(300,Math.round(seed.get())).slice(0,n);sbPCAShow(out,id.map(i=>js.map(j=>SUBZ[i][j])),js.map(j=>FEATS[j]),std.get());};
+      go.addEventListener("click",run);run();},
+    generate:pane=>{const p=sbNum("Columns p",5,2,10,1),n=sbNum("Rows n",500,5,5000,1),s=sbNum("Factor strength s (0–1)",0.7,0,1,0.05),seed=sbNum("Seed",5,1,999999,1);
+      const u=sbCheck("Column 1 in other units (× 100)",false),std=sbCheck("Standardise (correlation matrix)",true);const go=sbBtn("Generate and run");const out=el("div",{class:"ctrl"});
+      pane.append(SB.text("p","Every column is s × (one shared factor) + √(1 − s²) × (its own noise). Theory: λ₁ ≈ 1 + (p − 1)s² and the rest ≈ 1 − s². Try s = 0, then measure column 1 in other units and switch standardising off.","note"),sbRow(p,n,s,seed),u.lab,std.lab,go,out);
+      const run=()=>{const pp=Math.round(p.get());sbPCAShow(out,sbGenFactor(pp,Math.round(n.get()),s.get(),Math.round(seed.get()),u.get()),[...Array(pp)].map((_,j)=>"x"+(j+1)),std.get());};
+      go.addEventListener("click",run);run();},
+    own:pane=>{const out=el("div",{class:"ctrl"});sbNumForm(pane,d=>sbPCAShow(out,d.X,d.names,d.scale),{example:SB_NUM_EX});pane.appendChild(out);}
+  },"Eigenvalues, variance explained, loadings and scores for any set of numeric columns: the customers, a one-factor generator, or your own table.");
+}
+
+/* ---------- Sandbox 4: hierarchical clustering (File 7) ---------- */
+function sbDendroUI(pane){
+  let X=[],labels=null,lk="ward",Z=[],done=0,run=null,speed=1,acc=0,order=[],maxH=1,coph=NaN;
+  const bar=el("div",{class:"btnrow"});const seg=sbSeg("Linkage",[["ward","Ward"],["average","average"],["complete","complete"],["single","single"]],lk,v=>{lk=v;setup();});
+  const bPlay=sbBtn(REDUCED?"Grow tree":"Play"),bOne=sbBtn("One merge","btn ghost small"),bReset=sbBtn("Reset","btn ghost small");bar.append(seg,bPlay,bOne,bReset);speedSeg(bar,v=>{speed=v;});
+  const box=el("div",{class:"svgbox"});const cl=el("label");const cutOut=el("output");cl.appendChild(SB.text("span","Cut height: "));cl.appendChild(cutOut);
+  const cut=el("input",{type:"range",min:"0",max:"1",step:"any",value:"0.5","aria-label":"Cut height"});const rd=el("div",{class:"readout"});const sizes=el("p",{class:"note"});
+  pane.append(bar,box,cl,cut,rd,sizes);
+  function setup(){stop();done=0;if(X.length<2){Z=[];box.textContent="";rd.textContent="";sizes.textContent=X.length?"At least 2 rows are needed.":"";return;}
+    Z=sbHclust(X,lk);coph=sbCophCorr(X,Z);const n=X.length;order=[];const st=[2*n-2];while(st.length){const i=st.pop();if(i<n)order.push(i);else{const r=Z[i-n];st.push(r[1]);st.push(r[0]);}}
+    maxH=Math.max(1e-9,Z[n-2][2])*1.06;cut.max=String(maxH);cut.step=String(maxH/400);const kc=Math.min(n-1,3);cut.value=String(n>3?(Z[n-kc-1][2]+Z[n-kc][2])/2:maxH/2);
+    done=n-1;draw();}
+  function labelsAt(h,upto){const n=X.length;const par=[...Array(2*n-1).keys()];const find=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;};
+    for(let i=0;i<upto;i++)if(Z[i][2]<=h){par[find(Z[i][0])]=n+i;par[find(Z[i][1])]=n+i;}const roots={};let c=0;return [...Array(n).keys()].map(i=>{const r=find(i);if(!(r in roots))roots[r]=c++;return roots[r];});}
+  function draw(){const n=X.length;if(n<2)return;const showLab=labels&&n<=60;const W=720,H=showLab?420:360,mg={l:44,r:10,t:24,b:showLab?96:22};
+    const rank=new Array(n);order.forEach((i,k)=>rank[i]=k);const pos=new Array(2*n-1);for(let i=0;i<n;i++)pos[i]={x:mg.l+(rank[i]+0.5)/n*(W-mg.l-mg.r),h:0};
+    for(let i=0;i<done;i++){const r=Z[i];pos[n+i]={x:(pos[r[0]].x+pos[r[1]].x)/2,h:r[2]};}
+    const Y=h=>H-mg.b-h/maxH*(H-mg.t-mg.b);const ch=+cut.value;const labs=labelsAt(ch,done);let nc=0;for(let i=0;i<done;i++)if(Z[i][2]<=ch)nc++;nc=n-nc;
+    const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Dendrogram with a dashed cut line"});s.appendChild(sv("rect",{x:0,y:0,width:W,height:H,style:"fill:var(--sunk)"}));
+    [0,0.25,0.5,0.75,1].forEach(f=>{const h=f*maxH;s.appendChild(sv("line",{x1:mg.l,x2:W-mg.r,y1:Y(h),y2:Y(h),style:"stroke:var(--line)"}));const t=sv("text",{x:mg.l-4,y:Y(h)+4,"font-size":10,"text-anchor":"end"});t.textContent=h>=100?ind(Math.round(h)):h.toFixed(2);s.appendChild(t);});
+    const pal=PAL();const leafUnder=i=>{while(i>=n)i=Z[i-n][0];return i;};
+    for(let i=0;i<done;i++){const r=Z[i],a=pos[r[0]],b=pos[r[1]],h=r[2];const below=h<=ch;const col=below&&nc<=8?pal[labs[leafUnder(r[0])]%8]:"var(--ink)";
+      s.appendChild(sv("path",{d:`M${a.x.toFixed(1)},${Y(a.h).toFixed(1)}V${Y(h).toFixed(1)}H${b.x.toFixed(1)}V${Y(b.h).toFixed(1)}`,style:`fill:none;stroke:${col};stroke-width:${below?1.5:1.1}`}));}
+    s.appendChild(sv("line",{x1:mg.l,x2:W-mg.r,y1:Y(ch),y2:Y(ch),style:"stroke:var(--gold);stroke-width:1.5;stroke-dasharray:6 4"}));
+    if(showLab)for(let i=0;i<n;i++){const x=pos[i].x,y=H-mg.b+6;const t=sv("text",{x:x.toFixed(1),y:y,"font-size":n>36?8:10,"text-anchor":"end",transform:`rotate(-90 ${x.toFixed(1)} ${y})`,"dominant-baseline":"middle"});t.textContent=labels[i];s.appendChild(t);}
+    const tt=sv("text",{x:mg.l+6,y:mg.t-8,"font-size":11});tt.textContent=`${lk} linkage · ${done} of ${n-1} merges · cut at ${ch.toFixed(3)} → ${nc} clusters`;s.appendChild(tt);
+    box.textContent="";box.appendChild(s);cutOut.textContent=ch.toFixed(3);
+    sbStat(rd,[["Rows",ind(n)],["Merges drawn",`${done} / ${n-1}`],["Last merge height",done?Z[done-1][2].toFixed(4):"—"],["Clusters at the cut",String(nc)],["Cophenetic correlation",Number.isFinite(coph)?coph.toFixed(4):"—"]]);
+    const full=labelsAt(ch,n-1);const m=Math.max(...full)+1;const sz=new Array(m).fill(0);full.forEach(c=>sz[c]++);sizes.textContent=`Full tree cut at ${ch.toFixed(3)}: ${m} cluster(s), sizes ${sz.sort((a,b)=>b-a).slice(0,20).join(", ")}${m>20?", …":""}.`;}
+  function stop(){if(run){run.stop();run=null;}bPlay.textContent=REDUCED?"Grow tree":"Play";}
+  bPlay.addEventListener("click",()=>{if(X.length<2)return;if(REDUCED){done=X.length-1;draw();return;}if(run){stop();return;}if(done>=X.length-1)done=0;bPlay.textContent="Pause";
+    run=loop(()=>{acc+=0.25*speed;while(acc>=1&&done<X.length-1){acc-=1;done++;}draw();if(done>=X.length-1)stop();});});
+  bOne.addEventListener("click",()=>{stop();if(done<X.length-1){done++;draw();}});bReset.addEventListener("click",()=>{stop();done=REDUCED?X.length-1:0;draw();});
+  cut.addEventListener("input",draw);
+  return {set(X2,lab2){X=X2;labels=lab2||null;setup();}};
+}
+function sbDendroPanel(root){
+  SB.panel(root,"Hierarchical clustering",{
+    controls:pane=>{const N=sbNum("Customers N (of 300, max 200)",60,2,200,1),seed=sbNum("Seed",1,1,999999,1);const go=sbBtn("Use these customers");
+      pane.append(SB.text("p","A random N of the 300 sampled customers, ten z-scored columns, Euclidean distance. Leaves are labelled with customer IDs when N ≤ 60.","note"),sbRow(N,seed),go);
+      const ui=sbDendroUI(pane);const use=()=>{const id=shuffled(300,Math.round(seed.get())).slice(0,Math.round(N.get()));ui.set(id.map(i=>SUBZ[i].slice()),id.map(i=>SUBID[i]));};go.addEventListener("click",use);use();},
+    generate:pane=>{const g=sbNum("Clusters",3,1,8,1),sp=sbNum("Spread (sd)",0.7,0.05,4,0.05),n=sbNum("Points n (max 200)",60,2,200,1),seed=sbNum("Seed",4,1,999999,1);const go=sbBtn("Generate");
+      pane.append(SB.text("p","Points in two dimensions around randomly placed centres. Single linkage chains; Ward prefers compact, equal-sized groups.","note"),sbRow(g,sp,n,seed),go);
+      const ui=sbDendroUI(pane);const use=()=>{const d=sbGenClusters(Math.round(g.get()),sp.get(),Math.round(n.get()),Math.round(seed.get()));ui.set(d.X,null);};go.addEventListener("click",use);use();},
+    own:pane=>{let ui=null;sbNumForm(pane,d=>{ui.set(d.scale?sbStandardise(d.X,true).Z:d.X,d.labels);},{example:SB_NUM_EX,maxRows:200});ui=sbDendroUI(pane);}
+  },"Agglomerative clustering on up to 200 rows: the customers, generated points or your own table, with any linkage, a growing dendrogram and a movable cut.");
+}
+
 const BOARD=[
 {t:"num",q:"Diapers are in 1,427 of 20,648 orders, baby wipes in 1,426, both in 768. What is the lift of diapers → baby wipes?",a:7.793,tol:0.03,why:"Lift = supp(both) / (supp(X)·supp(Y)) = 768 × 20,648 / (1,427 × 1,426) = 7.79, the strongest pair in the file. Confidence is 768 / 1,427 = 0.538 either way, because the two items are almost equally common."},
 {t:"mcq",q:"Why can Apriori discard {curd, bananas, apples} without counting it, when {curd, bananas} is infrequent?",opts:["Every order containing all three contains curd and bananas, so the triple's support cannot exceed the pair's, which is already below the minimum","Because curd and bananas have a lift below 1","Because triples are never frequent","Because the confidence of curd → bananas is low"],a:0,why:"Support is anti-monotone: adding items can only lower it. The prune step uses this to skip every superset of an infrequent itemset, and the result is still exact."},
@@ -989,6 +1471,173 @@ const COURSE={
   L, BOARD
 };
 
+/* ---------- sandbox toolkit (shared by every module) ----------
+   Three levels of free play next to a lab:
+     1. controls on the real data   2. generate your own data   3. bring your own data
+   SAFETY: everything runs in the visitor's browser. Uploaded or pasted text is never sent anywhere,
+   never stored, never put in the URL, and never inserted as HTML: it is only parsed into numbers and
+   short labels, which are always displayed with textContent (SB.text / SB.table). Size caps keep phones responsive. */
+const SB=(function(){
+  const MAX_BYTES=2*1024*1024, MAX_ROWS=5000, MAX_COLS=50, MAX_LABEL=40;
+  const used=()=>{try{award("explorer");}catch(e){}};
+  /* safe text node helpers */
+  function text(tag,str,cls){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=String(str);return e;}
+  /* control characters, bidirectional embedding/override/isolate controls (U+202A–202E, U+2066–2069, which could
+     reorder the surrounding sentence on screen) and invisible U+200B, U+2060, U+FEFF are removed; ZWJ/ZWNJ stay (Indic scripts) */
+  function cleanLabel(s){s=String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u200b\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g,"").trim();return s.length>MAX_LABEL?s.slice(0,MAX_LABEL)+"…":s;}
+  /* parse delimited text into {header:[...], rows:[[...]], note} — all values stay plain strings */
+  function parse(str){
+    str=String(str||"");if(str.length>MAX_BYTES)str=str.slice(0,MAX_BYTES);
+    let lines=str.replace(/\r\n?/g,"\n").split("\n").map(l=>l.trim()).filter(l=>l.length);
+    let truncated=false;if(lines.length>MAX_ROWS+1){lines=lines.slice(0,MAX_ROWS+1);truncated=true;}
+    const note=()=>truncated?`Only the first ${ind(MAX_ROWS)} rows were read.`:"";
+    if(!lines.length)return{header:[],rows:[],note:"Nothing to read."};
+    // pick a delimiter that splits the first lines into the same number (>1) of fields
+    let delim=null,best=1;
+    for(const d of [",","\t",";","|"]){const c=lines.slice(0,20).map(l=>splitLine(l,d).length);if(c.every(x=>x===c[0])&&c[0]>best){best=c[0];delim=d;}}
+    if(!delim){const c=lines.slice(0,20).map(l=>l.split(/\s+/).length);if(c.every(x=>x===c[0])&&c[0]>1&&lines.length>1)delim="ws";}
+    // one line of values, or one value per line: a single column
+    if(!delim||lines.length===1){
+      const flat=(lines.length>1?lines:lines[0].split(/[\s,;\t|]+/)).map(cleanLabel).filter(x=>x.length);
+      const hasHead=flat.length>1&&isNaN(num(flat[0]))&&!isNaN(num(flat[1]));
+      const vals=(hasHead?flat.slice(1):flat).slice(0,MAX_ROWS);
+      return{header:[hasHead?flat[0]:"value"],rows:vals.map(v=>[v]),note:(flat.length>MAX_ROWS?`Only the first ${ind(MAX_ROWS)} values were read.`:note())};
+    }
+    const rows=lines.map(l=>(delim==="ws"?l.split(/\s+/):splitLine(l,delim)).slice(0,MAX_COLS).map(cleanLabel));
+    const first=rows[0];
+    const hasHead=first.some(v=>v!==""&&isNaN(num(v)))&&rows.slice(1,6).some(r=>r.some(v=>!isNaN(num(v))));
+    const width=first.length;
+    const header=hasHead?first.map((h,i)=>h||("column "+(i+1))):first.map((_,i)=>"column "+(i+1));
+    const body=(hasHead?rows.slice(1):rows).map(r=>{r=r.slice(0,width);while(r.length<width)r.push("");return r;});
+    return{header,rows:body,note:note()};
+  }
+  function splitLine(l,d){const out=[];let cur="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur="";}else cur+=ch;}out.push(cur);return out;}
+  function num(v){if(typeof v==="number")return v;const s=String(v).replace(/[₹$€£,\s]/g,"");if(s===""||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?%?$/.test(s))return NaN;let x=parseFloat(s);if(s.endsWith("%"))x/=100;return isFinite(x)?x:NaN;}
+  function column(t,i){return t.rows.map(r=>r[i]);}
+  function numeric(vals){const out=[];let dropped=0;vals.forEach(v=>{const x=num(v);if(Number.isFinite(x))out.push(x);else dropped++;});return{values:out,dropped};}
+  function isNumericCol(t,i){const c=column(t,i).filter(v=>v!=="");return c.length>0&&c.filter(v=>!isNaN(num(v))).length/c.length>=0.8;}
+  function readFile(file,cb){if(!file)return;if(file.size>MAX_BYTES){cb(null,`That file is ${(file.size/1048576).toFixed(1)} MB; the limit is 2 MB. Use a smaller extract.`);return;}
+    const fr=new FileReader();fr.onload=()=>cb(String(fr.result||""),null);fr.onerror=()=>cb(null,"The file could not be read.");fr.readAsText(file);}
+  /* random generators (seeded) */
+  function normal(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  const GEN={
+    normal:{label:"Normal",params:[["mean",50],["sd",10]],draw:(r,p)=>p.mean+p.sd*normal(r)},
+    lognormal:{label:"Lognormal (right-skewed)",params:[["median",500],["spread σ",0.6]],draw:(r,p)=>p.median*Math.exp(p["spread σ"]*normal(r))},
+    exponential:{label:"Exponential",params:[["mean",10]],draw:(r,p)=>-p.mean*Math.log(1-r())},
+    uniform:{label:"Uniform",params:[["min",0],["max",100]],draw:(r,p)=>p.min+(p.max-p.min)*r()},
+    bimodal:{label:"Two humps (mixture)",params:[["mean 1",30],["mean 2",70],["sd",8],["share of hump 1",0.5]],draw:(r,p)=>(r()<p["share of hump 1"]?p["mean 1"]:p["mean 2"])+p.sd*normal(r)},
+    poisson:{label:"Poisson (counts)",params:[["mean λ",4]],draw:(r,p)=>{const L=Math.exp(-p["mean λ"]);let k=0,q=1;do{k++;q*=r();}while(q>L&&k<1000);return k-1;}},
+    binomial:{label:"Binomial (successes in n)",params:[["n trials",20],["p",0.3]],draw:(r,p)=>{let k=0;const n=Math.min(1000,Math.max(1,Math.round(p["n trials"])));for(let i=0;i<n;i++)if(r()<p.p)k++;return k;}}
+  };
+  function generate(kind,params,n,seed){const g=GEN[kind];const r=rng(seed||1);const out=[];n=Math.max(1,Math.min(MAX_ROWS,Math.round(n)));for(let i=0;i<n;i++)out.push(g.draw(r,params));return out;}
+  /* UI: a tabbed sandbox panel. levels = {controls:fn(el), generate:fn(el), own:fn(el)} — each optional */
+  function panel(root,title,levels,intro){
+    const box=el("div",{class:"sandbox"});
+    const head=el("div",{class:"sb-head"});head.appendChild(text("span","Sandbox · "+title,"eyebrow"));
+    const tabs=el("div",{class:"seg sb-tabs",role:"tablist","aria-label":"Sandbox mode"});
+    head.appendChild(tabs);box.appendChild(head);
+    if(intro)box.appendChild(text("p",intro,"note"));
+    const body=el("div",{class:"sb-body"});box.appendChild(body);
+    const defs=[["controls","Real data"],["generate","Generate"],["own","Your data"]].filter(([k])=>levels[k]);
+    const panes={};
+    defs.forEach(([k,lab],i)=>{const b=el("button",{type:"button",role:"tab","aria-pressed":i===0?"true":"false"});b.textContent=lab;tabs.appendChild(b);
+      const p=el("div",{class:"sb-pane"});p.hidden=i!==0;body.appendChild(p);panes[k]={b,p,built:false};
+      b.addEventListener("click",()=>{defs.forEach(([kk])=>{panes[kk].p.hidden=kk!==k;panes[kk].b.setAttribute("aria-pressed",kk===k);});if(!panes[k].built){panes[k].built=true;levels[k](p);}used();});});
+    if(defs.length){const k=defs[0][0];panes[k].built=true;levels[k](panes[k].p);}
+    root.appendChild(box);return box;
+  }
+  /* generator form: returns {el, get()} */
+  function genForm(kinds,defaults){
+    kinds=kinds||Object.keys(GEN);defaults=defaults||{};
+    const wrap=el("div",{class:"ctrl"});
+    const sel=el("select",{"aria-label":"Shape"});kinds.forEach(k=>{const o=el("option",{value:k});o.textContent=GEN[k].label;sel.appendChild(o);});
+    if(defaults.kind)sel.value=defaults.kind;
+    const params=el("div",{class:"sb-params"});
+    const nIn=el("input",{type:"number",min:"1",max:String(MAX_ROWS),step:"1",value:String(defaults.n||200),"aria-label":"How many values"});
+    const seedIn=el("input",{type:"number",min:"1",max:"999999",step:"1",value:String(defaults.seed||1),"aria-label":"Random seed"});
+    function drawParams(){params.innerHTML="";GEN[sel.value].params.forEach(([name,def])=>{const lab=el("label");lab.appendChild(text("span",name));const i=el("input",{type:"number",step:"any",value:String((defaults.params&&defaults.params[name]!=null)?defaults.params[name]:def)});i.dataset.p=name;lab.appendChild(i);params.appendChild(lab);});}
+    sel.addEventListener("change",drawParams);drawParams();
+    const row=el("div",{class:"sb-params"});
+    const l1=el("label");l1.appendChild(text("span","Shape"));l1.appendChild(sel);
+    const l2=el("label");l2.appendChild(text("span","How many values (n)"));l2.appendChild(nIn);
+    const l3=el("label");l3.appendChild(text("span","Seed"));l3.appendChild(seedIn);
+    row.append(l1,l2,l3);wrap.append(row,params);
+    return{el:wrap,get(){const p={};params.querySelectorAll("input").forEach(i=>{const v=parseFloat(i.value);p[i.dataset.p]=Number.isFinite(v)?v:0;});return{kind:sel.value,params:p,n:Math.max(1,Math.min(MAX_ROWS,parseInt(nIn.value)||1)),seed:Math.max(1,parseInt(seedIn.value)||1)};},
+      values(){const g=this.get();return generate(g.kind,g.params,g.n,g.seed);}};
+  }
+  /* your-data form: textarea + file input + column pickers by role.
+     roles: [{key, label, type:"num"|"cat"|"any", optional}]  onData(dataObj, info) where dataObj[key] = array */
+  function dataForm(root,roles,onData,opts){
+    opts=opts||{};
+    const wrap=el("div",{class:"ctrl"});
+    wrap.appendChild(text("p",opts.help||"Paste numbers (one per line, or separated by commas or spaces), or a small table with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared.","note"));
+    const ta=el("textarea",{rows:"6","aria-label":"Paste your data",spellcheck:"false",placeholder:opts.placeholder||"e.g.\n12\n15\n9\n31\n14"});
+    const file=el("input",{type:"file",accept:".csv,.tsv,.txt,text/csv,text/plain","aria-label":"Choose a CSV file"});
+    const row=el("div",{class:"btnrow"});const go=el("button",{class:"btn small",type:"button"});go.textContent="Use this data";
+    const ex=el("button",{class:"btn ghost small",type:"button"});ex.textContent="Load an example";
+    row.append(go,ex,file);
+    const picks=el("div",{class:"sb-params"});const msg=el("p",{class:"note",role:"status"});
+    wrap.append(ta,row,picks,msg);root.appendChild(wrap);
+    let table=null;
+    function say(s){msg.textContent=s;}
+    function build(){
+      picks.innerHTML="";const sels={};
+      if(!table||!table.rows.length){say("No rows found.");return;}
+      if(roles.length>1||table.header.length>1){
+        roles.forEach((ro,ri)=>{const lab=el("label");lab.appendChild(text("span",ro.label+(ro.optional?" (optional)":"")));const s=el("select");
+          if(ro.optional){const o=el("option",{value:"-1"});o.textContent="none";s.appendChild(o);}
+          table.header.forEach((h,i)=>{const o=el("option",{value:String(i)});o.textContent=h;s.appendChild(o);});
+          let guess=ri<table.header.length?ri:0;if(ro.type==="num"){const ni=table.header.findIndex((h,i)=>isNumericCol(table,i)&&!Object.values(sels).some(x=>+x.value===i));if(ni>=0)guess=ni;}
+          if(ro.type==="cat"){const ci=table.header.findIndex((h,i)=>!isNumericCol(table,i));if(ci>=0)guess=ci;}
+          s.value=ro.optional&&table.header.length<=ri?"-1":String(guess);s.addEventListener("change",emit);lab.appendChild(s);picks.appendChild(lab);sels[ro.key]=s;});
+      } else roles.forEach(ro=>{sels[ro.key]={value:"0"};});
+      table._sels=sels;emit();
+    }
+    function emit(){
+      if(!table)return;const sels=table._sels;const out={};let n=table.rows.length,dropped=0;
+      const keep=table.rows.map(()=>true);
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0){out[ro.key]=null;return;}const col=column(table,v);
+        if(ro.type==="num")col.forEach((x,i)=>{if(!Number.isFinite(num(x)))keep[i]=false;});
+        else col.forEach((x,i)=>{if(x==="")keep[i]=false;});});
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0)return;const col=column(table,v).filter((_,i)=>keep[i]);out[ro.key]=ro.type==="num"?col.map(num):col.map(cleanLabel);});
+      dropped=keep.filter(k=>!k).length;
+      const used_n=n-dropped;
+      if(used_n<(opts.minRows||2)){say(`Only ${used_n} usable row(s); at least ${opts.minRows||2} are needed.`);return;}
+      say(`Read ${ind(n)} row(s); using ${ind(used_n)}`+(dropped?`, skipped ${ind(dropped)} blank or non-numeric.`:".")+(table.note?" "+table.note:""));
+      used();onData(out,{n:used_n,dropped});
+    }
+    go.addEventListener("click",()=>{table=parse(ta.value);build();});
+    ex.addEventListener("click",()=>{ta.value=opts.example||"12\n15\n9\n31\n14\n18\n11\n16\n90\n13";table=parse(ta.value);build();});
+    file.addEventListener("change",()=>{readFile(file.files[0],(txt,err)=>{if(err){say(err);return;}ta.value=txt.length>20000?txt.slice(0,20000)+"\n…":txt;table=parse(txt);build();});});
+    return{set(str){ta.value=str;table=parse(str);build();}};
+  }
+  /* safe table renderer for user data (textContent only) */
+  function table(headers,rows){const w=el("div",{class:"tbl"});const t=document.createElement("table");const th=document.createElement("thead");const tr=document.createElement("tr");headers.forEach(h=>tr.appendChild(text("th",h)));th.appendChild(tr);t.appendChild(th);const tb=document.createElement("tbody");rows.forEach(r=>{const rr=document.createElement("tr");r.forEach((c,i)=>rr.appendChild(text("td",c,i?"num":"")));tb.appendChild(rr);});t.appendChild(tb);w.appendChild(t);return w;}
+  /* common statistics used by many sandboxes */
+  const st={
+    sorted:a=>[...a].sort((x,y)=>x-y),
+    mean:a=>a.reduce((s,x)=>s+x,0)/a.length,
+    q:(a,p)=>{const s=[...a].sort((x,y)=>x-y);const h=(s.length-1)*p;const lo=Math.floor(h);return s[lo]+(s[Math.min(lo+1,s.length-1)]-s[lo])*(h-lo);},
+    sd:a=>{const m=a.reduce((s,x)=>s+x,0)/a.length;return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));},
+    corr:(x,y)=>{const n=x.length,mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}return sxy/Math.sqrt(sxx*syy);}
+  };
+  /* a reusable histogram drawer (SVG) for any numeric array */
+  function histogram(container,values,o){
+    o=o||{};container.innerHTML="";if(!values.length)return;
+    const W=o.w||360,H=o.h||200,m={l:36,r:10,t:14,b:30};const s=st.sorted(values);let lo=o.lo!=null?o.lo:s[0],hi=o.hi!=null?o.hi:s[s.length-1];if(hi===lo){hi=lo+1;}
+    const k=o.bins||Math.max(5,Math.min(60,Math.ceil(Math.log2(values.length)+1)));const bw=(hi-lo)/k;const c=new Array(k).fill(0);
+    values.forEach(v=>{let i=Math.floor((v-lo)/bw);if(i>=k)i=k-1;if(i<0)i=0;c[i]++;});const mx=Math.max(...c);
+    const X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r),Y=v=>H-m.b-v/mx*(H-m.t-m.b);
+    const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label||"Histogram"});
+    svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(0),y2:Y(0),style:"stroke:var(--line)"}));
+    c.forEach((v,i)=>svg.appendChild(sv("rect",{x:X(lo+i*bw)+0.5,y:Y(v),width:Math.max(0.5,X(lo+(i+1)*bw)-X(lo+i*bw)-1),height:Y(0)-Y(v),style:"fill:var(--accent)"})));
+    [lo,(lo+hi)/2,hi].forEach((v,i)=>{const t=sv("text",{x:X(v),y:H-10,"font-size":10,"text-anchor":i===0?"start":i===2?"end":"middle"});t.textContent=Math.abs(v)>=1000?ind(Math.round(v)):(+v.toFixed(2)).toString();svg.appendChild(t);});
+    (o.marks||[]).forEach(([v,lab,col],i)=>{if(v<lo||v>hi)return;svg.appendChild(sv("line",{x1:X(v),x2:X(v),y1:m.t,y2:Y(0),style:`stroke:${col||"var(--gold)"};stroke-width:2;stroke-dasharray:4 3`}));const t=sv("text",{x:X(v)+3,y:m.t+10+12*i,"font-size":10});t.textContent=lab;svg.appendChild(t);});
+    container.appendChild(svg);
+  }
+  return{parse,num,numeric,column,isNumericCol,readFile,GEN,generate,panel,genForm,dataForm,table,text,histogram,st,used,MAX_ROWS};
+})();
+
 /* ---------- helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
 const el=(tag,attrs={},html)=>{const e=document.createElement(tag);for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),attrs[k]);else e.setAttribute(k,attrs[k]);}if(html!==undefined)e.innerHTML=html;return e;};
@@ -1020,7 +1669,7 @@ try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.pars
 const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
 
 const RANKS=COURSE.ranks;
-const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["explorer","Sandbox Explorer","Opened a sandbox and played with your own settings or data"],["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
 
 function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
 function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}

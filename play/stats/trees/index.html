@@ -197,6 +197,17 @@ td.num{font-family:var(--mono)}
 .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .sheet .formula{font-size:.84rem}
 .sheet h3{font-size:1rem;margin-bottom:6px}
+.sandbox{border:1px dashed var(--accent);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;background:var(--sunk);min-width:0;margin-top:14px}
+.sb-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.sb-head .eyebrow{color:var(--accent)}
+.sb-tabs button{border:0;background:transparent;padding:5px 12px;font:600 .8rem/1.2 var(--mono)}
+.sb-tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.sb-pane{display:grid;gap:10px;min-width:0}
+.sb-params{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.sb-params label{display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.sb-params input,.sb-params select{width:9.5em;max-width:100%}
+.sandbox textarea{width:100%;max-width:100%;font:400 .88rem/1.4 var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+.sandbox input[type=file]{font-size:.82rem;max-width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -433,7 +444,7 @@ gain = I(parent) − I(split)</div>
 <p><span class="term">Numeric splits</span>: sort the values and try the midpoints between consecutive distinct values, n − 1 cuts at most. <span class="term">Categorical splits</span>: a variable with c categories has 2<sup>c−1</sup> − 1 ways to be divided into two groups. For a yes/no outcome there is a shortcut (Breiman et al., 1984): order the categories by their default rate; the best split is one of the c − 1 cuts along that order.</p>
 <p>Gini and entropy are smooth and strictly concave in p, so any split that makes the children purer lowers them. The misclassification error is piecewise linear: it only moves when a split flips a child's majority class. That is why trees are <em>grown</em> with Gini or entropy, which usually pick the same splits, and misclassification is kept for judging the final tree.</p>`,
 refs:"ISLR (2021), §8.1.2 · ESL (2009), §9.2.3–9.2.4 · Quinlan, <i>Machine Learning</i> 1 (1986) 81–106 (ID3) · Shannon, <i>Bell System Technical Journal</i> 27 (1948) · Breiman et al. (1984), ch. 4.",
-lab:labGrow,
+lab:r=>{labGrow(r);sbImpurity(r);},
 qs:[
 {t:"num",ph:"e.g. 0.3",q:"Of the 4,200 training loans, 712 defaulted. What is the Gini index of the root node?",a:0.2816,tol:0.001,
  hint:"G = 2p(1 − p) with p = 712 / 4,200.",why:"p = 0.1695, so G = 2 × 0.1695 × 0.8305 = 0.2816. Entropy is 0.6566 bits and misclassification 0.1695 for the same node."},
@@ -459,7 +470,7 @@ weakest link: g(t) = [R(t) − R(T_t)] / (|T_t| − 1)</div>
 <p>α is chosen by <span class="term">K-fold cross-validation</span> on the training loans (here K = 5): for each α, grow and prune on four folds, measure the error on the fifth, average. Take the α with the lowest cross-validation (CV) error, or the <span class="term">one-standard-error (1-SE) rule</span>: the simplest tree whose CV error is within one standard error of that minimum. Simpler <span class="term">stopping rules</span> (a maximum depth, a minimum leaf size) are cheaper but short-sighted: a weak split can open the way to a strong one below it.</p>
 <p><span class="term">Regression trees</span> work the same way for a numeric outcome (say, the amount recovered on a loan): a leaf predicts the mean of its training values, and splits minimise the residual sum of squares, RSS = Σₘ Σ<sub>i∈Rₘ</sub> (yᵢ − ȳₘ)².</p>`,
 refs:"ISLR (2021), §8.1.1 (pruning, Algorithm 8.1) and §5.1 (cross-validation) · ESL (2009), §9.2.2 · Breiman et al. (1984), ch. 3.",
-lab:labPrune,
+lab:r=>{labPrune(r);sbGrow(r);},
 qs:[
 {t:"num",ph:"e.g. 30",q:"Choose α by five-fold cross-validation (the lowest CV error on the pruning path). How many leaves does the chosen tree have?",a:10,tol:0.01,
  hint:"Press \"Jump to CV minimum\" in the lab.",why:"α = 0.00106 gives a 10-leaf tree with CV error 0.1329. On the 1,800 test loans it errs 13.7% of the time (AUC, area under the ROC curve, 0.847), against 20.2% for the full 485-leaf tree."},
@@ -538,7 +549,7 @@ P(a loan is in a bootstrap sample) = 1 − (1 − 1/n)ⁿ ≈ 0.632</div>
 <p>When one predictor dominates (here the EMI ratio), every bagged tree asks it first and the trees are highly correlated. A <span class="term">random forest</span> (Breiman, 2001) considers only a random subset of m of the p predictors at each split, typically m ≈ √p for classification. Some trees must start with something else, the trees become less alike, ρ falls, and the average improves more. The number of trees B is not a tuning knob for overfitting: more trees only make the average more stable, and the OOB error falls and flattens.</p>
 <p>Settings here: 500 trees, at least 5 loans per leaf, p = 25 columns (the three categorical variables coded as one indicator column per category), m = 5 for the forest and m = 25 (all) for bagging.</p>`,
 refs:"ISLR (2021), §8.2.1–8.2.2 · ESL (2009), §8.7 and ch. 15 · Breiman, <i>Machine Learning</i> 24 (1996) 123–140 · Breiman, <i>Machine Learning</i> 45 (2001) 5–32 · Efron, <i>Annals of Statistics</i> 7 (1979) 1–26 · Efron & Tibshirani, <i>An Introduction to the Bootstrap</i> (1993).",
-lab:labForest,
+lab:r=>{labForest(r);sbForest(r);},
 qs:[
 {t:"num",ph:"e.g. 0.5",q:"With n = 4,200 training loans, what is the probability that a given loan appears at least once in a bootstrap sample?",a:0.6322,tol:0.002,
  hint:"1 − (1 − 1/n)ⁿ.",why:"1 − (1 − 1/4,200)^4,200 = 0.6322, close to 1 − 1/e. The first tree of the forest saw 63.3% of the loans; the other 36.7% are its out-of-bag loans."},
@@ -923,6 +934,253 @@ function labRespons(root){
   fair();upd();
 }
 
+/* ---------- sandboxes: free play next to Files 2, 3 and 6 (no XP; the challenges stay on the fixed data) ----------
+   SAFETY: pasted text is only parsed into numbers and short labels; labels reach the page only through
+   textContent (SB.text, SB.table, SVG <text>.textContent). Nothing pasted is stored. */
+const SBX_ROWS=2000,SBX_TREES=100,SBX_NODES=4000;
+const SBX_EX="defaulted,emi_ratio,income_k,occupation,group_loan,late_before,age\nno,0.392,22.1,vegetable vending,yes,1,20\nyes,0.269,10.4,tailoring,no,1,43\nyes,0.38,7.5,tailoring,yes,1,41\nno,0.12,23.1,dairy farming,no,0,41\nyes,0.639,12.1,small shop,no,0,28\nyes,0.693,14.2,daily wage,yes,0,50\nno,0.098,27.4,tailoring,yes,0,56\nyes,0.289,20.8,small shop,yes,2,47\nyes,0.527,17.5,dairy farming,yes,0,59\nno,0.261,20.4,small shop,yes,0,53\nno,0.423,10.9,vegetable vending,no,0,23\nyes,0.327,18.2,dairy farming,no,0,51\nyes,0.555,20.6,dairy farming,yes,2,44\nyes,0.673,18.2,vegetable vending,no,1,43\nyes,0.629,13.0,dairy farming,yes,0,28\nyes,0.457,3.8,tailoring,no,0,33\nno,0.163,17.0,vegetable vending,yes,1,34\nyes,0.666,14.6,dairy farming,yes,0,24\nno,0.075,12.3,tailoring,no,0,33\nno,0.251,18.4,small shop,no,0,26\nno,0.24,15.4,tailoring,yes,0,38\nno,0.49,15.0,vegetable vending,no,1,54\nno,0.372,8.3,dairy farming,yes,1,49\nno,0.119,8.4,vegetable vending,no,0,30\nno,0.068,15.9,small shop,no,1,43\nyes,0.447,14.4,dairy farming,yes,1,55\nno,0.375,14.7,dairy farming,no,0,57\nyes,0.445,14.8,dairy farming,yes,0,32\nyes,0.421,16.2,tailoring,no,1,32\nyes,0.63,14.2,daily wage,no,0,22\nyes,0.648,14.8,dairy farming,no,2,50\nyes,0.18,15.3,vegetable vending,no,0,31\nyes,0.663,19.4,dairy farming,yes,0,34\nyes,0.564,11.7,daily wage,no,1,35\nyes,0.469,18.4,daily wage,no,1,23\nno,0.482,17.5,small shop,yes,0,24\nyes,0.409,14.5,tailoring,yes,2,43\nyes,0.647,11.9,small shop,yes,1,37\nno,0.209,15.9,tailoring,yes,0,33\nyes,0.444,18.9,small shop,no,1,51\nyes,0.581,9.6,vegetable vending,yes,0,28\nno,0.146,14.3,daily wage,no,2,36\nno,0.454,14.3,tailoring,yes,0,32\nyes,0.318,11.1,daily wage,yes,0,39\nyes,0.55,11.3,small shop,yes,2,25\nyes,0.103,8.1,dairy farming,no,0,59\nno,0.448,9.5,vegetable vending,yes,0,31\nyes,0.609,8.2,tailoring,yes,1,28\nno,0.462,11.3,daily wage,yes,0,47\nyes,0.266,11.5,daily wage,yes,0,41\nyes,0.48,11.6,vegetable vending,no,0,49\nno,0.276,15.9,small shop,yes,0,59\nyes,0.488,13.1,tailoring,no,1,47\nyes,0.142,10.8,tailoring,no,2,39\nno,0.239,10.9,daily wage,no,2,32\nno,0.081,9.4,daily wage,yes,1,43\nno,0.114,13.1,small shop,no,1,56\nyes,0.415,13.0,daily wage,yes,0,41\nno,0.208,24.7,dairy farming,no,2,42\nno,0.39,24.0,small shop,yes,0,24\nno,0.482,23.5,vegetable vending,yes,1,37\nyes,0.624,29.0,small shop,yes,2,48\nno,0.287,9.1,vegetable vending,no,0,52\nno,0.264,17.7,vegetable vending,yes,1,56\nno,0.261,18.3,vegetable vending,no,1,45\nno,0.135,16.5,dairy farming,yes,2,57\nyes,0.484,29.5,daily wage,no,0,22\nno,0.585,34.0,dairy farming,yes,1,43\nyes,0.363,19.7,small shop,yes,0,30\nyes,0.417,17.6,small shop,no,0,34\nyes,0.673,9.5,daily wage,yes,2,57\nno,0.507,9.5,vegetable vending,yes,0,47\nno,0.537,17.9,dairy farming,yes,0,37\nyes,0.629,13.6,daily wage,yes,0,57\nno,0.198,8.8,daily wage,yes,0,35\nyes,0.476,13.4,daily wage,yes,1,59\nyes,0.519,15.9,daily wage,yes,1,31\nyes,0.599,19.4,vegetable vending,no,0,31\nno,0.28,13.5,tailoring,no,0,45\nyes,0.501,12.7,small shop,yes,0,57\nyes,0.447,14.0,daily wage,no,2,23\nno,0.322,14.9,dairy farming,yes,0,49\nno,0.125,9.3,daily wage,no,0,36\nno,0.286,18.7,small shop,yes,1,54\nno,0.677,30.1,tailoring,no,1,51\nno,0.199,18.6,small shop,no,0,26\nno,0.133,8.4,tailoring,yes,1,46\nno,0.295,14.5,dairy farming,no,2,59\nyes,0.125,7.5,daily wage,no,2,25\nno,0.231,7.4,small shop,no,0,50\nyes,0.645,17.6,daily wage,yes,1,24\nyes,0.264,14.4,daily wage,yes,1,26\nyes,0.435,11.0,daily wage,yes,0,30\nyes,0.213,6.7,daily wage,yes,1,41\nyes,0.488,9.0,dairy farming,yes,2,51\nno,0.142,14.8,tailoring,no,2,24\nno,0.565,14.2,tailoring,yes,2,21\nyes,0.331,17.8,dairy farming,no,0,48\nno,0.178,23.9,vegetable vending,yes,0,32\nyes,0.545,12.4,daily wage,no,2,43\nno,0.415,16.5,daily wage,yes,0,36\nno,0.34,13.3,dairy farming,no,0,43\nno,0.214,11.8,tailoring,no,0,33\nyes,0.56,12.9,small shop,no,0,53\nno,0.294,19.6,small shop,yes,0,24\nno,0.088,9.8,daily wage,yes,0,50\nyes,0.678,20.9,dairy farming,no,2,37\nno,0.079,23.5,daily wage,no,0,23\nno,0.137,14.2,vegetable vending,yes,1,56\nno,0.358,15.3,daily wage,no,0,50\nno,0.193,8.5,tailoring,yes,0,26\nno,0.274,32.0,dairy farming,yes,2,41\nyes,0.423,19.7,dairy farming,no,2,26\nyes,0.673,14.9,daily wage,no,0,27\nno,0.659,14.3,vegetable vending,yes,0,31\nyes,0.107,16.4,daily wage,yes,0,33\nyes,0.606,11.1,dairy farming,yes,1,59\nno,0.167,15.5,tailoring,yes,2,40\nno,0.579,10.1,tailoring,no,0,36\nyes,0.25,16.7,dairy farming,no,0,54";
+const SBX_EXI=(()=>{const a=["low EMI","high EMI"];const rows=["emi_band,outcome"];[[0,"repaid",19],[0,"defaulted",3],[1,"repaid",8],[1,"defaulted",10]].forEach(([g,o,k])=>{for(let i=0;i<k;i++)rows.push(a[g]+","+o);});
+  const r=rng(41);const body=rows.slice(1);for(let k=body.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[body[k],body[j]]=[body[j],body[k]];}return [rows[0]].concat(body).join("\n");})();
+const SBX_POS=["1","yes","y","true","default","defaulted","bad","fail","failed","late","churn","positive"];
+function sbShuf(a,r){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(r()*(k+1));const t=a[k];a[k]=a[j];a[j]=t;}return a;}
+const sbCmp=(a,b)=>a<b?-1:a>b?1:0;
+/* best binary split of one variable inside the rows ix (CART). Numeric: midpoints between consecutive distinct values.
+   Categorical: categories ordered by their class-1 rate in this node, then the c − 1 cuts along that order
+   (Breiman et al. 1984, sec. 4.2.2: for a two-class target this finds the best of all 2^(c−1) − 1 groupings).
+   Returns undefined if the variable is constant in the node, null if no cut leaves minleaf rows on each side. */
+function sbBestSplit(cols,y,ix,f,I,minleaf){
+  const c=cols[f],n=ix.length;let t1=0;for(const i of ix)t1+=y[i];
+  const W=(nL,n1L)=>(nL*I(n1L,nL)+(n-nL)*I(t1-n1L,n-nL))/n;let b=null;
+  if(c.type==="num"){const s=ix.slice().sort((a,z)=>c.v[a]-c.v[z]);if(c.v[s[0]]===c.v[s[n-1]])return undefined;
+    let nL=0,n1L=0;for(let k=0;k<n-1;k++){nL++;n1L+=y[s[k]];const a=c.v[s[k]],z=c.v[s[k+1]];if(z<=a||nL<minleaf||n-nL<minleaf)continue;
+      const w=W(nL,n1L);if(!b||w<b.w-1e-12)b={w,t:a/2+z/2,nL,n1L};}return b;}
+  const m=new Map();for(const i of ix){const k=c.v[i];let e=m.get(k);if(!e){e=[0,0];m.set(k,e);}e[0]++;e[1]+=y[i];}
+  if(m.size<2)return undefined;
+  const ks=[...m.keys()].sort((a,z)=>{const ea=m.get(a),ez=m.get(z);return (ea[1]/ea[0]-ez[1]/ez[0])||sbCmp(a,z);});
+  let nL=0,n1L=0;for(let k=0;k<ks.length-1;k++){const e=m.get(ks[k]);nL+=e[0];n1L+=e[1];if(nL<minleaf||n-nL<minleaf)continue;
+    const w=W(nL,n1L);if(!b||w<b.w-1e-12)b={w,left:ks.slice(0,k+1),right:ks.slice(k+1),nL,n1L};}return b;}
+/* grow a CART tree: o = {depth, minleaf, crit, feats, mtry?, r?}. With mtry, each node tries mtry variables drawn at random
+   (a variable that is constant in the node does not count, as in scikit-learn). Variables in order; first strict minimum wins. */
+function sbFit(cols,y,ix,o){const I=o.crit==="entropy"?ent2:gini2;let count=0;
+  function grow(ix,d){let n1=0;for(const i of ix)n1+=y[i];const n=ix.length;const nd={n,n1,d};count++;
+    if(d>=o.depth||n<2*o.minleaf||n<2||n1===0||n1===n||count>SBX_NODES)return nd;
+    let b=null;const take=f=>{const c=sbBestSplit(cols,y,ix,f,I,o.minleaf);if(c&&(!b||c.w<b.w-1e-12))b=Object.assign({f},c);return c;};
+    if(o.mtry&&o.mtry<o.feats.length){let seen=0;for(const f of sbShuf(o.feats,o.r)){if(seen>=o.mtry)break;if(take(f)!==undefined)seen++;}}
+    else o.feats.forEach(take);
+    if(!b)return nd;const c=cols[b.f],L=[],R=[];
+    if(c.type==="num"){for(const i of ix)(c.v[i]<=b.t?L:R).push(i);nd.t=b.t;}
+    else{const ls=new Set(b.left);for(const i of ix)(ls.has(c.v[i])?L:R).push(i);nd.left=ls;nd.right=new Set(b.right);}
+    nd.f=b.f;nd.drop=I(n1,n)-b.w;nd.L=grow(L,d+1);nd.R=grow(R,d+1);return nd;}
+  return grow(ix,0);}
+// the leaf a row lands in; an unseen category goes to the larger child
+function sbLeaf(nd,cols,i){while(nd.L){const c=cols[nd.f],v=c.v[i];nd=c.type==="num"?(v<=nd.t?nd.L:nd.R):(nd.left.has(v)?nd.L:nd.right.has(v)?nd.R:(nd.L.n>=nd.R.n?nd.L:nd.R));}return nd;}
+function sbAcc(tree,cols,y,ix){if(!ix.length)return NaN;let ok=0;for(const i of ix){const l=sbLeaf(tree,cols,i);if((l.n1/l.n>0.5?1:0)===y[i])ok++;}return ok/ix.length;}
+const sbNum=t=>String(+(+t).toPrecision(5));
+function sbCond(nd,cols,names,yes){const nm=names[nd.f];if(cols[nd.f].type==="num")return `${nm} ${yes?"≤":">"} ${sbNum(nd.t)}`;return `${nm} ∈ {${[...(yes?nd.left:nd.right)].join(", ")}}`;}
+const sbCut=(s,k)=>s.length>k?s.slice(0,k-1)+"…":s;
+/* draw a tree as SVG; every label is set with textContent */
+function sbTreeSVG(host,root,cols,names,posName){host.textContent="";host.style.minWidth="0";const lv=leavesOf(root),D=depthOf(root);
+  if(lv.length>32){host.appendChild(SB.text("p",`The tree has ${lv.length} leaves, too many to draw legibly; its rules are listed below.`,"note"));return;}
+  const SP=64,W=Math.max(340,lv.length*SP+16),H=D*62+64;let k=0;const pos=new Map();
+  const walk=nd=>{if(isLeaf(nd)){pos.set(nd,{x:8+SP/2+SP*k++,y:22+nd.d*62});return;}walk(nd.L);walk(nd.R);pos.set(nd,{x:(pos.get(nd.L).x+pos.get(nd.R).x)/2,y:22+nd.d*62});};walk(root);
+  const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"The grown tree: split questions at the nodes, leaves coloured by the predicted class",style:`display:block;width:${W<=360?"100%":W+"px"};height:auto;max-width:none`});
+  const T=(x,y,s,o={})=>{const t=sv("text",Object.assign({x,y,"font-size":o.fs||9,"text-anchor":o.a||"middle",style:`fill:var(${o.col||"--ink"});font-family:var(--mono)`},o.attr||{}));t.textContent=s;svg.appendChild(t);return t;};
+  const rec=nd=>{const p=pos.get(nd);if(isLeaf(nd))return;[nd.L,nd.R].forEach((ch,i)=>{const q=pos.get(ch);svg.appendChild(sv("line",{x1:p.x,y1:p.y,x2:q.x,y2:q.y-9,style:"stroke:var(--line);stroke-width:1.3"}));T((p.x+q.x)/2+(i?9:-9),(p.y+q.y)/2,i?"no":"yes",{fs:8,col:"--muted"});rec(ch);});};rec(root);
+  pos.forEach((p,nd)=>{if(isLeaf(nd)){const pr=nd.n1/nd.n;svg.appendChild(sv("rect",{x:p.x-26,y:p.y-9,width:52,height:30,rx:4,style:`fill:var(${pr>0.5?"--fraud":"--ok"});fill-opacity:${(0.18+0.5*Math.min(1,Math.abs(pr-0.5)*2)).toFixed(2)};stroke:var(--muted)`}));
+      T(p.x,p.y+4,Math.round(100*pr)+"%");T(p.x,p.y+16,"n "+nd.n,{fs:8,col:"--muted"});}
+    else{svg.appendChild(sv("circle",{cx:p.x,cy:p.y,r:5,style:"fill:var(--surface);stroke:var(--accent);stroke-width:1.5"}));const full=sbCond(nd,cols,names,true);const t=T(p.x,p.y-9,sbCut(full,20));const tt=sv("title",{});tt.textContent=full;t.appendChild(tt);}});
+  const wrap=el("div",{style:"overflow-x:auto;max-width:100%"});wrap.appendChild(svg);host.appendChild(wrap);if(W>360)requestAnimationFrame(()=>{wrap.scrollLeft=Math.max(0,(pos.get(root).x)-wrap.clientWidth/2);});
+  host.appendChild(SB.text("p",`Each node asks its question of a row: yes goes left. Leaves show the share of “${sbCut(posName,24)}” and the number of training rows.`,"note"));}
+function sbRules(host,root,cols,names,posName){host.textContent="";const ul=el("ul",{style:"margin:0;padding-left:18px;font-size:.84rem"});
+  const walk=(nd,cs)=>{if(isLeaf(nd)){ul.appendChild(SB.text("li",`IF ${cs.length?cs.join(" AND "):"any row"} THEN ${pct(nd.n1/nd.n,0)} ${posName} (${nd.n1} of ${nd.n}) → predict ${nd.n1/nd.n>0.5?"1":"0"}`));return;}
+    walk(nd.L,cs.concat(sbCond(nd,cols,names,true)));walk(nd.R,cs.concat(sbCond(nd,cols,names,false)));};walk(root,[]);host.appendChild(ul);}
+/* shared controls: depth, minimum leaf size, criterion */
+function sbParams(host,def){const row=el("div",{class:"sb-params"});
+  const mk=(lab,inp)=>{const l=el("label");l.appendChild(SB.text("span",lab));l.appendChild(inp);row.appendChild(l);return inp;};
+  const dep=mk("Maximum depth",el("select",{},[1,2,3,4,5,6].map(d=>`<option value="${d}"${d===def.depth?" selected":""}>${d}</option>`).join("")));
+  const ml=mk("Minimum leaf size",el("input",{type:"number",min:"1",max:"500",step:"1",value:String(def.minleaf)}));
+  const cr=mk("Criterion",el("select",{},`<option value="gini">Gini index</option><option value="entropy">entropy</option>`));
+  host.appendChild(row);return ()=>({depth:+dep.value,minleaf:Math.max(1,Math.min(500,parseInt(ml.value)||1)),crit:cr.value});}
+function sbNumIn(host,lab,val,min,max,step){const l=el("label");l.appendChild(SB.text("span",lab));const i=el("input",{type:"number",min:String(min),max:String(max),step:String(step||1),value:String(val)});l.appendChild(i);host.appendChild(l);
+  return ()=>{const v=parseFloat(i.value);return Math.max(min,Math.min(max,Number.isFinite(v)?v:val));};}
+function sbChecks(host,names,on){const row=el("div",{class:"btnrow"});row.appendChild(SB.text("span","Predictors allowed:","note"));const bs=names.map((nm,i)=>{const l=el("label",{style:"display:flex;gap:4px;align-items:center;font-size:.84rem"});const c=el("input",{type:"checkbox"});c.checked=on?on.includes(i):true;l.appendChild(c);l.appendChild(SB.text("span",nm));row.appendChild(l);return c;});host.appendChild(row);
+  return ()=>bs.map((c,i)=>c.checked?i:-1).filter(i=>i>=0);}
+function sbReadout(host,items){host.textContent="";const r=el("div",{class:"readout"});items.forEach(([a,b])=>{const d=el("div");d.appendChild(SB.text("span",a));d.appendChild(SB.text("b",b));r.appendChild(d);});host.appendChild(r);}
+/* toy data: two numeric features on [0, 10] with a chosen class-1 region and label noise */
+const SBX_PAT={box:["one box",(a,b)=>a>3&&a<7&&b>2&&b<6],diag:["diagonal boundary",(a,b)=>b>a],xor:["checkerboard (XOR)",(a,b)=>(a>5)!==(b>5)],ring:["disc",(a,b)=>(a-5)**2+(b-5)**2<9]};
+function sbToy(pat,n,noise,seed){const r=rng(seed),x1=[],x2=[],y=[];const f=SBX_PAT[pat][1];
+  for(let i=0;i<n;i++){const a=Math.round(1000*r())/100,b=Math.round(1000*r())/100;let c=f(a,b)?1:0;if(r()<noise)c=1-c;x1.push(a);x2.push(b);y.push(c);}
+  return {cols:[{type:"num",v:x1},{type:"num",v:x2}],y,names:["x₁","x₂"],feats:[0,1],posName:"class 1"};}
+function sbToyForm(host,def){const row=el("div",{class:"sb-params"});const l=el("label");l.appendChild(SB.text("span","Class-1 region"));
+  const s=el("select",{style:"width:13em;max-width:100%"},Object.keys(SBX_PAT).map(k=>`<option value="${k}"${k===def.pat?" selected":""}>${SBX_PAT[k][0]}</option>`).join(""));l.appendChild(s);row.appendChild(l);
+  const n=sbNumIn(row,"Points (n)",def.n,20,SBX_ROWS),nz=sbNumIn(row,"Label noise (%)",def.noise,0,50),sd=sbNumIn(row,"Data seed",1,1,99999);host.appendChild(row);
+  return ()=>Object.assign(sbToy(s.value,Math.round(n()),nz()/100,Math.round(sd())),{pat:s.value,noise:nz()/100});}
+// scatter of a 2-D data set with a probability surface (prob(x1,x2)) and optional tree boxes
+function sbPlane(g,W,H,D,prob,tree){bg(g,W,H);const m={l:34,r:10,t:18,b:28};const ax=axes(g,W,H,m,[0,10],[0,10],[0,2,4,6,8,10],[0,2,4,6,8,10],"x₁","x₂");const C=ax.C;
+  const GX=60,GY=50;for(let a=0;a<GX;a++)for(let b=0;b<GY;b++){const p=prob(10*(a+0.5)/GX,10*(b+0.5)/GY);g.fillStyle=p>0.5?C.bad:C.ok;g.globalAlpha=0.06+0.3*Math.abs(p-0.5)*2;
+    const xa=Math.round(ax.X(10*a/GX)),xb=Math.round(ax.X(10*(a+1)/GX)),ya=Math.round(ax.Y(10*(b+1)/GY)),yb=Math.round(ax.Y(10*b/GY));g.fillRect(xa,ya,xb-xa,yb-ya);}g.globalAlpha=1;
+  if(tree){const box=(nd,x0,x1,y0,y1)=>{if(isLeaf(nd)){g.strokeStyle=C.ink;g.lineWidth=1;g.strokeRect(ax.X(x0),ax.Y(y1),ax.X(x1)-ax.X(x0),ax.Y(y0)-ax.Y(y1));return;}
+      if(nd.f===0){box(nd.L,x0,Math.min(x1,nd.t),y0,y1);box(nd.R,Math.max(x0,nd.t),x1,y0,y1);}else{box(nd.L,x0,x1,y0,Math.min(y1,nd.t));box(nd.R,x0,x1,Math.max(y0,nd.t),y1);}};box(tree,0,10,0,10);}
+  const n=D.y.length,step=n>1200?2:1;for(let i=0;i<n;i+=step){g.beginPath();g.arc(ax.X(D.cols[0].v[i]),ax.Y(D.cols[1].v[i]),n>600?1.6:2.3,0,7);g.fillStyle=D.y[i]?C.bad:C.ok;g.globalAlpha=0.8;g.fill();}g.globalAlpha=1;
+  legend(g,m.l+60,m.t-5,[[C.bad,"class 1"],[C.ok,"class 0"]]);}
+const sbSplit=(n,seed,share)=>{const o=shuffled(n,seed);const k=Math.round(n*share);return {te:o.slice(0,k).sort((a,b)=>a-b),tr:o.slice(k).sort((a,b)=>a-b)};};
+/* parse the "Your data" table: roles [y, x1..x6]; names read back from the column pickers (shown only via textContent) */
+const SBX_ROLES=[{key:"y",label:"Target (two values)",type:"any"}].concat([1,2,3,4,5,6].map(k=>({key:"x"+k,label:"Predictor "+k,type:"any",optional:k>1})));
+function sbOwnData(form,out,maxRows){
+  const sels=[...form.querySelectorAll(".sb-params select")];const pick=k=>{const s=sels[k];if(!s)return {i:k===0?0:-1,name:k===0?"target":"x"+k};const i=+s.value;return {i,name:i<0?"":s.options[s.selectedIndex].textContent};};
+  const yv=out.y;if(!yv||yv.length<10)return "At least 10 complete rows are needed.";
+  const lev=[...new Set(yv)].sort(sbCmp);if(lev.length!==2)return `The target column must have exactly two values; the chosen one has ${lev.length}.`;
+  let pos=lev.find(v=>SBX_POS.includes(String(v).toLowerCase()));if(pos===undefined)pos=lev[1];
+  const yi=pick(0).i,used=new Set([yi]),cols=[],names=[];
+  for(let k=1;k<=6;k++){const p=pick(k);if(p.i<0||used.has(p.i)||!out["x"+k])continue;used.add(p.i);const raw=out["x"+k];const nums=raw.map(SB.num);
+    if(nums.every(Number.isFinite))cols.push({type:"num",v:nums});else cols.push({type:"cat",v:raw.map(String)});names.push(p.name||("predictor "+k));}
+  if(!cols.length)return "Choose at least one predictor column that is not the target.";
+  let n=yv.length,note="";if(n>maxRows){n=maxRows;note=`Only the first ${ind(maxRows)} rows are used.`;cols.forEach(c=>{c.v=c.v.slice(0,n);});}
+  const cats=cols.filter(c=>c.type==="cat").map(c=>new Set(c.v).size);if(cats.some(k=>k>60))return "A categorical predictor has more than 60 different values; that is an identifier, not a predictor. Choose another column.";
+  return {cols,y:yv.slice(0,n).map(v=>v===pos?1:0),names,feats:cols.map((_,i)=>i),posName:String(pos),posLabel:String(pos),note};}
+
+/* ===== sandbox 1 (File 3): grow your own tree ===== */
+function sbGrow(root){
+  SB.panel(root,"grow your own tree",{
+    controls:p=>{
+      p.appendChild(SB.text("p","The 500 training loans of File 2. Choose the predictors, the depth, the minimum leaf size and the criterion; CART grows the tree here, greedily, split by split. Test accuracy uses the 300 embedded test loans, which carry only the EMI ratio, earlier late loans and group loan.","note"));
+      const fx=sbChecks(p,SF);const prm=sbParams(p,{depth:3,minleaf:20});const r2=el("div",{class:"sb-params"});p.appendChild(r2);
+      const N=sbNumIn(r2,"Loans used (N)",500,20,500),sd=sbNumIn(r2,"Seed for the N loans",1,1,99999);
+      const b=el("button",{class:"btn small",type:"button"},"Grow the tree");p.appendChild(el("div",{class:"btnrow"})).appendChild(b);
+      const ro=el("div"),msg=el("p",{class:"note",role:"status"}),dg=el("div"),ru=el("details");p.append(ro,msg,dg,ru);
+      const cols=[0,1,2,3,4].map(f=>({type:"num",v:SUB.map(r=>r[f])})),y=SUB.map(r=>r[SY]);
+      const hcols=[];hcols[0]={type:"num",v:HSUB.map(r=>r[0])};hcols[3]={type:"num",v:HSUB.map(r=>r[2])};hcols[4]={type:"num",v:HSUB.map(r=>r[1])};const hy=HSUB.map(r=>r[4]),hix=HSUB.map((_,i)=>i);
+      function run(){const feats=fx();if(!feats.length){msg.textContent="Tick at least one predictor.";return;}const o=prm();const n=Math.round(N());
+        const ix=(n>=SUBN?[...Array(SUBN).keys()]:shuffled(SUBN,Math.round(sd())).slice(0,n).sort((a,z)=>a-z));
+        const tree=sbFit(cols,y,ix,Object.assign({feats},o));const n1=ix.reduce((s,i)=>s+y[i],0);
+        const testable=feats.every(f=>f===0||f===3||f===4);const te=testable?sbAcc(tree,hcols,hy,hix):NaN;
+        sbReadout(ro,[["Leaves",leavesOf(tree).length],["Depth",depthOf(tree)],["Train accuracy",pct(sbAcc(tree,cols,y,ix),1)],["Test accuracy (300)",testable?pct(te,1):"—"],["Approve-all accuracy",pct(1-n1/n,1)]]);
+        msg.textContent=testable?`Grown on ${n} loans (${n1} defaults). Train accuracy is measured on the same loans; the test loans were never seen.`:`Grown on ${n} loans (${n1} defaults). Untick income and age to measure test accuracy: the 300 test loans do not carry them.`;
+        sbTreeSVG(dg,tree,cols,SF,"default");ru.textContent="";ru.appendChild(SB.text("summary","The tree as if–then rules"));const h=el("div");ru.appendChild(h);sbRules(h,tree,cols,SF,"default");}
+      b.addEventListener("click",run);run();},
+    generate:p=>{
+      p.appendChild(SB.text("p","Two numeric features and a class-1 region of your choice, with some labels flipped at random (noise). The tree cuts the plane into boxes parallel to the axes; 30% of the points are held out to measure test accuracy.","note"));
+      const gen=sbToyForm(p,{pat:"diag",n:400,noise:10});const prm=sbParams(p,{depth:4,minleaf:5});
+      const b=el("button",{class:"btn small",type:"button"},"Generate and grow");p.appendChild(el("div",{class:"btnrow"})).appendChild(b);
+      const box=el("div",{class:"svgbox"}),cv=el("canvas",{"aria-label":"Scatter of the generated points with the tree's rectangular regions shaded by the predicted class"});box.appendChild(cv);
+      const ro=el("div"),dg=el("div");const grid=el("div",{class:"labgrid"}),rc=el("div",{style:"display:grid;gap:10px;align-content:start;min-width:0"});rc.append(ro,dg);grid.append(box,rc);p.appendChild(grid);const W=360,H=300,g=canvasSetup(cv,W,H);
+      function run(){const D=gen(),o=prm();const sp=sbSplit(D.y.length,7,0.3);const tree=sbFit(D.cols,D.y,sp.tr,Object.assign({feats:D.feats},o));
+        const gc=[{type:"num",v:[0]},{type:"num",v:[0]}];const prob=(a,c)=>{gc[0].v[0]=a;gc[1].v[0]=c;const l=sbLeaf(tree,gc,0);return l.n1/l.n;};
+        const Dtr={cols:D.cols.map(c=>({type:"num",v:sp.tr.map(i=>c.v[i])})),y:sp.tr.map(i=>D.y[i])};sbPlane(g,W,H,Dtr,prob,tree);
+        sbReadout(ro,[["Leaves (boxes)",leavesOf(tree).length],["Train accuracy",pct(sbAcc(tree,D.cols,D.y,sp.tr),1)],["Test accuracy",pct(sbAcc(tree,D.cols,D.y,sp.te),1)],["Best possible (1 − noise)",pct(1-Math.min(0.5,D.noise),0)]]);
+        sbTreeSVG(dg,tree,D.cols,D.names,"class 1");}
+      b.addEventListener("click",run);run();},
+    own:p=>{
+      const form=el("div");p.appendChild(form);const prm=sbParams(p,{depth:3,minleaf:5});
+      const hold=el("input",{type:"checkbox"});hold.checked=true;const hl=el("label",{style:"display:flex;gap:6px;align-items:center;font-size:.84rem"});hl.append(hold,SB.text("span","Hold out 30% of the rows as a test set"));p.appendChild(hl);
+      const b=el("button",{class:"btn small",type:"button"},"Grow the tree");p.appendChild(el("div",{class:"btnrow"})).appendChild(b);
+      const msg=el("p",{class:"note",role:"status"}),ro=el("div"),dg=el("div"),ru=el("details");p.append(msg,ro,dg,ru);let data=null;
+      function run(){ro.textContent="";dg.textContent="";ru.textContent="";if(!data){msg.textContent="Paste a table above and press “Use this data”.";return;}
+        const D=sbOwnData(form,data,5000);if(typeof D==="string"){msg.textContent=D;return;}const o=prm();const n=D.y.length;
+        const sp=hold.checked&&n>=20?sbSplit(n,7,0.3):{tr:[...Array(n).keys()],te:[]};
+        const tree=sbFit(D.cols,D.y,sp.tr,Object.assign({feats:D.feats},o));const n1=sp.tr.reduce((s,i)=>s+D.y[i],0);
+        sbReadout(ro,[["Leaves",leavesOf(tree).length],["Depth",depthOf(tree)],["Train accuracy",pct(sbAcc(tree,D.cols,D.y,sp.tr),1)],["Test accuracy",sp.te.length?pct(sbAcc(tree,D.cols,D.y,sp.te),1):"—"],["Majority-class accuracy",pct(Math.max(n1,sp.tr.length-n1)/sp.tr.length,1)]]);
+        msg.textContent=`Class 1 is “${D.posLabel}” (${n1} of ${sp.tr.length} training rows). ${D.cols.map((c,i)=>D.names[i]+": "+(c.type==="num"?"numeric":"categorical")).join("; ")}.`+(sp.te.length?` ${sp.te.length} rows held out.`:hold.checked?" Too few rows to hold any out.":"")+(D.note?" "+D.note:"");
+        sbTreeSVG(dg,tree,D.cols,D.names,D.posName);ru.appendChild(SB.text("summary","The tree as if–then rules"));const h=el("div");ru.appendChild(h);sbRules(h,tree,D.cols,D.names,D.posName);}
+      SB.dataForm(form,SBX_ROLES,o=>{data=o;run();},{example:SBX_EX,minRows:10,placeholder:"defaulted,emi_ratio,occupation\nno,0.21,tailoring\nyes,0.48,daily wage\n…",
+        help:"Paste a table with a header row (or choose a CSV file): a target column with two values (0/1, yes/no, …) and up to six predictor columns, numeric or categorical. Your data stays in this browser: it is not uploaded, saved or shared."});
+      b.addEventListener("click",run);}
+  },"Three ways to grow a classification tree: on the loans, on points you generate, or on your own table.");
+}
+
+/* ===== sandbox 2 (File 2): impurity calculator ===== */
+function sbImpurity(root){
+  function show(host,lab,c){host.textContent="";// c = [[n0,n1] left, [n0,n1] right]
+    const L=c[0],R=c[1],P=[L[0]+R[0],L[1]+R[1]];const nL=L[0]+L[1],nR=R[0]+R[1],n=nL+nR;
+    if(!nL||!nR){host.appendChild(SB.text("p","Both children need at least one row.","note"));return;}
+    const row=(nm,x)=>{const m=x[0]+x[1];return [nm,ind(m),ind(x[1]),pct(x[1]/m,1),gini2(x[1],m).toFixed(4),ent2(x[1],m).toFixed(4),mis2(x[1],m).toFixed(4)];};
+    host.appendChild(SB.table(["node","n",`${lab.pos}`,"share","Gini","entropy","misclass."],[row(lab.p,P),row(lab.l,L),row(lab.r,R)]));
+    const wG=(nL*gini2(L[1],nL)+nR*gini2(R[1],nR))/n,wE=(nL*ent2(L[1],nL)+nR*ent2(R[1],nR))/n,wM=(nL*mis2(L[1],nL)+nR*mis2(R[1],nR))/n;
+    const ro=el("div");sbReadout(ro,[["Weighted Gini after",wG.toFixed(4)],["Gini decrease",(gini2(P[1],n)-wG).toFixed(4)],["Weighted entropy after",wE.toFixed(4)],["Information gain (bits)",(ent2(P[1],n)-wE).toFixed(4)],["Misclass. decrease",(mis2(P[1],n)-wM).toFixed(4)]]);host.appendChild(ro);
+    // bars: share of class 1 in parent and children, width ∝ n
+    const W=360,H=96,svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Parent and child nodes: bar length is the number of rows, the red part is class 1",style:"max-width:440px"});
+    [[lab.p,P,0],[lab.l,L,1],[lab.r,R,2]].forEach(([nm,x,k])=>{const m=x[0]+x[1],y=8+k*30,w=(W-130)*m/n;const t=sv("text",{x:0,y:y+11,"font-size":10,style:"fill:var(--ink);font-family:var(--mono)"});t.textContent=sbCut(String(nm),18);svg.appendChild(t);
+      svg.appendChild(sv("rect",{x:124,y,width:Math.max(1,w*x[0]/m),height:14,style:"fill:var(--ok);fill-opacity:.7"}));svg.appendChild(sv("rect",{x:124+w*x[0]/m,y,width:w*x[1]/m,height:14,style:"fill:var(--fraud);fill-opacity:.8"}));});
+    const bx=el("div",{class:"svgbox"});bx.appendChild(svg);host.appendChild(bx);
+    host.appendChild(SB.text("p","Gini = 2p(1 − p), entropy = −p log₂ p − (1 − p) log₂(1 − p), misclassification = min(p, 1 − p), with p the class-1 share; “after” is the average of the two children weighted by their sizes. Information gain is the fall in entropy.","note"));}
+  SB.panel(root,"impurity calculator",{
+    controls:p=>{
+      p.appendChild(SB.text("p","Type the counts in two child nodes, or start from a split of the 4,200 training loans. The parent is the two children added together.","note"));
+      const PRE=[["EMI ratio ≤ 0.3505 (4,200 loans)",RS.emi_to_income,"EMI ≤ 0.3505","EMI > 0.3505"],["group loan (4,200 loans)",RS.group_loan,"individual","group"],["earlier late loans (4,200 loans)",RS.prior_late,"none late","1+ late"],["tenure ≤ 15 months (4,200 loans)",RS.tenure_months,"tenure ≤ 15","tenure > 15"]];
+      const r1=el("div",{class:"sb-params"});const l=el("label");l.appendChild(SB.text("span","Start from"));const s=el("select",{style:"width:22em;max-width:100%"},PRE.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join("")+`<option value="-1">my own counts</option>`);l.appendChild(s);r1.appendChild(l);p.appendChild(r1);
+      const r2=el("div",{class:"sb-params"});p.appendChild(r2);const ins=["Left: repaid (class 0)","Left: defaulted (class 1)","Right: repaid (class 0)","Right: defaulted (class 1)"].map(t=>{const lb=el("label");lb.appendChild(SB.text("span",t));const i=el("input",{type:"number",min:"0",max:"1000000",step:"1"});lb.appendChild(i);r2.appendChild(lb);return i;});
+      const out=el("div",{style:"display:grid;gap:10px;min-width:0"});p.appendChild(out);let names=["parent","left","right"];
+      const fill=()=>{const k=+s.value;if(k<0)return;const x=PRE[k][1];[x.nL-x.n1L,x.n1L,x.nR-x.n1R,x.n1R].forEach((v,i)=>{ins[i].value=String(v);});names=["all 4,200",PRE[k][2],PRE[k][3]];};
+      const calc=()=>{const v=ins.map(i=>Math.max(0,Math.min(1e6,Math.round(+i.value||0))));show(out,{p:names[0],l:names[1],r:names[2],pos:"defaulted"},[[v[0],v[1]],[v[2],v[3]]]);};
+      s.addEventListener("change",()=>{fill();calc();});ins.forEach(i=>i.addEventListener("input",()=>{s.value="-1";names=["parent","left","right"];calc();}));fill();calc();},
+    own:p=>{
+      const form=el("div");p.appendChild(form);const out=el("div",{style:"display:grid;gap:10px;min-width:0"}),msg=el("p",{class:"note",role:"status"});p.append(msg,out);
+      SB.dataForm(form,[{key:"g",label:"Child node (two values)",type:"any"},{key:"y",label:"Outcome (two values)",type:"any"}],o=>{out.textContent="";
+          const gl=[...new Set(o.g)].sort(sbCmp),yl=[...new Set(o.y)].sort(sbCmp);
+          if(gl.length!==2){msg.textContent=`The child column must have exactly two values; it has ${gl.length}.`;return;}
+          if(yl.length>2){msg.textContent=`The outcome column must have one or two values; it has ${yl.length}.`;return;}
+          let pos=yl.find(v=>SBX_POS.includes(String(v).toLowerCase()));if(pos===undefined)pos=yl[yl.length-1];
+          const c=[[0,0],[0,0]];o.g.forEach((g,i)=>{c[g===gl[0]?0:1][o.y[i]===pos?1:0]++;});msg.textContent=`Class 1 is “${pos}”.`;
+          show(out,{p:"parent",l:gl[0],r:gl[1],pos:sbCut(String(pos),16)},c);},
+        {example:SBX_EXI,minRows:2,placeholder:"emi_band,outcome\nlow EMI,repaid\nhigh EMI,defaulted\n…",help:"Paste one row per case: a column saying which child it falls in (two values) and its outcome (two values), with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared."});}
+  },"Impurity of a parent and its two children, by Gini, entropy and misclassification.");
+}
+
+/* ===== sandbox 3 (File 6): a small random forest with an out-of-bag error curve ===== */
+function sbForestRun(p,getData,toy){
+  const r1=el("div",{class:"sb-params"});p.appendChild(r1);
+  const B=sbNumIn(r1,"Trees (B, ≤ 100)",50,1,SBX_TREES),M=sbNumIn(r1,"Variables tried per split (m)",0,0,6),ML=sbNumIn(r1,"Minimum leaf size",1,1,200),SD=sbNumIn(r1,"Forest seed",1,1,99999);
+  const bl=el("label",{style:"display:flex;gap:6px;align-items:center;font-size:.84rem"});const bs=el("input",{type:"checkbox"});bs.checked=true;bl.append(bs,SB.text("span","Bootstrap samples (off: every tree sees every training row)"));p.appendChild(bl);
+  p.appendChild(SB.text("p","m = 0 means the default ⌊√p⌋ for p predictors; m = p is bagging. Trees are grown to full depth unless the leaf size stops them. 30% of the rows are held out as a test set.","note"));
+  const br=el("div",{class:"btnrow"});const go=el("button",{class:"btn small",type:"button"},"Grow the forest");const sp=el("span");br.append(go,sp);p.appendChild(br);
+  const box=el("div",{class:"svgbox"}),cv=el("canvas",{"aria-label":"Out-of-bag error and test error as trees are added"});box.appendChild(cv);const ro=el("div"),msg=el("p",{class:"note",role:"status"});const grid=el("div",{class:"labgrid"}),lc=el("div",{style:"display:grid;gap:10px;align-content:start;min-width:0"}),rc=el("div",{style:"display:grid;gap:10px;align-content:start;min-width:0"});grid.append(lc,rc);p.appendChild(grid);lc.appendChild(box);
+  let box2=null,g2=null;if(toy){box2=el("div",{class:"svgbox"});const c2=el("canvas",{"aria-label":"The forest's average class-1 probability over the plane, with the training points"});box2.appendChild(c2);lc.append(ro,msg);rc.appendChild(box2);g2=canvasSetup(c2,360,300);}else rc.append(ro,msg);
+  const W=360,H=230,g=canvasSetup(cv,W,H);let anim=null,speed=1,S0=null;
+  speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  function chart(){bg(g,W,H);const C=COL();if(!S0)return;const ys=S0.oob.concat(S0.test,[S0.single]).filter(Number.isFinite);const top=Math.max(0.05,Math.ceil(20*Math.max(...ys,0.05)*1.1)/20);
+    const xt=S0.B<=10?[1,S0.B]:[1,Math.round(S0.B/2),S0.B];const yt=[0,top/2,top].map(v=>+v.toFixed(3));
+    const ax=axes(g,W,H,{l:42,r:10,t:22,b:28},[1,Math.max(2,S0.B)],[0,top],xt,yt,"trees","error");
+    if(Number.isFinite(S0.single)){polyline(g,[[ax.X(1),ax.Y(S0.single)],[ax.X(Math.max(2,S0.B)),ax.Y(S0.single)]],C.muted,1.2,[4,3]);}
+    if(S0.oob.length)polyline(g,S0.oob.map((v,i)=>[ax.X(i+1),ax.Y(Number.isFinite(v)?v:0)]),C.bad,2);
+    polyline(g,S0.test.map((v,i)=>[ax.X(i+1),ax.Y(v)]),C.acc,2);
+    legend(g,ax.X(1)+48,14,[[C.bad,"out-of-bag",true],[C.acc,"test",true],[C.muted,"1st tree",true]]);}
+  function plane(){if(!toy||!S0)return;const D=S0.D,gc=[{type:"num",v:[0]},{type:"num",v:[0]}];const T=S0.trees;
+    const prob=(a,c)=>{if(!T.length)return 0.5;gc[0].v[0]=a;gc[1].v[0]=c;let s=0;for(const t of T){const l=sbLeaf(t,gc,0);s+=l.n1/l.n;}return s/T.length;};
+    sbPlane(g2,360,300,{cols:D.cols.map(c=>({type:"num",v:S0.tr.map(i=>c.v[i])})),y:S0.tr.map(i=>D.y[i])},prob,null);}
+  function readout(){const b=S0.trees.length;sbReadout(ro,[["Trees",b],["OOB error",S0.oob.length&&Number.isFinite(S0.oob[b-1])?S0.oob[b-1].toFixed(4):"—"],["Test error",b?S0.test[b-1].toFixed(4):"—"],["First tree, test error",Number.isFinite(S0.single)?S0.single.toFixed(4):"—"],["m used",S0.m+" of "+S0.D.feats.length]]);}
+  function addTree(){const D=S0.D,tr=S0.tr,r=S0.r;let ix=tr,inb=null;
+    if(S0.boot){ix=new Array(tr.length);inb=new Uint8Array(D.y.length);for(let k=0;k<tr.length;k++){const i=tr[Math.floor(r()*tr.length)];ix[k]=i;inb[i]=1;}}
+    const t=sbFit(D.cols,D.y,ix,{depth:Infinity,minleaf:S0.minleaf,crit:"gini",feats:D.feats,mtry:S0.m,r});S0.trees.push(t);
+    if(S0.boot){for(const i of tr)if(!inb[i]){const l=sbLeaf(t,D.cols,i);S0.so[i]+=l.n1/l.n;S0.co[i]++;}let e=0,k=0;for(const i of tr)if(S0.co[i]){k++;if((S0.so[i]/S0.co[i]>0.5?1:0)!==D.y[i])e++;}S0.oob.push(k?e/k:NaN);}
+    let e=0;for(const i of S0.te){const l=sbLeaf(t,D.cols,i);S0.st[i]+=l.n1/l.n;if((S0.st[i]/S0.trees.length>0.5?1:0)!==D.y[i])e++;}S0.test.push(e/S0.te.length);
+    if(S0.trees.length===1)S0.single=S0.test[0];}
+  function stop(){if(anim){anim.stop();anim=null;}go.textContent="Grow the forest";}
+  function run(){if(anim){stop();return;}const D=getData();if(typeof D==="string"){msg.textContent=D;return;}
+    const n=D.y.length;if(n<20){msg.textContent="At least 20 rows are needed.";return;}const seed=Math.round(SD());const sp2=sbSplit(n,seed,0.3);
+    const pF=D.feats.length;let m=Math.round(M());m=m<=0?Math.max(1,Math.floor(Math.sqrt(pF))):Math.min(pF,m);
+    S0={D,tr:sp2.tr,te:sp2.te,B:Math.round(B()),m,minleaf:Math.round(ML()),boot:bs.checked,r:rng(seed+101),trees:[],oob:[],test:[],single:NaN,so:new Float64Array(n),co:new Int32Array(n),st:new Float64Array(n)};
+    msg.textContent=`${sp2.tr.length} training rows, ${sp2.te.length} test rows, ${pF} predictor(s), m = ${m}.`+(S0.boot?"":" Without bootstrap samples there is no out-of-bag error"+(m>=pF?", and with m = p every tree is the same tree.":"; only the random choice of variables makes the trees differ."))+(D.note?" "+D.note:"");
+    if(REDUCED){while(S0.trees.length<S0.B)addTree();chart();readout();plane();return;}
+    go.textContent="Stop";anim=loop(()=>{for(let k=0;k<speed&&S0.trees.length<S0.B;k++)addTree();chart();readout();if(S0.trees.length%5===0||S0.trees.length>=S0.B)plane();if(S0.trees.length>=S0.B)stop();});}
+  go.addEventListener("click",run);
+  return {run,clear(){stop();S0=null;bg(g,W,H);ro.textContent="";}};
+}
+function sbForest(root){
+  SB.panel(root,"a small random forest",{
+    controls:p=>{
+      p.appendChild(SB.text("p","The 500 training loans of File 2 (five numeric predictors), split 70/30 into training and test rows. Grow up to 100 trees and watch the out-of-bag error settle next to the test error.","note"));
+      const fx=sbChecks(p,SF);const cols=[0,1,2,3,4].map(f=>({type:"num",v:SUB.map(r=>r[f])})),y=SUB.map(r=>r[SY]);
+      const R=sbForestRun(p,()=>{const feats=fx();return feats.length?{cols,y,feats,names:SF,posName:"default"}:"Tick at least one predictor.";},false);R.run();},
+    generate:p=>{
+      p.appendChild(SB.text("p","Points in the plane with a class-1 region and label noise. The second picture shades the forest's average vote: many boxy trees average into a smoother boundary.","note"));
+      const gen=sbToyForm(p,{pat:"ring",n:600,noise:10});const R=sbForestRun(p,()=>gen(),true);R.run();},
+    own:p=>{const form=el("div");p.appendChild(form);let data=null;
+      const R=sbForestRun(p,()=>data?sbOwnData(form,data,SBX_ROWS):"Paste a table above and press “Use this data”.",false);
+      SB.dataForm(form,SBX_ROLES,o=>{data=o;R.clear();R.run();},{example:SBX_EX,minRows:20,placeholder:"defaulted,emi_ratio,occupation\nno,0.21,tailoring\nyes,0.48,daily wage\n…",
+        help:"Paste a table with a header row (or choose a CSV file): a target column with two values and up to six predictor columns, numeric or categorical. At most 2,000 rows are used. Your data stays in this browser: it is not uploaded, saved or shared."});}
+  },"Bagging and random forests on the loans, on generated points, or on your own table.");
+}
+
 /* ---------- course ---------- */
 const COURSE={
   key:"trees",
@@ -951,6 +1209,173 @@ const COURSE={
    ["Interpreting and boosting","f̄(x_s) = (1/n) Σᵢ f̂(x_s, x_iC)\nF_m = F_(m−1) + ν·h_m\nclass weight wₖ = n / (2nₖ)\nfidelity = agreement rate"]],
   L, BOARD
 };
+
+/* ---------- sandbox toolkit (shared by every module) ----------
+   Three levels of free play next to a lab:
+     1. controls on the real data   2. generate your own data   3. bring your own data
+   SAFETY: everything runs in the visitor's browser. Uploaded or pasted text is never sent anywhere,
+   never stored, never put in the URL, and never inserted as HTML: it is only parsed into numbers and
+   short labels, which are always displayed with textContent (SB.text / SB.table). Size caps keep phones responsive. */
+const SB=(function(){
+  const MAX_BYTES=2*1024*1024, MAX_ROWS=5000, MAX_COLS=50, MAX_LABEL=40;
+  const used=()=>{try{award("explorer");}catch(e){}};
+  /* safe text node helpers */
+  function text(tag,str,cls){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=String(str);return e;}
+  /* control characters, bidirectional embedding/override/isolate controls (U+202A–202E, U+2066–2069, which could
+     reorder the surrounding sentence on screen) and invisible U+200B, U+2060, U+FEFF are removed; ZWJ/ZWNJ stay (Indic scripts) */
+  function cleanLabel(s){s=String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u200b\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g,"").trim();return s.length>MAX_LABEL?s.slice(0,MAX_LABEL)+"…":s;}
+  /* parse delimited text into {header:[...], rows:[[...]], note} — all values stay plain strings */
+  function parse(str){
+    str=String(str||"");if(str.length>MAX_BYTES)str=str.slice(0,MAX_BYTES);
+    let lines=str.replace(/\r\n?/g,"\n").split("\n").map(l=>l.trim()).filter(l=>l.length);
+    let truncated=false;if(lines.length>MAX_ROWS+1){lines=lines.slice(0,MAX_ROWS+1);truncated=true;}
+    const note=()=>truncated?`Only the first ${ind(MAX_ROWS)} rows were read.`:"";
+    if(!lines.length)return{header:[],rows:[],note:"Nothing to read."};
+    // pick a delimiter that splits the first lines into the same number (>1) of fields
+    let delim=null,best=1;
+    for(const d of [",","\t",";","|"]){const c=lines.slice(0,20).map(l=>splitLine(l,d).length);if(c.every(x=>x===c[0])&&c[0]>best){best=c[0];delim=d;}}
+    if(!delim){const c=lines.slice(0,20).map(l=>l.split(/\s+/).length);if(c.every(x=>x===c[0])&&c[0]>1&&lines.length>1)delim="ws";}
+    // one line of values, or one value per line: a single column
+    if(!delim||lines.length===1){
+      const flat=(lines.length>1?lines:lines[0].split(/[\s,;\t|]+/)).map(cleanLabel).filter(x=>x.length);
+      const hasHead=flat.length>1&&isNaN(num(flat[0]))&&!isNaN(num(flat[1]));
+      const vals=(hasHead?flat.slice(1):flat).slice(0,MAX_ROWS);
+      return{header:[hasHead?flat[0]:"value"],rows:vals.map(v=>[v]),note:(flat.length>MAX_ROWS?`Only the first ${ind(MAX_ROWS)} values were read.`:note())};
+    }
+    const rows=lines.map(l=>(delim==="ws"?l.split(/\s+/):splitLine(l,delim)).slice(0,MAX_COLS).map(cleanLabel));
+    const first=rows[0];
+    const hasHead=first.some(v=>v!==""&&isNaN(num(v)))&&rows.slice(1,6).some(r=>r.some(v=>!isNaN(num(v))));
+    const width=first.length;
+    const header=hasHead?first.map((h,i)=>h||("column "+(i+1))):first.map((_,i)=>"column "+(i+1));
+    const body=(hasHead?rows.slice(1):rows).map(r=>{r=r.slice(0,width);while(r.length<width)r.push("");return r;});
+    return{header,rows:body,note:note()};
+  }
+  function splitLine(l,d){const out=[];let cur="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur="";}else cur+=ch;}out.push(cur);return out;}
+  function num(v){if(typeof v==="number")return v;const s=String(v).replace(/[₹$€£,\s]/g,"");if(s===""||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?%?$/.test(s))return NaN;let x=parseFloat(s);if(s.endsWith("%"))x/=100;return isFinite(x)?x:NaN;}
+  function column(t,i){return t.rows.map(r=>r[i]);}
+  function numeric(vals){const out=[];let dropped=0;vals.forEach(v=>{const x=num(v);if(Number.isFinite(x))out.push(x);else dropped++;});return{values:out,dropped};}
+  function isNumericCol(t,i){const c=column(t,i).filter(v=>v!=="");return c.length>0&&c.filter(v=>!isNaN(num(v))).length/c.length>=0.8;}
+  function readFile(file,cb){if(!file)return;if(file.size>MAX_BYTES){cb(null,`That file is ${(file.size/1048576).toFixed(1)} MB; the limit is 2 MB. Use a smaller extract.`);return;}
+    const fr=new FileReader();fr.onload=()=>cb(String(fr.result||""),null);fr.onerror=()=>cb(null,"The file could not be read.");fr.readAsText(file);}
+  /* random generators (seeded) */
+  function normal(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  const GEN={
+    normal:{label:"Normal",params:[["mean",50],["sd",10]],draw:(r,p)=>p.mean+p.sd*normal(r)},
+    lognormal:{label:"Lognormal (right-skewed)",params:[["median",500],["spread σ",0.6]],draw:(r,p)=>p.median*Math.exp(p["spread σ"]*normal(r))},
+    exponential:{label:"Exponential",params:[["mean",10]],draw:(r,p)=>-p.mean*Math.log(1-r())},
+    uniform:{label:"Uniform",params:[["min",0],["max",100]],draw:(r,p)=>p.min+(p.max-p.min)*r()},
+    bimodal:{label:"Two humps (mixture)",params:[["mean 1",30],["mean 2",70],["sd",8],["share of hump 1",0.5]],draw:(r,p)=>(r()<p["share of hump 1"]?p["mean 1"]:p["mean 2"])+p.sd*normal(r)},
+    poisson:{label:"Poisson (counts)",params:[["mean λ",4]],draw:(r,p)=>{const L=Math.exp(-p["mean λ"]);let k=0,q=1;do{k++;q*=r();}while(q>L&&k<1000);return k-1;}},
+    binomial:{label:"Binomial (successes in n)",params:[["n trials",20],["p",0.3]],draw:(r,p)=>{let k=0;const n=Math.min(1000,Math.max(1,Math.round(p["n trials"])));for(let i=0;i<n;i++)if(r()<p.p)k++;return k;}}
+  };
+  function generate(kind,params,n,seed){const g=GEN[kind];const r=rng(seed||1);const out=[];n=Math.max(1,Math.min(MAX_ROWS,Math.round(n)));for(let i=0;i<n;i++)out.push(g.draw(r,params));return out;}
+  /* UI: a tabbed sandbox panel. levels = {controls:fn(el), generate:fn(el), own:fn(el)} — each optional */
+  function panel(root,title,levels,intro){
+    const box=el("div",{class:"sandbox"});
+    const head=el("div",{class:"sb-head"});head.appendChild(text("span","Sandbox · "+title,"eyebrow"));
+    const tabs=el("div",{class:"seg sb-tabs",role:"tablist","aria-label":"Sandbox mode"});
+    head.appendChild(tabs);box.appendChild(head);
+    if(intro)box.appendChild(text("p",intro,"note"));
+    const body=el("div",{class:"sb-body"});box.appendChild(body);
+    const defs=[["controls","Real data"],["generate","Generate"],["own","Your data"]].filter(([k])=>levels[k]);
+    const panes={};
+    defs.forEach(([k,lab],i)=>{const b=el("button",{type:"button",role:"tab","aria-pressed":i===0?"true":"false"});b.textContent=lab;tabs.appendChild(b);
+      const p=el("div",{class:"sb-pane"});p.hidden=i!==0;body.appendChild(p);panes[k]={b,p,built:false};
+      b.addEventListener("click",()=>{defs.forEach(([kk])=>{panes[kk].p.hidden=kk!==k;panes[kk].b.setAttribute("aria-pressed",kk===k);});if(!panes[k].built){panes[k].built=true;levels[k](p);}used();});});
+    if(defs.length){const k=defs[0][0];panes[k].built=true;levels[k](panes[k].p);}
+    root.appendChild(box);return box;
+  }
+  /* generator form: returns {el, get()} */
+  function genForm(kinds,defaults){
+    kinds=kinds||Object.keys(GEN);defaults=defaults||{};
+    const wrap=el("div",{class:"ctrl"});
+    const sel=el("select",{"aria-label":"Shape"});kinds.forEach(k=>{const o=el("option",{value:k});o.textContent=GEN[k].label;sel.appendChild(o);});
+    if(defaults.kind)sel.value=defaults.kind;
+    const params=el("div",{class:"sb-params"});
+    const nIn=el("input",{type:"number",min:"1",max:String(MAX_ROWS),step:"1",value:String(defaults.n||200),"aria-label":"How many values"});
+    const seedIn=el("input",{type:"number",min:"1",max:"999999",step:"1",value:String(defaults.seed||1),"aria-label":"Random seed"});
+    function drawParams(){params.innerHTML="";GEN[sel.value].params.forEach(([name,def])=>{const lab=el("label");lab.appendChild(text("span",name));const i=el("input",{type:"number",step:"any",value:String((defaults.params&&defaults.params[name]!=null)?defaults.params[name]:def)});i.dataset.p=name;lab.appendChild(i);params.appendChild(lab);});}
+    sel.addEventListener("change",drawParams);drawParams();
+    const row=el("div",{class:"sb-params"});
+    const l1=el("label");l1.appendChild(text("span","Shape"));l1.appendChild(sel);
+    const l2=el("label");l2.appendChild(text("span","How many values (n)"));l2.appendChild(nIn);
+    const l3=el("label");l3.appendChild(text("span","Seed"));l3.appendChild(seedIn);
+    row.append(l1,l2,l3);wrap.append(row,params);
+    return{el:wrap,get(){const p={};params.querySelectorAll("input").forEach(i=>{const v=parseFloat(i.value);p[i.dataset.p]=Number.isFinite(v)?v:0;});return{kind:sel.value,params:p,n:Math.max(1,Math.min(MAX_ROWS,parseInt(nIn.value)||1)),seed:Math.max(1,parseInt(seedIn.value)||1)};},
+      values(){const g=this.get();return generate(g.kind,g.params,g.n,g.seed);}};
+  }
+  /* your-data form: textarea + file input + column pickers by role.
+     roles: [{key, label, type:"num"|"cat"|"any", optional}]  onData(dataObj, info) where dataObj[key] = array */
+  function dataForm(root,roles,onData,opts){
+    opts=opts||{};
+    const wrap=el("div",{class:"ctrl"});
+    wrap.appendChild(text("p",opts.help||"Paste numbers (one per line, or separated by commas or spaces), or a small table with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared.","note"));
+    const ta=el("textarea",{rows:"6","aria-label":"Paste your data",spellcheck:"false",placeholder:opts.placeholder||"e.g.\n12\n15\n9\n31\n14"});
+    const file=el("input",{type:"file",accept:".csv,.tsv,.txt,text/csv,text/plain","aria-label":"Choose a CSV file"});
+    const row=el("div",{class:"btnrow"});const go=el("button",{class:"btn small",type:"button"});go.textContent="Use this data";
+    const ex=el("button",{class:"btn ghost small",type:"button"});ex.textContent="Load an example";
+    row.append(go,ex,file);
+    const picks=el("div",{class:"sb-params"});const msg=el("p",{class:"note",role:"status"});
+    wrap.append(ta,row,picks,msg);root.appendChild(wrap);
+    let table=null;
+    function say(s){msg.textContent=s;}
+    function build(){
+      picks.innerHTML="";const sels={};
+      if(!table||!table.rows.length){say("No rows found.");return;}
+      if(roles.length>1||table.header.length>1){
+        roles.forEach((ro,ri)=>{const lab=el("label");lab.appendChild(text("span",ro.label+(ro.optional?" (optional)":"")));const s=el("select");
+          if(ro.optional){const o=el("option",{value:"-1"});o.textContent="none";s.appendChild(o);}
+          table.header.forEach((h,i)=>{const o=el("option",{value:String(i)});o.textContent=h;s.appendChild(o);});
+          let guess=ri<table.header.length?ri:0;if(ro.type==="num"){const ni=table.header.findIndex((h,i)=>isNumericCol(table,i)&&!Object.values(sels).some(x=>+x.value===i));if(ni>=0)guess=ni;}
+          if(ro.type==="cat"){const ci=table.header.findIndex((h,i)=>!isNumericCol(table,i));if(ci>=0)guess=ci;}
+          s.value=ro.optional&&table.header.length<=ri?"-1":String(guess);s.addEventListener("change",emit);lab.appendChild(s);picks.appendChild(lab);sels[ro.key]=s;});
+      } else roles.forEach(ro=>{sels[ro.key]={value:"0"};});
+      table._sels=sels;emit();
+    }
+    function emit(){
+      if(!table)return;const sels=table._sels;const out={};let n=table.rows.length,dropped=0;
+      const keep=table.rows.map(()=>true);
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0){out[ro.key]=null;return;}const col=column(table,v);
+        if(ro.type==="num")col.forEach((x,i)=>{if(!Number.isFinite(num(x)))keep[i]=false;});
+        else col.forEach((x,i)=>{if(x==="")keep[i]=false;});});
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0)return;const col=column(table,v).filter((_,i)=>keep[i]);out[ro.key]=ro.type==="num"?col.map(num):col.map(cleanLabel);});
+      dropped=keep.filter(k=>!k).length;
+      const used_n=n-dropped;
+      if(used_n<(opts.minRows||2)){say(`Only ${used_n} usable row(s); at least ${opts.minRows||2} are needed.`);return;}
+      say(`Read ${ind(n)} row(s); using ${ind(used_n)}`+(dropped?`, skipped ${ind(dropped)} blank or non-numeric.`:".")+(table.note?" "+table.note:""));
+      used();onData(out,{n:used_n,dropped});
+    }
+    go.addEventListener("click",()=>{table=parse(ta.value);build();});
+    ex.addEventListener("click",()=>{ta.value=opts.example||"12\n15\n9\n31\n14\n18\n11\n16\n90\n13";table=parse(ta.value);build();});
+    file.addEventListener("change",()=>{readFile(file.files[0],(txt,err)=>{if(err){say(err);return;}ta.value=txt.length>20000?txt.slice(0,20000)+"\n…":txt;table=parse(txt);build();});});
+    return{set(str){ta.value=str;table=parse(str);build();}};
+  }
+  /* safe table renderer for user data (textContent only) */
+  function table(headers,rows){const w=el("div",{class:"tbl"});const t=document.createElement("table");const th=document.createElement("thead");const tr=document.createElement("tr");headers.forEach(h=>tr.appendChild(text("th",h)));th.appendChild(tr);t.appendChild(th);const tb=document.createElement("tbody");rows.forEach(r=>{const rr=document.createElement("tr");r.forEach((c,i)=>rr.appendChild(text("td",c,i?"num":"")));tb.appendChild(rr);});t.appendChild(tb);w.appendChild(t);return w;}
+  /* common statistics used by many sandboxes */
+  const st={
+    sorted:a=>[...a].sort((x,y)=>x-y),
+    mean:a=>a.reduce((s,x)=>s+x,0)/a.length,
+    q:(a,p)=>{const s=[...a].sort((x,y)=>x-y);const h=(s.length-1)*p;const lo=Math.floor(h);return s[lo]+(s[Math.min(lo+1,s.length-1)]-s[lo])*(h-lo);},
+    sd:a=>{const m=a.reduce((s,x)=>s+x,0)/a.length;return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));},
+    corr:(x,y)=>{const n=x.length,mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}return sxy/Math.sqrt(sxx*syy);}
+  };
+  /* a reusable histogram drawer (SVG) for any numeric array */
+  function histogram(container,values,o){
+    o=o||{};container.innerHTML="";if(!values.length)return;
+    const W=o.w||360,H=o.h||200,m={l:36,r:10,t:14,b:30};const s=st.sorted(values);let lo=o.lo!=null?o.lo:s[0],hi=o.hi!=null?o.hi:s[s.length-1];if(hi===lo){hi=lo+1;}
+    const k=o.bins||Math.max(5,Math.min(60,Math.ceil(Math.log2(values.length)+1)));const bw=(hi-lo)/k;const c=new Array(k).fill(0);
+    values.forEach(v=>{let i=Math.floor((v-lo)/bw);if(i>=k)i=k-1;if(i<0)i=0;c[i]++;});const mx=Math.max(...c);
+    const X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r),Y=v=>H-m.b-v/mx*(H-m.t-m.b);
+    const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label||"Histogram"});
+    svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(0),y2:Y(0),style:"stroke:var(--line)"}));
+    c.forEach((v,i)=>svg.appendChild(sv("rect",{x:X(lo+i*bw)+0.5,y:Y(v),width:Math.max(0.5,X(lo+(i+1)*bw)-X(lo+i*bw)-1),height:Y(0)-Y(v),style:"fill:var(--accent)"})));
+    [lo,(lo+hi)/2,hi].forEach((v,i)=>{const t=sv("text",{x:X(v),y:H-10,"font-size":10,"text-anchor":i===0?"start":i===2?"end":"middle"});t.textContent=Math.abs(v)>=1000?ind(Math.round(v)):(+v.toFixed(2)).toString();svg.appendChild(t);});
+    (o.marks||[]).forEach(([v,lab,col],i)=>{if(v<lo||v>hi)return;svg.appendChild(sv("line",{x1:X(v),x2:X(v),y1:m.t,y2:Y(0),style:`stroke:${col||"var(--gold)"};stroke-width:2;stroke-dasharray:4 3`}));const t=sv("text",{x:X(v)+3,y:m.t+10+12*i,"font-size":10});t.textContent=lab;svg.appendChild(t);});
+    container.appendChild(svg);
+  }
+  return{parse,num,numeric,column,isNumericCol,readFile,GEN,generate,panel,genForm,dataForm,table,text,histogram,st,used,MAX_ROWS};
+})();
 
 /* ---------- helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
@@ -983,7 +1408,7 @@ try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.pars
 const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
 
 const RANKS=COURSE.ranks;
-const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["explorer","Sandbox Explorer","Opened a sandbox and played with your own settings or data"],["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
 
 function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
 function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}

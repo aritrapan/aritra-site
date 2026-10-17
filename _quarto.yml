@@ -36,7 +36,7 @@ website:
       - href: blog.qmd
         text: Blog
       - href: play.qmd
-        text: Learn by playing
+        text: Learn by Playing
     right:
       - icon: google
         href: https://scholar.google.co.in/citations?user=m9SYPDMAAAAJ

@@ -197,6 +197,17 @@ td.num{font-family:var(--mono)}
 .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .sheet .formula{font-size:.84rem}
 .sheet h3{font-size:1rem;margin-bottom:6px}
+.sandbox{border:1px dashed var(--accent);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;background:var(--sunk);min-width:0;margin-top:14px}
+.sb-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.sb-head .eyebrow{color:var(--accent)}
+.sb-tabs button{border:0;background:transparent;padding:5px 12px;font:600 .8rem/1.2 var(--mono)}
+.sb-tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.sb-pane{display:grid;gap:10px;min-width:0}
+.sb-params{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.sb-params label{display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.sb-params input,.sb-params select{width:9.5em;max-width:100%}
+.sandbox textarea{width:100%;max-width:100%;font:400 .88rem/1.4 var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+.sandbox input[type=file]{font-size:.82rem;max-width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -329,7 +340,7 @@ brief:`<p>Kolmogorov's <span class="term">axioms</span> (1933) are the three rul
 <div class="formula">P(at least one repeat) = 1 − (1 − 1/N)(1 − 2/N) … (1 − (n−1)/N)
 Expected number of repeated pairs = C(n, 2) / N</div>`,
 refs:"Blitzstein & Hwang (2019), ch. 1 (counting) and ch. 1.6 (axioms) · Ross (2019), ch. 1–2 · Kolmogorov, <i>Grundbegriffe der Wahrscheinlichkeitsrechnung</i> (1933).",
-lab:labCollision,
+lab:root=>{labCollision(root);sbCollision(root);},
 qs:[
 {t:"num",q:"P(new device) = 0.0795 and P(foreign IP) = 0.03076, but P(A ∪ B) = 0.10802. By how much does P(A) + P(B) overshoot P(A ∪ B)?",a:0.00224,tol:0.0002,
  hint:"Inclusion–exclusion: the overshoot is exactly the overlap that was counted twice.",why:"0.0795 + 0.03076 = 0.11026. The gap 0.11026 − 0.10802 = 0.00224 is P(A ∩ B) = 112 / 50,000, the overlap counted twice."},
@@ -355,7 +366,7 @@ Multiplication rule:   P(A ∩ B) = P(A | B) · P(B)</div>
 <div class="formula">P(F) = P(F | B₁) P(B₁) + … + P(F | Bₖ) P(Bₖ)</div>
 <p>So the blended rate depends on the conditional rates <em>and</em> the mix. If traffic shifts towards the riskiest segment, the blended rate can rise while every segment improves. That reversal is <span class="term">Simpson's paradox</span>, first documented at scale in the 1973 Berkeley admissions data (Bickel, Hammel & O'Connell, 1975).</p>`,
 refs:"Blitzstein & Hwang (2019), ch. 2 · Ross (2019), ch. 3 · Bickel, Hammel & O'Connell, <i>Science</i> 187 (1975) 398–404.",
-lab:labSimpson,
+lab:root=>{root.style.minWidth="0";labSimpson(root);},
 qs:[
 {t:"num",q:"Netbanking had 20,045 transactions, 509 of them fraud. What is P(fraud | netbanking)?",a:509/20045,tol:0.0004,
  hint:"Zoom into netbanking: frauds there over transactions there.",why:"509 / 20,045 = 0.0254, about 2.5%. Compare UPI at 0.82% and card at 1.33%."},
@@ -381,7 +392,7 @@ confidence = P(Y | X)
 lift       = P(X ∩ Y) / [P(X) P(Y)] = confidence / P(Y)
 lift = 1  ⇔  independent</div>`,
 refs:"Blitzstein & Hwang (2019), §2.5–2.6 · Ross (2019), §3.4 · Agrawal, Imieliński & Swami, <i>Proc. ACM SIGMOD</i> (1993).",
-lab:labLift,
+lab:root=>{labLift(root);sbLift(root);},
 qs:[
 {t:"mcq",q:"Rank the three flags by their lift on fraud, highest first.",opts:["Foreign IP > new device > night","New device > foreign IP > night","Night > new device > foreign IP","All three are about equal"],a:0,
  hint:"Try each flag against Fraud in the lab.",why:"Foreign IP 3.53, new device 2.58, night 1.43. A foreign-IP transaction is about 3.5 times as likely to be fraud as an average one."},
@@ -407,7 +418,7 @@ P(F | alert) = ─────────────────────�
 LR = P(alert | F) / P(alert | Fᶜ)</div>
 <p>When the base rate is small, even a small false alarm rate applied to the huge legitimate majority produces more false alerts than true ones. Quoting P(alert | F) as if it were P(F | alert) is the <span class="term">prosecutor's fallacy</span> (confusion of the inverse). Thinking in natural frequencies, "out of 1,000 transactions…", is the standard cure (Gigerenzer & Hoffrage, 1995).</p>`,
 refs:"Blitzstein & Hwang (2019), §2.3–2.4 · Ross (2019), §3.3 · Gigerenzer & Hoffrage, <i>Psychological Review</i> 102 (1995) 684–704 · Selvin, <i>The American Statistician</i> 29 (1975) on the Monty Hall problem.",
-lab:labBayes,
+lab:root=>{const a=el("div");root.appendChild(a);labBayes(a);sbBayes(root);},
 qs:[
 {t:"num",q:"Using VeloPay's numbers (base rate 0.01638, sensitivity 0.895, false alarm rate 0.0498), what is P(fraud | alert)?",a:0.2304,tol:0.004,
  hint:"Click \"VeloPay\" in the lab, or put the three numbers into Bayes' theorem.",why:"(0.895 × 0.01638) / (0.895 × 0.01638 + 0.0498 × 0.98362) = 0.230. Directly from the file: 733 frauds among 3,181 alerts = 0.2304. About 3 in 4 alerts are false."},
@@ -458,7 +469,7 @@ SD(X)  = √Var(X)</div>
 review if q · v > c,  i.e. if v / c > 1/q ≈ 4.3</div>
 <p>Why trust an average? The <span class="term">Law of Large Numbers</span> (Bernoulli, 1713): the running mean of independent draws from the same distribution converges to E[X] as the number of draws grows. Its spread shrinks like SD/√n, which is why 90 days of data gives a usable mean but a single day does not.</p>`,
 refs:"Blitzstein & Hwang (2019), ch. 4 and §10.2 · Ross (2019), ch. 4 and ch. 8 · Wasserman (2004), ch. 3 and ch. 5.",
-lab:labExpect,
+lab:root=>{labExpect(root);sbLLN(root);},
 qs:[
 {t:"num",ph:"e.g. 7.5",q:"Using the 90-day PMF, what is E[X], the expected number of frauds per day?",a:9.1,tol:0.05,
  hint:"Σ x · p(x). The lab computes it; so does the mean of the 90 daily counts.",why:"E[X] = Σ x · p(x) = 819 / 90 = 9.1 frauds per day."},
@@ -485,7 +496,7 @@ E[X] = Var(X) = λ</div>
 X̄ₙ ≈ Normal(μ, σ²/n)</div>
 <p>A model is a claim to be checked, not a fact. Compare the model's PMF with the empirical one before using it for planning; a Poisson fit with λ = 9.1 says P(X > 10) = 0.306, close to the empirical 0.30.</p>`,
 refs:"Blitzstein & Hwang (2019), §3.3, §4.7, ch. 5, §10.3 · Ross (2019), ch. 4–5 and §8.3 · Wasserman (2004), ch. 2 and §5.4.",
-lab:labDist,
+lab:root=>{labDist(root);sbDist(root);},
 qs:[
 {t:"num",ph:"e.g. 6.0",q:"A day brings 35 alerts, each fraud with probability 0.2304, independently. Model the number of frauds among them as Binomial(35, 0.2304). What is its standard deviation?",a:2.49,tol:0.03,
  hint:"√(np(1 − p)).",why:"np = 8.06 and np(1 − p) = 6.21, so SD = 2.49. Plan for 8 ± 2.5 real frauds among a day's alerts."},
@@ -650,12 +661,7 @@ function labLift(root){
     const lift=(nxy/N)/((nx/N)*(ny/N));
     $("#sup",right).textContent=fmt(nxy/N);$("#con",right).textContent=fmt(nxy/nx);$("#lif",right).textContent=x===y?"—":lift.toFixed(3);
     $("#lnote",right).textContent=x===y?"Pick two different events.":lift>1.05?`${FLAGNAME[x]} and ${FLAGNAME[y].toLowerCase()} occur together ${lift.toFixed(2)} times as often as independence predicts.`:lift<0.95?`They occur together less often than independence predicts.`:`Close to 1: close to independent.`;
-    const W=360,H=58,lo=Math.log(0.25),hi=Math.log(4),X=v=>12+(Math.log(Math.min(4,Math.max(0.25,v)))-lo)/(hi-lo)*(W-24);
-    const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Lift meter on a log scale from 0.25 to 4"});
-    s.appendChild(sv("rect",{x:12,y:18,width:W-24,height:8,rx:4,style:"fill:var(--line)"}));
-    [0.25,0.5,1,2,4].forEach(v=>{s.appendChild(sv("line",{x1:X(v),x2:X(v),y1:14,y2:30,style:"stroke:var(--muted)"}));const t=sv("text",{x:X(v),y:46,"font-size":11,"text-anchor":"middle"});t.textContent=v;s.appendChild(t);});
-    if(x!==y)s.appendChild(sv("circle",{cx:X(lift),cy:22,r:8,style:"fill:var(--gold);stroke:var(--surface);stroke-width:2"}));
-    $("#meter",right).innerHTML="";$("#meter",right).appendChild(s);}
+    liftMeter($("#meter",right),lift,x!==y);}
   $("#lx",right).addEventListener("change",draw);$("#ly",right).addEventListener("change",draw);draw();
 }
 
@@ -840,6 +846,340 @@ function labDist(root){
 }
 
 
+const SBX={"bayes": "actual,alerted\n0,0\n0,0\n0,0\n0,1\n0,0\n0,0\n1,1\n0,0\n0,0\n0,0\n1,0\n1,1\n0,0\n0,0\n1,1\n0,1\n0,0\n0,0\n0,0\n0,0\n0,0\n0,0\n0,0\n0,0\n0,0\n1,0\n0,1\n0,0\n0,0\n0,0\n0,0\n0,0\n0,0\n0,0\n0,0\n1,1\n0,0\n0,0\n0,0\n0,1\n0,0\n0,1\n1,1\n0,0\n0,0\n0,0\n0,0\n0,1\n0,0\n0,0\n0,0\n0,0\n1,1\n1,1\n1,1\n0,1\n0,0\n0,0\n1,1\n0,0", "lift": "coupon,repeat_buyer,weekend\nno,no,yes\nno,no,yes\nno,no,yes\nno,no,yes\nno,no,yes\nyes,yes,no\nno,no,no\nno,no,yes\nno,yes,yes\nno,yes,yes\nno,no,yes\nno,yes,no\nno,no,no\nno,no,no\nno,no,no\nyes,yes,no\nno,no,no\nno,no,yes\nyes,no,no\nno,no,yes\nno,no,yes\nno,no,yes\nno,no,no\nno,no,yes\nno,yes,no\nyes,no,no\nyes,no,yes\nno,no,no\nno,no,no\nno,no,yes\nyes,yes,no\nno,yes,yes\nno,yes,no\nyes,no,no\nno,no,no\nno,no,yes\nyes,yes,yes\nno,no,yes\nno,no,yes\nyes,yes,no\nno,no,yes\nno,no,yes\nyes,no,no\nno,no,yes\nyes,no,no\nno,no,no\nno,yes,yes\nno,no,no", "coll": "R-716\nR-816\nR-859\nR-384\nR-360\nR-556\nR-922\nR-806\nR-051\nR-109\nR-465\nR-139\nR-313\nR-945\nR-405\nR-666\nR-359\nR-560\nR-373\nR-458\nR-239\nR-713\nR-330\nR-751\nR-027\nR-673\nR-221\nR-591\nR-033\nR-619\nR-014\nR-379\nR-036\nR-468\nR-768\nR-646\nR-300\nR-231\nR-587\nR-971\nR-383\nR-315\nR-148\nR-121\nR-914\nR-629\nR-780\nR-336\nR-963\nR-772\nR-765\nR-378\nR-667\nR-462\nR-455\nR-011\nR-456\nR-813\nR-734\nR-330", "lln": "38.3\n5.2\n18.7\n10.1\n34.0\n52.0\n30.7\n10.5\n13.2\n49.8\n24.0\n11.4\n30.6\n25.0\n9.1\n23.0\n10.8\n23.6\n17.4\n21.7\n3.5\n22.0\n14.7\n64.2\n21.3\n23.8\n7.7\n7.5\n15.1\n37.5\n10.2\n54.5\n35.3\n11.3\n54.0\n10.3\n25.6\n10.2\n19.2\n33.3", "dist": "disputes\n3\n4\n4\n3\n0\n5\n3\n6\n6\n2\n2\n3\n2\n5\n6\n5\n3\n4\n6\n2\n4\n2\n2\n2\n5\n7\n0\n2\n1\n5\n3\n1\n4\n5\n2\n3\n3\n2\n4\n2\n1\n0\n3\n1\n3\n5\n1\n3\n3\n7\n2\n4\n6\n2\n1\n4\n3\n3\n1\n2"};
+
+/* ---------- sandboxes: free play next to five labs (no XP; pasted text is only ever shown via textContent) ---------- */
+function sbField(parent,label,value,attrs){const lab=el("label");lab.appendChild(SB.text("span",label));const i=el("input",Object.assign({type:"number",step:"any",value:String(value)},attrs||{}));lab.appendChild(i);parent.appendChild(lab);return i;}
+function sbSelect(parent,label,opts,value){const lab=el("label");lab.appendChild(SB.text("span",label));const s=el("select");opts.forEach(([v,t])=>{const o=el("option",{value:v});o.textContent=t;s.appendChild(o);});if(value!=null)s.value=value;lab.appendChild(s);parent.appendChild(lab);return s;}
+function sbGet(i,def,lo,hi,int){let v=parseFloat(i.value);if(!Number.isFinite(v))v=def;if(int)v=Math.round(v);v=Math.min(hi,Math.max(lo,v));i.value=String(v);return v;}
+function sbRead(parent,items){const d=el("div",{class:"readout"});const o={};items.forEach(([k,lab])=>{const w=el("div");w.appendChild(SB.text("span",lab));const b=el("b");b.textContent="—";w.appendChild(b);d.appendChild(w);o[k]=b;});parent.appendChild(d);return o;}
+function sbBtn(parent,label,ghost){const b=el("button",{class:"btn small"+(ghost?" ghost":""),type:"button"});b.textContent=label;parent.appendChild(b);return b;}
+function sbRow(parent,cls){const d=el("div",{class:cls||"sb-params"});parent.appendChild(d);return d;}
+function sbNote(parent){const p=el("p",{class:"note",role:"status"});parent.appendChild(p);return p;}
+function sbSay(box,str){box.innerHTML="";box.appendChild(SB.text("p",str,"note"));}
+/* 0/1, yes/no, true/false → 1/0; anything else → null */
+function sbBin(v){const s=String(v==null?"":v).trim().toLowerCase();if(["1","1.0","yes","y","true","t"].includes(s))return 1;if(["0","0.0","no","n","false","f"].includes(s))return 0;return null;}
+/* draw n units without replacement from categories with the given counts (rows of the real file) */
+function sbDrawCounts(counts,n,r){const c=counts.slice();let rem=c.reduce((a,b)=>a+b,0);n=Math.min(n,rem);const out=c.map(()=>0);
+  for(let i=0;i<n;i++){let u=r()*rem,k=0;while(k<c.length-1&&u>=c[k]){u-=c[k];k++;}c[k]--;out[k]++;rem--;}return out;}
+const sbF=(x,d)=>Number.isFinite(x)?fmt(x,d):"—";
+function sbTick(v){return Math.abs(v)>=1000?ind(Math.round(v)):String(+(+v).toPrecision(3));}
+
+/* natural-frequency grid: 1,000 squares coloured like the hero (red = fraud alerted, ring = fraud missed, gold = false alarm) */
+function sbFreqGrid(box,tp,fn,fp,tn){
+  box.innerHTML="";const tot=tp+fn+fp+tn;if(!tot)return;
+  const raw=[tp,fn,fp,tn].map(x=>1000*x/tot),base=raw.map(Math.floor);let left=1000-base.reduce((a,b)=>a+b,0);
+  raw.map((x,i)=>[x-base[i],i]).sort((a,b)=>b[0]-a[0]).slice(0,left).forEach(([,i])=>base[i]++);
+  const W=360,cols=40,cw=8.8,H=4+25*cw+46;
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Natural-frequency grid of 1,000 transactions"});
+  const fills=["var(--fraud)","var(--surface)","var(--gold)","var(--line)"],strokes=["none","var(--fraud)","none","none"];
+  let k=0;base.forEach((c,ci)=>{for(let j=0;j<c;j++,k++){const x=4+(k%cols)*cw,y=4+Math.floor(k/cols)*cw;
+    s.appendChild(sv("rect",{x:x+0.7,y:y+0.7,width:cw-2,height:cw-2,rx:1.5,style:`fill:${fills[ci]};stroke:${strokes[ci]};stroke-width:1.2`}));}});
+  const lab=[[`${base[0]} fraud, alerted`,`${base[1]} fraud, missed`],[`${base[2]} legitimate, alerted`,`${base[3]} legitimate, quiet`]];
+  lab.forEach((rowL,ri)=>rowL.forEach((t,ci)=>{const x=6+ci*180,y=4+25*cw+18+ri*17,idx=ri*2+ci;
+    s.appendChild(sv("rect",{x,y:y-8,width:8,height:8,rx:1.5,style:`fill:${fills[idx]};stroke:${idx===1?"var(--fraud)":idx===3?"var(--muted)":"none"};stroke-width:1.2`}));
+    const tx=sv("text",{x:x+13,y,"font-size":11});tx.textContent=t;s.appendChild(tx);}));
+  const w=el("div",{class:"svgbox"});w.appendChild(s);box.appendChild(w);
+}
+
+/* the 2 × 2 alert table → sensitivity, false alarm rate, P(F | alert), grid */
+function sbBayesShow(out,c,extra){
+  out.innerHTML="";const [tp,fn,fp,tn]=c,n=tp+fn+fp+tn,fr=tp+fn,lg=fp+tn,al=tp+fp;
+  if(n<1){sbSay(out,"No transactions to tabulate.");return;}
+  const p=fr/n,s=fr?tp/fr:NaN,f=lg?fp/lg:NaN,ppv=al?tp/al:NaN;
+  const rd=sbRead(out,[["p","Base rate P(F)"],["s","Sensitivity P(alert | F)"],["f","False alarm rate P(alert | Fᶜ)"],["q","P(F | alert)"],["lr","Likelihood ratio"]]);
+  rd.p.textContent=fmt(p,4);rd.s.textContent=sbF(s,3);rd.f.textContent=sbF(f,4);rd.q.textContent=sbF(ppv,3);rd.lr.textContent=f>0&&Number.isFinite(s)?(s/f).toFixed(1):"—";
+  out.appendChild(SB.table(["","Alerted","Not alerted","Total"],[["Fraud",ind(tp),ind(fn),ind(fr)],["Legitimate",ind(fp),ind(tn),ind(lg)],["Total",ind(al),ind(fn+tn),ind(n)]]));
+  const bayes=Number.isFinite(s)&&Number.isFinite(f)&&(s*p+f*(1-p))>0?s*p/(s*p+f*(1-p)):NaN;
+  const msgs=[];if(!fr)msgs.push("There are no actual frauds, so sensitivity is undefined.");if(!lg)msgs.push("There are no legitimate rows, so the false alarm rate is undefined.");if(!al)msgs.push("Nothing was alerted, so P(F | alert) is undefined.");
+  if(Number.isFinite(bayes))msgs.push(`Bayes' theorem from the three rates gives ${fmt(bayes,3)}, the same as alerted frauds / alerts = ${ind(tp)} / ${ind(al)}: the theorem is a way of reading the table. Of the ${ind(al)} alerts, ${ind(fp)} are false.`);
+  if(extra)msgs.push(extra);
+  out.appendChild(SB.text("p",msgs.join(" "),"note"));
+  out.appendChild(SB.text("span","Per 1,000 transactions (natural frequencies)","eyebrow"));
+  const gb=el("div");out.appendChild(gb);sbFreqGrid(gb,tp,fn,fp,tn);
+}
+
+function sbBayes(root){
+  const SEG={all:["All channels",[733,86,2448,46733]],netbanking:["Netbanking",[464,45,965,18571]],card:["Card",[150,18,646,11781]],UPI:["UPI",[119,23,837,16381]]};
+  SB.panel(root,"Bayes with your own numbers",{
+    controls:p=>{
+      const f=sbRow(p);const seg=sbSelect(f,"Segment of the file",Object.keys(SEG).map(k=>[k,SEG[k][0]]),"all");
+      const nI=sbField(f,"Transactions to draw (N)",1000,{min:"10",max:"50000",step:"1"});const sI=sbField(f,"Seed",1,{min:"1",step:"1"});
+      const go=sbBtn(sbRow(p,"btnrow"),"Draw");const msg=sbNote(p);const out=el("div",{class:"sb-pane"});p.appendChild(out);
+      function run(){const c=SEG[seg.value][1],tot=c.reduce((a,b)=>a+b,0);const n=sbGet(nI,1000,10,tot,true);const d=sbDrawCounts(c,n,rng(sbGet(sI,1,1,999999,true)));
+        msg.textContent=`Drew ${ind(n)} of the ${ind(tot)} transactions in this segment at random, without replacement. The whole segment has sensitivity ${fmt(c[0]/(c[0]+c[1]),3)}, false alarm rate ${fmt(c[2]/(c[2]+c[3]),4)} and P(F | alert) ${fmt(c[0]/(c[0]+c[2]),3)}. Small samples wobble around these; N = ${ind(tot)} reproduces them exactly.`;
+        sbBayesShow(out,d);}
+      go.addEventListener("click",run);seg.addEventListener("change",run);run();
+    },
+    generate:p=>{
+      const f=sbRow(p);const pI=sbField(f,"Base rate P(F)",0.01638,{min:"0.0001",max:"0.9999"}),sI=sbField(f,"Sensitivity",0.895,{min:"0",max:"1"}),fI=sbField(f,"False alarm rate",0.0498,{min:"0",max:"1"});
+      const nI=sbField(f,"Transactions (N)",10000,{min:"10",max:"200000",step:"1"}),seI=sbField(f,"Seed",1,{min:"1",step:"1"});
+      const go=sbBtn(sbRow(p,"btnrow"),"Simulate");const tb=el("div");p.appendChild(tb);const out=el("div",{class:"sb-pane"});p.appendChild(out);
+      function run(){const pp=sbGet(pI,0.01638,0.0001,0.9999),s=sbGet(sI,0.895,0,1),fa=sbGet(fI,0.0498,0,1),n=sbGet(nI,10000,10,200000,true);const r=rng(sbGet(seI,1,1,999999,true));
+        const c=[0,0,0,0],marks=[100,1000,10000,100000].filter(x=>x<n).concat([n]),rows=[];
+        for(let i=1;i<=n;i++){const fr=r()<pp,al=r()<(fr?s:fa);c[fr?(al?0:1):(al?2:3)]++;if(marks.includes(i))rows.push([ind(i),ind(c[0]+c[2]),c[0]+c[2]?fmt(c[0]/(c[0]+c[2]),3):"—"]);}
+        const den=s*pp+fa*(1-pp),b=den>0?s*pp/den:NaN;tb.innerHTML="";
+        tb.appendChild(SB.text("p",`Each simulated transaction is fraud with probability ${pp}; a fraud is alerted with probability ${s}, a legitimate one with probability ${fa}. Bayes' theorem predicts P(F | alert) = ${sbF(b,3)}. The simulated share settles towards it as N grows:`,"note"));
+        tb.appendChild(SB.table(["After N transactions","Alerts so far","Simulated P(F | alert)"],rows));
+        sbBayesShow(out,c);}
+      go.addEventListener("click",run);run();
+    },
+    own:p=>{
+      const out=el("div",{class:"sb-pane"});
+      SB.dataForm(p,[{key:"a",label:"Actual (1 = fraud)",type:"any"},{key:"b",label:"Alerted (1 = yes)",type:"any"}],d=>{
+        const c=[0,0,0,0];let skip=0;d.a.forEach((v,i)=>{const a=sbBin(v),b=sbBin(d.b[i]);if(a===null||b===null){skip++;return;}c[a?(b?0:1):(b?2:3)]++;});
+        const used=c[0]+c[1]+c[2]+c[3];
+        if(used<2){sbSay(out,"Fewer than two rows have 0/1 (or yes/no) values in both chosen columns, so there is nothing to tabulate. Check the column choices above.");return;}
+        sbBayesShow(out,c,skip?`Skipped ${ind(skip)} row(s) whose values were not 0/1 or yes/no.`:"");
+      },{example:SBX.bayes,placeholder:"actual,alerted\n1,1\n0,0\n0,1\n…",minRows:2,
+        help:"Paste two columns with a header row: the true label (1 = fraud, 0 = legitimate; yes/no also works) and whether the engine alerted (1/0). Or type a 2 × 2 table of counts below. Your data stays in this browser: it is not uploaded, saved or shared."});
+      p.appendChild(SB.text("span","Or type a 2 × 2 table of counts","eyebrow"));
+      const f=sbRow(p);const iTP=sbField(f,"Fraud, alerted",9,{min:"0",step:"1"}),iFN=sbField(f,"Fraud, not alerted",2,{min:"0",step:"1"}),iFP=sbField(f,"Legitimate, alerted",7,{min:"0",step:"1"}),iTN=sbField(f,"Legitimate, not alerted",42,{min:"0",step:"1"});
+      const go=sbBtn(sbRow(p,"btnrow"),"Use these counts");p.appendChild(out);
+      go.addEventListener("click",()=>{const c=[iTP,iFN,iFP,iTN].map(i=>sbGet(i,0,0,1e9,true));if(c[0]+c[1]+c[2]+c[3]<1){sbSay(out,"All four counts are zero.");return;}sbBayesShow(out,c);});
+    }
+  },"Draw transactions from the file, simulate an engine with your own rates, or bring your own labelled alerts.");
+}
+
+/* ---------- File 2: collisions ---------- */
+const sbPRepeat=(n,Nn)=>{if(n>Nn)return 1;let l=0;for(let k=0;k<n;k++)l+=Math.log1p(-k/Nn);return 1-Math.exp(l);};
+/* bar chart of a discrete distribution (SVG): bars = observed shares, gold dots = model, red rings = second reference */
+function sbPMF(box,o){
+  box.innerHTML="";const W=360,H=210,m={l:34,r:10,t:22,b:30},nb=o.bars.length;if(!nb)return;const bw=(W-m.l-m.r)/nb;
+  const all=o.bars.concat(o.dots||[],o.rings||[]).filter(Number.isFinite);const ymax=o.ymax||Math.max(0.02,...all)*1.12;
+  const Y=v=>H-m.b-Math.min(v,ymax)/ymax*(H-m.t-m.b),X=i=>m.l+i*bw;
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label||"Bar chart of a discrete distribution"});
+  [0,ymax/2].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-4,y:Y(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=v?v.toFixed(2):"0";s.appendChild(t);});
+  o.bars.forEach((v,i)=>{if(v>0)s.appendChild(sv("rect",{x:X(i)+Math.min(1.5,bw*0.1),y:Y(v),width:Math.max(0.6,bw-Math.min(3,bw*0.2)),height:Y(0)-Y(v),style:"fill:var(--accent)"}));});
+  const rr=Math.max(1.6,Math.min(3.2,bw/3));
+  (o.rings||[]).forEach((v,i)=>{if(Number.isFinite(v))s.appendChild(sv("circle",{cx:X(i)+bw/2,cy:Y(v),r:rr,style:"fill:none;stroke:var(--fraud);stroke-width:1.5"}));});
+  (o.dots||[]).forEach((v,i)=>{if(Number.isFinite(v))s.appendChild(sv("circle",{cx:X(i)+bw/2,cy:Y(v),r:rr,style:"fill:var(--gold)"}));});
+  const step=Math.max(1,Math.ceil(nb/8));for(let i=0;i<nb;i+=step){const t=sv("text",{x:X(i)+bw/2,y:H-16,"font-size":10,"text-anchor":"middle"});t.textContent=String(o.k0+i);s.appendChild(t);}
+  const xl=sv("text",{x:W-m.r,y:H-2,"font-size":10,"text-anchor":"end"});xl.textContent=o.xlab||"k";s.appendChild(xl);
+  const tl=sv("text",{x:m.l,y:12,"font-size":11});tl.textContent=o.title||"";s.appendChild(tl);
+  const w=el("div",{class:"svgbox"});w.appendChild(s);box.appendChild(w);
+}
+function sbCollision(root){
+  SB.panel(root,"Collisions on your terms",{
+    generate:p=>{
+      const f=sbRow(p);const NI=sbField(f,"Pool size N",1000000,{min:"2",max:"1000000000",step:"1"}),nI=sbField(f,"Draws per run n",2000,{min:"2",max:"20000",step:"1"});
+      const RI=sbField(f,"Runs",200,{min:"1",max:"2000",step:"1"}),sI=sbField(f,"Seed",1,{min:"1",step:"1"});
+      const go=sbBtn(sbRow(p,"btnrow"),"Run the simulation");const msg=sbNote(p);
+      const rd=sbRead(p,[["sim","Runs with a repeat"],["ex","Exact P(at least one repeat)"],["mp","Mean repeated pairs per run"],["ep","Expected pairs C(n, 2) / N"]]);
+      const ch=el("div");p.appendChild(ch);
+      function run(){const Nn=sbGet(NI,1e6,2,1e9,true),n=sbGet(nI,2000,2,20000,true);let R=sbGet(RI,200,1,2000,true);const cap=Math.max(1,Math.floor(2e6/n));let capped=false;if(R>cap){R=cap;capped=true;}
+        const r=rng(sbGet(sI,1,1,999999,true));let hit=0,tot=0;const per=[];
+        for(let k=0;k<R;k++){const seen=new Map();let pairs=0;for(let i=0;i<n;i++){const v=Math.floor(r()*Nn),c=seen.get(v)||0;pairs+=c;seen.set(v,c+1);}if(pairs>0)hit++;tot+=pairs;per.push(pairs);}
+        const lam=n*(n-1)/2/Nn,kmax=Math.min(40,Math.max(...per,Math.ceil(lam+4*Math.sqrt(lam)+1)));
+        const bars=[],dots=[];for(let k=0;k<=kmax;k++){bars.push(per.filter(x=>x===k).length/R);dots.push(poisPMF(k,lam));}
+        rd.sim.textContent=`${ind(hit)} / ${ind(R)} (${pct(hit/R,1)})`;rd.ex.textContent=fmt(sbPRepeat(n,Nn),4);rd.mp.textContent=fmt(tot/R,3);rd.ep.textContent=fmt(lam,3);
+        msg.textContent=(capped?`Runs were capped at ${ind(R)} so that runs × n stays under 2,000,000. `:"")+`Each run draws ${ind(n)} IDs with replacement from ${ind(Nn)}. `+(n>Nn?"With more draws than IDs, a repeat is certain (the pigeonhole principle).":`There are C(n, 2) = ${ind(n*(n-1)/2)} pairs, each matching with probability 1/N.`);
+        sbPMF(ch,{k0:0,bars,dots,title:"bars: share of runs · gold: Poisson(C(n,2)/N)",xlab:"repeated pairs in a run",label:"Distribution of repeated pairs per run"});}
+      go.addEventListener("click",run);run();
+      p.appendChild(SB.text("p","The number of repeated pairs is close to Poisson with mean C(n, 2)/N when N is large: many pairs, each a rare match (the Poisson approximation, File 8).","note"));
+    },
+    own:p=>{
+      let ids=null;const out=el("div",{class:"sb-pane"});
+      SB.dataForm(p,[{key:"id",label:"ID column",type:"any"}],d=>{ids=d.id;show();},{example:SBX.coll,minRows:2,placeholder:"one ID per line, e.g.\nR-716\nR-816\nR-330",
+        help:"Paste a list of IDs, codes or labels (one per line, or a CSV column), and the size of the pool they were drawn from. The sandbox finds the repeats and compares them with the birthday formula. Labels longer than 40 characters are shortened. Your data stays in this browser: it is not uploaded, saved or shared."});
+      const f=sbRow(p);const NI=sbField(f,"Pool size N",1000,{min:"1",max:"1000000000000",step:"1"});const go=sbBtn(sbRow(p,"btnrow"),"Recompute");p.appendChild(out);
+      function show(){if(!ids)return;out.innerHTML="";const n=ids.length,Nn=sbGet(NI,1000,1,1e12,true);const cnt=new Map();ids.forEach(v=>cnt.set(v,(cnt.get(v)||0)+1));
+        const rep=[...cnt.entries()].filter(([,c])=>c>1).sort((a,b)=>b[1]-a[1]);const pairs=rep.reduce((t,[,c])=>t+c*(c-1)/2,0),ep=n*(n-1)/2/Nn;
+        const rd=sbRead(out,[["n","IDs read (n)"],["d","Distinct IDs"],["r","IDs seen more than once"],["pp","Repeated pairs"],["ep","Expected pairs C(n, 2) / N"],["pr","Formula: P(at least one repeat)"]]);
+        rd.n.textContent=ind(n);rd.d.textContent=ind(cnt.size);rd.r.textContent=ind(rep.length);rd.pp.textContent=ind(pairs);rd.ep.textContent=fmt(ep,3);rd.pr.textContent=fmt(sbPRepeat(n,Nn),4);
+        let note=cnt.size>Nn?`There are more distinct IDs (${ind(cnt.size)}) than the pool size you entered, so the pool must be larger than N = ${ind(Nn)}. `:"";
+        note+=pairs?`If the IDs were drawn at random from ${ind(Nn)} values, about ${fmt(ep,2)} repeated pairs would be expected; you have ${ind(pairs)}. The pool size at which ${ind(pairs)} pair(s) is the expected number is C(n, 2) / pairs ≈ ${ind(Math.round(n*(n-1)/2/pairs))}. `+(pairs>3*ep+3?"Far more repeats than random draws would give: the IDs are probably not random (reuse, a short counter, a bad generator).":"")
+          :`No repeats. The formula gave P(at least one repeat) = ${fmt(sbPRepeat(n,Nn),3)}.`;
+        out.appendChild(SB.text("p",note,"note"));
+        if(rep.length){out.appendChild(SB.text("span","Repeated IDs (most frequent first, up to 12)","eyebrow"));out.appendChild(SB.table(["ID","Times seen"],rep.slice(0,12).map(([v,c])=>[v,ind(c)])));}}
+      go.addEventListener("click",show);NI.addEventListener("change",show);
+    }
+  },"Choose any pool and any number of draws and run it many times, or paste your own IDs and look for repeats.");
+}
+
+/* ---------- File 4: lift ---------- */
+function liftMeter(box,lift,show){
+  const W=360,H=58,lo=Math.log(0.25),hi=Math.log(4),X=v=>12+(Math.log(Math.min(4,Math.max(0.25,v)))-lo)/(hi-lo)*(W-24);
+  const s=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Lift meter on a log scale from 0.25 to 4"});
+  s.appendChild(sv("rect",{x:12,y:18,width:W-24,height:8,rx:4,style:"fill:var(--line)"}));
+  [0.25,0.5,1,2,4].forEach(v=>{s.appendChild(sv("line",{x1:X(v),x2:X(v),y1:14,y2:30,style:"stroke:var(--muted)"}));const t=sv("text",{x:X(v),y:46,"font-size":11,"text-anchor":"middle"});t.textContent=v;s.appendChild(t);});
+  if(show&&Number.isFinite(lift))s.appendChild(sv("circle",{cx:X(lift),cy:22,r:8,style:"fill:var(--gold);stroke:var(--surface);stroke-width:2"}));
+  box.innerHTML="";box.appendChild(s);
+}
+/* c = [X∩Y, X∩Yᶜ, Xᶜ∩Y, neither] */
+function sbLiftShow(out,c,extra){
+  out.innerHTML="";const [a,b,cc,d]=c,n=a+b+cc+d,nx=a+b,ny=a+cc;
+  out.appendChild(SB.table(["","Y","not Y","Total"],[["X",ind(a),ind(b),ind(nx)],["not X",ind(cc),ind(d),ind(n-nx)],["Total",ind(ny),ind(n-ny),ind(n)]]));
+  const lift=nx&&ny?(a/n)/((nx/n)*(ny/n)):NaN;
+  const rd=sbRead(out,[["px","P(X)"],["py","P(Y)"],["s","Support P(X ∩ Y)"],["c","Confidence P(Y | X)"],["c2","Confidence P(X | Y)"],["l","Lift"]]);
+  rd.px.textContent=fmt(nx/n,4);rd.py.textContent=fmt(ny/n,4);rd.s.textContent=fmt(a/n,4);rd.c.textContent=nx?fmt(a/nx,4):"—";rd.c2.textContent=ny?fmt(a/ny,4):"—";rd.l.textContent=Number.isFinite(lift)?lift.toFixed(3):"—";
+  const m=el("div",{class:"svgbox"});out.appendChild(m);liftMeter(m,lift,true);
+  let t=!nx?"X never happens, so P(Y | X) and lift are undefined.":!ny?"Y never happens, so lift is undefined.":
+    `Under independence ${fmt(nx*ny/n,1)} rows would have both X and Y; there are ${ind(a)}. `+(lift>1.05?`X and Y occur together ${lift.toFixed(2)} times as often as independence predicts.`:lift<0.95?"They occur together less often than independence predicts.":"Lift is close to 1: close to independent.")+" Lift is symmetric: the rule Y → X has the same lift.";
+  if(n<100&&nx&&ny)t+=` With only ${ind(n)} rows, one row more or less in the X ∩ Y cell moves lift by about ${(n/(nx*ny)).toFixed(2)}.`;
+  if(extra)t+=" "+extra;out.appendChild(SB.text("p",t,"note"));
+}
+function sbLift(root){
+  SB.panel(root,"Lift on any table",{
+    controls:p=>{
+      const f=sbRow(p);const opts=Object.keys(FLAGNAME).map(k=>[k,FLAGNAME[k]]);const xS=sbSelect(f,"X (if)",opts,"foreign_ip"),yS=sbSelect(f,"Y (then)",opts,"fraud");
+      const nI=sbField(f,"Transactions to draw (N)",2000,{min:"20",max:"50000",step:"1"}),sI=sbField(f,"Seed",1,{min:"1",step:"1"});
+      const row=sbRow(p,"btnrow");const go=sbBtn(row,"Draw"),many=sbBtn(row,"Draw 200 samples",true);const msg=sbNote(p);const out=el("div",{class:"sb-pane"});p.appendChild(out);
+      const cells=()=>{const x=xS.value,y=yS.value,nx=FLAGS[x],ny=FLAGS[y],a=x===y?nx:(PAIRS[x+"|"+y]??PAIRS[y+"|"+x]);return [a,nx-a,ny-a,N-nx-ny+a];};
+      const full=c=>(c[0]/N)/(((c[0]+c[1])/N)*((c[0]+c[2])/N));
+      function one(){if(xS.value===yS.value){sbSay(out,"Pick two different events.");msg.textContent="";return;}const c=cells(),n=sbGet(nI,2000,20,N,true);const d=sbDrawCounts(c,n,rng(sbGet(sI,1,1,999999,true)));
+        msg.textContent=`A random sample of ${ind(n)} of the 50,000 transactions, drawn without replacement. On the whole file the lift of ${FLAGNAME[xS.value]} → ${FLAGNAME[yS.value]} is ${full(c).toFixed(3)}.`;sbLiftShow(out,d);}
+      function lots(){if(xS.value===yS.value){sbSay(out,"Pick two different events.");return;}const c=cells(),n=sbGet(nI,2000,20,N,true),R=Math.min(200,Math.max(1,Math.floor(4e6/n)));const r=rng(sbGet(sI,1,1,999999,true));const L2=[];let und=0;
+        for(let k=0;k<R;k++){const d=sbDrawCounts(c,n,r),nx=d[0]+d[1],ny=d[0]+d[2];if(!nx||!ny){und++;continue;}L2.push((d[0]/n)/((nx/n)*(ny/n)));}
+        out.innerHTML="";const lf=full(c);
+        if(L2.length<2){sbSay(out,"Too few samples had both events; increase N.");return;}
+        const h=el("div",{class:"svgbox"});out.appendChild(h);SB.histogram(h,L2,{marks:[[lf,"whole file "+lf.toFixed(2),"var(--gold)"]],label:"Histogram of sample lifts"});
+        const sd=SB.st.sd(L2),lo=SB.st.q(L2,0.025),hi=SB.st.q(L2,0.975);
+        out.appendChild(SB.text("p",`${ind(L2.length)} samples of ${ind(n)} transactions each`+(und?` (${ind(und)} more had no X or no Y, so no lift)`:"")+`. The middle 95% of sample lifts runs from ${lo.toFixed(2)} to ${hi.toFixed(2)}; their SD is ${sd.toFixed(3)}. Raise N and the spread shrinks: a lift from a small sample is a noisy number.`,"note"));
+        msg.textContent="";}
+      go.addEventListener("click",one);many.addEventListener("click",lots);one();
+    },
+    generate:p=>{
+      const f=sbRow(p);const xI=sbField(f,"P(X)",0.3,{min:"0.001",max:"0.999"}),yI=sbField(f,"P(Y)",0.2,{min:"0.001",max:"0.999"}),rI=sbField(f,"Correlation ρ",0.3,{min:"-1",max:"1"});
+      const nI=sbField(f,"Rows (N)",1000,{min:"10",max:"200000",step:"1"}),sI=sbField(f,"Seed",1,{min:"1",step:"1"});
+      p.appendChild(SB.text("p","ρ is the correlation of the two 0/1 indicators (the phi coefficient): ρ = [P(X ∩ Y) − P(X)P(Y)] / √[P(X)(1 − P(X)) P(Y)(1 − P(Y))]. ρ = 0 is independence, lift 1.","note"));
+      const go=sbBtn(sbRow(p,"btnrow"),"Generate");const msg=sbNote(p);const out=el("div",{class:"sb-pane"});p.appendChild(out);
+      function run(){const px=sbGet(xI,0.3,0.001,0.999),py=sbGet(yI,0.2,0.001,0.999);let rho=sbGet(rI,0.3,-1,1);const n=sbGet(nI,1000,10,200000,true);const r=rng(sbGet(sI,1,1,999999,true));
+        const sd=Math.sqrt(px*(1-px)*py*(1-py)),lo=Math.max(0,px+py-1),hi=Math.min(px,py),rmin=(lo-px*py)/sd,rmax=(hi-px*py)/sd;let note="";
+        if(rho<rmin||rho>rmax){const r0=rho;rho=Math.min(rmax,Math.max(rmin,rho));rI.value=String(+rho.toFixed(4));note=`With these P(X) and P(Y), ρ can only run from ${rmin.toFixed(3)} to ${rmax.toFixed(3)}, so ${r0} was moved to ${rho.toFixed(3)}. `;}
+        const p11=px*py+rho*sd,cp=[p11,px-p11,py-p11,1-px-py+p11];const c=[0,0,0,0];
+        for(let i=0;i<n;i++){let u=r(),k=0;while(k<3&&u>=cp[k]){u-=cp[k];k++;}c[k]++;}
+        msg.textContent=note+`Model: P(X ∩ Y) = ${fmt(p11,4)}, true lift = ${(p11/(px*py)).toFixed(3)}. Below: ${ind(n)} rows simulated from it.`;sbLiftShow(out,c);}
+      go.addEventListener("click",run);run();
+    },
+    own:p=>{
+      const out=el("div",{class:"sb-pane"});
+      SB.dataForm(p,[{key:"x",label:"X (the rule's \"if\")",type:"any"},{key:"y",label:"Y (the rule's \"then\")",type:"any"}],d=>{
+        const c=[0,0,0,0];let skip=0;d.x.forEach((v,i)=>{const a=sbBin(v),b=sbBin(d.y[i]);if(a===null||b===null){skip++;return;}c[a?(b?0:1):(b?2:3)]++;});
+        if(c[0]+c[1]+c[2]+c[3]<2){sbSay(out,"Fewer than two rows have 0/1 (or yes/no) values in both chosen columns. Pick two yes/no columns above.");return;}
+        sbLiftShow(out,c,skip?`Skipped ${ind(skip)} row(s) whose values were not 0/1 or yes/no (a header row of names counts as one).`:"");
+      },{example:SBX.lift,minRows:2,placeholder:"coupon,repeat_buyer,weekend\nyes,yes,no\nno,no,yes\n…",
+        help:"Paste a table with a header row and two or more yes/no (or 1/0, true/false) columns, one row per customer, basket or transaction. Choose X and Y below; when every column is yes/no the header is not detected, so the columns are listed as column 1, 2, … in order. Your data stays in this browser: it is not uploaded, saved or shared."});
+      p.appendChild(out);
+    }
+  },"Sample the file and see how noisy lift is, generate two events with a chosen dependence, or bring your own yes/no columns.");
+}
+
+/* ---------- File 7: the Law of Large Numbers on any data ---------- */
+function sbRunMean(p,row){
+  const sp=el("span");row.appendChild(sp);let speed=1,anim=null;speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  const box=el("div",{class:"svgbox"});const cv=el("canvas",{"aria-label":"Running mean drawn one value at a time against the target mean"});box.appendChild(cv);p.appendChild(box);
+  const W=360,H=220,g=canvasSetup(cv,W,H);
+  const rd=sbRead(p,[["n","Values so far"],["m","Running mean"],["mu","Target mean"],["sd","SD of one value"]]);
+  const note=sbNote(p);
+  function draw(cm,k,mu,sd,lo,hi,lab){const n=cm.length,m={l:46,r:10,t:16,b:24};g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);
+    const lx=Math.log10(Math.max(10,n)),X=i=>m.l+Math.log10(Math.max(1,i))/lx*(W-m.l-m.r),Y=v=>H-m.b-(Math.min(hi,Math.max(lo,v))-lo)/(hi-lo)*(H-m.t-m.b);
+    g.strokeStyle=cssVar("--line");g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";g.lineWidth=1;
+    const e10=10**Math.floor(Math.log10((hi-lo)/4)),fr=(hi-lo)/4/e10,stp=(fr<=1?1:fr<=2?2:fr<=5?5:10)*e10;for(let v=Math.ceil(lo/stp)*stp;v<=hi+1e-9*stp;v+=stp){g.beginPath();g.moveTo(m.l,Y(v));g.lineTo(W-m.r,Y(v));g.stroke();const t=sbTick(v);g.fillText(t,m.l-4-g.measureText(t).width,Y(v)+3);}
+    [1,10,100,1000,10000].filter(v=>v<=n).forEach(v=>{const t=ind(v);g.fillText(t,Math.min(W-m.r-g.measureText(t).width,X(v)-3),H-8);});
+    if(sd>0){g.fillStyle=cssVar("--accent-soft");g.beginPath();for(let i=1;i<=n;i=Math.max(i+1,i*1.06))g.lineTo(X(i),Y(mu+2*sd/Math.sqrt(i)));g.lineTo(X(n),Y(mu+2*sd/Math.sqrt(n)));
+      g.lineTo(X(n),Y(mu-2*sd/Math.sqrt(n)));for(let i=n;i>=1;i=i>1?Math.min(i-1,i/1.06):0)g.lineTo(X(i),Y(mu-2*sd/Math.sqrt(i)));g.closePath();g.fill();}
+    g.strokeStyle=cssVar("--gold");g.setLineDash([4,3]);g.beginPath();g.moveTo(m.l,Y(mu));g.lineTo(W-m.r,Y(mu));g.stroke();g.setLineDash([]);
+    g.strokeStyle=cssVar("--accent");g.lineWidth=2;g.beginPath();for(let i=0;i<k;i++){const x=X(i+1),y=Y(cm[i]);i?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();g.lineWidth=1;
+    if(k){g.fillStyle=cssVar("--fraud");g.beginPath();g.arc(X(k),Y(cm[k-1]),4,0,7);g.fill();}
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText("running mean · gold: "+lab,m.l,11);}
+  return{run(vals,mu,sd,lab,why){if(anim){anim.stop();anim=null;}const n=vals.length;if(!n)return;const cm=[];let s=0;vals.forEach((v,i)=>{s+=v;cm.push(s/(i+1));});
+      const sm=SB.st.sorted(vals);let lo=Math.max(sm[0],mu-2.5*sd),hi=Math.min(sm[n-1],mu+2.5*sd);lo=Math.min(lo,mu);hi=Math.max(hi,mu);if(!(hi-lo>1e-9*Math.max(1,Math.abs(mu)))){lo=mu-1;hi=mu+1;}
+      rd.mu.textContent=sbTick(mu);rd.sd.textContent=sbTick(sd);
+      const upd=k=>{rd.n.textContent=ind(k);rd.m.textContent=k?sbTick(cm[k-1]):"—";draw(cm,k,mu,sd,lo,hi,lab);};
+      note.textContent=(why||"")+` After all ${ind(n)} values the running mean is ${sbTick(cm[n-1])}, ${sbTick(Math.abs(cm[n-1]-mu))} from the target; 2·SD/√n = ${sbTick(2*sd/Math.sqrt(n))}. The shaded band is target ± 2·SD/√n.`;
+      if(REDUCED){upd(n);return;}let k=0,acc=0;upd(0);anim=loop(()=>{acc+=0.5*speed*(1+k/40);while(acc>=1&&k<n){acc-=1;k++;}upd(k);if(k>=n){anim.stop();anim=null;}});}};
+}
+function sbTheory(kind,P){const cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+  switch(kind){case"normal":return[P.mean,Math.abs(P.sd)];
+    case"lognormal":{const s=P["spread σ"];return[P.median*Math.exp(s*s/2),Math.abs(P.median)*Math.exp(s*s/2)*Math.sqrt(Math.exp(s*s)-1)];}
+    case"exponential":return[P.mean,Math.abs(P.mean)];
+    case"uniform":return[(P.min+P.max)/2,Math.abs(P.max-P.min)/Math.sqrt(12)];
+    case"bimodal":{const w=cl(P["share of hump 1"],0,1),m=w*P["mean 1"]+(1-w)*P["mean 2"],v=P.sd*P.sd+w*(1-w)*(P["mean 1"]-P["mean 2"])**2;return[m,Math.sqrt(v)];}
+    case"poisson":return[P["mean λ"],Math.sqrt(Math.max(0,P["mean λ"]))];
+    case"binomial":{const n=Math.min(1000,Math.max(1,Math.round(P["n trials"]))),pp=cl(P.p,0,1);return[n*pp,Math.sqrt(n*pp*(1-pp))];}}
+  return[NaN,NaN];}
+function sbLLN(root){
+  SB.panel(root,"Running means of anything",{
+    controls:p=>{
+      const f=sbRow(p);const vS=sbSelect(f,"Variable",[["daily","Frauds per day"],["amount","Amount (₹)"]],"daily");
+      const nI=sbField(f,"Draws (n)",1000,{min:"10",max:"5000",step:"1"}),sI=sbField(f,"Seed",1,{min:"1",step:"1"});
+      const row=sbRow(p,"btnrow");const go=sbBtn(row,"Run");const rm=sbRunMean(p,row);
+      function run(){const n=sbGet(nI,1000,10,5000,true),r=rng(sbGet(sI,1,1,999999,true)),am=vS.value==="amount";const v=[];for(let i=0;i<n;i++)v.push(am?sampleAmount(r):sampleDaily(r));
+        if(am)rm.run(v,1227.08,2019.64,"E[X] = ₹1,227","Amounts are drawn from the file's percentile curve (its mean is ₹1,227; the raw file's is ₹1,222). One huge amount can jerk the mean: heavy tails make the LLN slow.");
+        else rm.run(v,9.1,2.895,"E[X] = 9.1","Days are drawn from the 90-day PMF.");}
+      go.addEventListener("click",run);vS.addEventListener("change",run);run();
+    },
+    generate:p=>{
+      const gf=SB.genForm(null,{kind:"exponential",n:1000});p.appendChild(gf.el);const row=sbRow(p,"btnrow");const go=sbBtn(row,"Generate and run");const rm=sbRunMean(p,row);const msg=sbNote(p);
+      function run(){const G=gf.get();if(G.kind==="poisson"&&!(G.params["mean λ"]>0&&G.params["mean λ"]<=500)){msg.textContent="Keep λ between 0 and 500.";return;}
+        const [mu,sd]=sbTheory(G.kind,G.params);if(!Number.isFinite(mu)||!Number.isFinite(sd)){msg.textContent="Those parameters do not give a finite mean and SD.";return;}msg.textContent="";
+        rm.run(gf.values(),mu,sd,"E[X] = "+sbTick(mu),`${SB.GEN[G.kind].label}: theoretical mean ${sbTick(mu)}, SD ${sbTick(sd)}.`);}
+      go.addEventListener("click",run);run();
+    },
+    own:p=>{
+      let vals=null,seed=1;
+      SB.dataForm(p,[{key:"x",label:"Values",type:"num"}],d=>{vals=d.x;show(vals,"in the order you pasted them");},{example:SBX.lln,minRows:2,
+        help:"Paste numbers (one per line, or a CSV column with a header). The running mean is drawn in the order given; the target is the mean of all your values. Your data stays in this browser: it is not uploaded, saved or shared."});
+      const row=sbRow(p,"btnrow");const sh=sbBtn(row,"Shuffle the order",true);const rm=sbRunMean(p,row);
+      function show(v,how){const mu=SB.st.mean(v),sd=v.length>1?SB.st.sd(v):0;rm.run(v,mu,sd,"mean of all = "+sbTick(mu),`${ind(v.length)} values, ${how}.`+(sd===0?" All values are equal, so there is nothing to converge.":""));}
+      sh.addEventListener("click",()=>{if(!vals)return;seed++;const o=shuffled(vals.length,seed);show(o.map(i=>vals[i]),"shuffled (seed "+seed+")");});
+    }
+  },"Watch the running mean settle for the real data, for a distribution you choose, or for numbers you paste.");
+}
+
+/* ---------- File 8: Binomial and Poisson of your choice ---------- */
+const sbBinom=(k,n,p)=>p<=0?(k===0?1:0):p>=1?(k===n?1:0):binomPMF(k,n,p);
+function sbDist(root){
+  SB.panel(root,"Fit and simulate counts",{
+    controls:p=>{
+      const f=sbRow(p);const lI=sbField(f,"Poisson λ",9.1,{min:"0.5",max:"30",step:"0.1"});const go=sbBtn(sbRow(p,"btnrow"),"Compare with the 90 days");
+      const rd=sbRead(p,[["m","Model P(X > 10)"],["e","Real P(X > 10)"],["mv","Model mean = variance"],["rv","Real mean · variance"]]);const ch=el("div");p.appendChild(ch);const msg=sbNote(p);
+      function run(){const l=sbGet(lI,9.1,0.5,30);const ks=[...Array(21).keys()];const pm=ks.map(k=>poisPMF(k,l));let cdf=0;for(let k=0;k<=10;k++)cdf+=poisPMF(k,l);rd.m.textContent=fmt(1-cdf,3);rd.e.textContent=fmt(27/90,3);rd.mv.textContent=fmt(l,2);rd.rv.textContent="9.10 · 8.38";
+        sbPMF(ch,{k0:0,bars:ks.map(k=>(DAILY[k]||0)/90),dots:pm,title:"bars: real 90 days · gold: Poisson("+l+")",xlab:"frauds per day",label:"Real daily PMF against a Poisson model"});
+        msg.textContent=`Poisson(λ) has mean and variance both equal to λ. The 90 real days have mean 9.1 and variance 8.38 (dividing by 90), slightly less spread than Poisson. λ = 9.1, the sample mean, is the natural choice; move it and watch the fit get worse.`;}
+      go.addEventListener("click",run);lI.addEventListener("change",run);run();
+    },
+    generate:p=>{
+      const f=sbRow(p);const mS=sbSelect(f,"Model",[["binom","Binomial(n, p)"],["pois","Poisson(λ)"]],"binom");
+      const nI=sbField(f,"n trials (Binomial)",35,{min:"1",max:"200",step:"1"}),pI=sbField(f,"p (Binomial)",0.2304,{min:"0",max:"1"}),lI=sbField(f,"λ (Poisson)",9.1,{min:"0.01",max:"100"});
+      const RI=sbField(f,"Samples",2000,{min:"1",max:"5000",step:"1"}),sI=sbField(f,"Seed",1,{min:"1",step:"1"});
+      const row=sbRow(p,"btnrow");const go=sbBtn(row,"Run");const sp=el("span");row.appendChild(sp);let speed=1,anim=null;speedSeg(sp,v=>{speed=v;},[1,4,16]);
+      const ch=el("div");p.appendChild(ch);const rd=sbRead(p,[["n","Samples"],["m","Sample mean"],["mu","Model mean"],["s","Sample SD"],["sd","Model SD"]]);const msg=sbNote(p);
+      function run(){if(anim){anim.stop();anim=null;}const bin=mS.value==="binom",n=sbGet(nI,35,1,200,true),pp=sbGet(pI,0.2304,0,1),l=sbGet(lI,9.1,0.01,100),R=sbGet(RI,2000,1,5000,true),r=rng(sbGet(sI,1,1,999999,true));
+        const mu=bin?n*pp:l,sd=Math.sqrt(bin?n*pp*(1-pp):l);let k0=Math.max(0,Math.floor(mu-4*sd-1)),k1=bin?Math.min(n,Math.ceil(mu+4*sd+1)):Math.ceil(mu+4*sd+2);if(k1-k0<4)k1=bin?Math.min(n,k0+4):k0+4;
+        const pmf=[];for(let k=k0;k<=k1;k++)pmf.push(bin?sbBinom(k,n,pp):poisPMF(k,l));
+        const draw1=()=>{if(bin){let k=0;for(let i=0;i<n;i++)if(r()<pp)k++;return k;}let k=0,q=Math.exp(-l),s=q;const u=r();while(u>s&&k<1000){k++;q*=l/k;s+=q;}return k;};
+        const h=new Array(k1-k0+1).fill(0);let cnt=0,sum=0,sum2=0,out=0;
+        rd.mu.textContent=mu.toFixed(3);rd.sd.textContent=sd.toFixed(3);
+        msg.textContent=bin?`Binomial(${n}, ${pp}): P(X = k) = C(n, k) pᵏ (1 − p)ⁿ⁻ᵏ, mean np, SD √(np(1 − p)).`:`Poisson(${l}): P(X = k) = e⁻λ λᵏ / k!, mean = variance = λ.`;
+        const upd=()=>{rd.n.textContent=ind(cnt);if(cnt){const m1=sum/cnt;rd.m.textContent=m1.toFixed(3);rd.s.textContent=Math.sqrt(Math.max(0,sum2/cnt-m1*m1)).toFixed(3);}
+          sbPMF(ch,{k0,bars:h.map(x=>cnt?x/cnt:0),dots:pmf,title:"bars: simulated · gold: model PMF",xlab:"k",label:"Simulated counts against the model PMF"});};
+        const step=()=>{const v=draw1();cnt++;sum+=v;sum2+=v*v;if(v<k0||v>k1)out++;else h[v-k0]++;};
+        if(REDUCED){while(cnt<R)step();upd();return;}upd();anim=loop(()=>{for(let j=0;j<6*speed&&cnt<R;j++)step();upd();if(cnt>=R){anim.stop();anim=null;}});}
+      go.addEventListener("click",run);mS.addEventListener("change",run);run();
+    },
+    own:p=>{
+      const out=el("div",{class:"sb-pane"});
+      SB.dataForm(p,[{key:"x",label:"Counts",type:"num"}],d=>{
+        const v=d.x.filter(x=>Number.isInteger(x)&&x>=0),bad=d.x.length-v.length;
+        if(v.length<2){sbSay(out,"Fewer than two whole-number counts (0, 1, 2, …) were found.");return;}
+        const n=v.length,mean=SB.st.mean(v),varp=v.reduce((s,x)=>s+(x-mean)**2,0)/n,mx=Math.max(...v),mn=Math.min(...v);
+        if(mx-mn>100){sbSay(out,"The counts span more than 100 values; this sandbox is built for small counts per window.");return;}
+        out.innerHTML="";const k0=mn,ks=[];for(let k=mn;k<=mx;k++)ks.push(k);const obs=ks.map(k=>v.filter(x=>x===k).length);
+        const pm=ks.map(k=>mean>0?poisPMF(k,mean):(k===0?1:0));
+        const rd=sbRead(out,[["n","Windows (n)"],["m","Mean x̄"],["v","Variance (÷ n)"],["d","Variance / mean"]]);rd.n.textContent=ind(n);rd.m.textContent=mean.toFixed(3);rd.v.textContent=varp.toFixed(3);rd.d.textContent=mean>0?(varp/mean).toFixed(2):"—";
+        const ch=el("div");out.appendChild(ch);sbPMF(ch,{k0,bars:obs.map(o=>o/n),dots:pm,title:"bars: your counts · gold: Poisson(x̄)",xlab:"count per window",label:"Your counts against a Poisson model with the same mean"});
+        const disp=mean>0?varp/mean:NaN;
+        out.appendChild(SB.text("p",(bad?`Skipped ${ind(bad)} value(s) that were not whole numbers ≥ 0. `:"")+`A Poisson model has variance equal to its mean; yours has variance / mean = ${Number.isFinite(disp)?disp.toFixed(2):"—"}. `+(disp>1.5?"Much more spread than Poisson (overdispersion): the events may cluster, or the rate may vary between windows.":disp<0.67?"Much less spread than Poisson: the counts are more regular than independent rare events would be.":"Close enough to 1 that a Poisson model is a reasonable first try.")+" Below: observed windows against n · P(X = k).","note"));
+        out.appendChild(SB.table(["k","Observed windows","Poisson expected"],ks.map((k,i)=>[String(k),ind(obs[i]),(n*pm[i]).toFixed(1)])));
+      },{example:SBX.dist,minRows:2,placeholder:"disputes\n3\n4\n0\n…",
+        help:"Paste counts per window (per day, per hour, per page): whole numbers, one per line or a CSV column. The sandbox fits a Poisson model with λ = your mean and compares. Your data stays in this browser: it is not uploaded, saved or shared."});
+      p.appendChild(out);
+    }
+  },"Fit a Poisson model to the 90 days with your own λ, simulate any Binomial or Poisson, or test your own counts.");
+}
+
 const COURSE={
   key:"probability",
   title:"VeloPay Risk Desk",
@@ -865,6 +1205,173 @@ const COURSE={
    ["Named distributions","Binomial: C(n,k)pᵏ(1−p)ⁿ⁻ᵏ, np, np(1−p)\nPoisson: e⁻λ λᵏ/k!, λ, λ\nNormal: 68% in μ±σ, 95% in μ±2σ\nCLT: X̄ₙ ≈ N(μ, σ²/n)"]],
   L, BOARD
 };
+
+/* ---------- sandbox toolkit (shared by every module) ----------
+   Three levels of free play next to a lab:
+     1. controls on the real data   2. generate your own data   3. bring your own data
+   SAFETY: everything runs in the visitor's browser. Uploaded or pasted text is never sent anywhere,
+   never stored, never put in the URL, and never inserted as HTML: it is only parsed into numbers and
+   short labels, which are always displayed with textContent (SB.text / SB.table). Size caps keep phones responsive. */
+const SB=(function(){
+  const MAX_BYTES=2*1024*1024, MAX_ROWS=5000, MAX_COLS=50, MAX_LABEL=40;
+  const used=()=>{try{award("explorer");}catch(e){}};
+  /* safe text node helpers */
+  function text(tag,str,cls){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=String(str);return e;}
+  /* control characters, bidirectional embedding/override/isolate controls (U+202A–202E, U+2066–2069, which could
+     reorder the surrounding sentence on screen) and invisible U+200B, U+2060, U+FEFF are removed; ZWJ/ZWNJ stay (Indic scripts) */
+  function cleanLabel(s){s=String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u200b\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g,"").trim();return s.length>MAX_LABEL?s.slice(0,MAX_LABEL)+"…":s;}
+  /* parse delimited text into {header:[...], rows:[[...]], note} — all values stay plain strings */
+  function parse(str){
+    str=String(str||"");if(str.length>MAX_BYTES)str=str.slice(0,MAX_BYTES);
+    let lines=str.replace(/\r\n?/g,"\n").split("\n").map(l=>l.trim()).filter(l=>l.length);
+    let truncated=false;if(lines.length>MAX_ROWS+1){lines=lines.slice(0,MAX_ROWS+1);truncated=true;}
+    const note=()=>truncated?`Only the first ${ind(MAX_ROWS)} rows were read.`:"";
+    if(!lines.length)return{header:[],rows:[],note:"Nothing to read."};
+    // pick a delimiter that splits the first lines into the same number (>1) of fields
+    let delim=null,best=1;
+    for(const d of [",","\t",";","|"]){const c=lines.slice(0,20).map(l=>splitLine(l,d).length);if(c.every(x=>x===c[0])&&c[0]>best){best=c[0];delim=d;}}
+    if(!delim){const c=lines.slice(0,20).map(l=>l.split(/\s+/).length);if(c.every(x=>x===c[0])&&c[0]>1&&lines.length>1)delim="ws";}
+    // one line of values, or one value per line: a single column
+    if(!delim||lines.length===1){
+      const flat=(lines.length>1?lines:lines[0].split(/[\s,;\t|]+/)).map(cleanLabel).filter(x=>x.length);
+      const hasHead=flat.length>1&&isNaN(num(flat[0]))&&!isNaN(num(flat[1]));
+      const vals=(hasHead?flat.slice(1):flat).slice(0,MAX_ROWS);
+      return{header:[hasHead?flat[0]:"value"],rows:vals.map(v=>[v]),note:(flat.length>MAX_ROWS?`Only the first ${ind(MAX_ROWS)} values were read.`:note())};
+    }
+    const rows=lines.map(l=>(delim==="ws"?l.split(/\s+/):splitLine(l,delim)).slice(0,MAX_COLS).map(cleanLabel));
+    const first=rows[0];
+    const hasHead=first.some(v=>v!==""&&isNaN(num(v)))&&rows.slice(1,6).some(r=>r.some(v=>!isNaN(num(v))));
+    const width=first.length;
+    const header=hasHead?first.map((h,i)=>h||("column "+(i+1))):first.map((_,i)=>"column "+(i+1));
+    const body=(hasHead?rows.slice(1):rows).map(r=>{r=r.slice(0,width);while(r.length<width)r.push("");return r;});
+    return{header,rows:body,note:note()};
+  }
+  function splitLine(l,d){const out=[];let cur="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur="";}else cur+=ch;}out.push(cur);return out;}
+  function num(v){if(typeof v==="number")return v;const s=String(v).replace(/[₹$€£,\s]/g,"");if(s===""||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?%?$/.test(s))return NaN;let x=parseFloat(s);if(s.endsWith("%"))x/=100;return isFinite(x)?x:NaN;}
+  function column(t,i){return t.rows.map(r=>r[i]);}
+  function numeric(vals){const out=[];let dropped=0;vals.forEach(v=>{const x=num(v);if(Number.isFinite(x))out.push(x);else dropped++;});return{values:out,dropped};}
+  function isNumericCol(t,i){const c=column(t,i).filter(v=>v!=="");return c.length>0&&c.filter(v=>!isNaN(num(v))).length/c.length>=0.8;}
+  function readFile(file,cb){if(!file)return;if(file.size>MAX_BYTES){cb(null,`That file is ${(file.size/1048576).toFixed(1)} MB; the limit is 2 MB. Use a smaller extract.`);return;}
+    const fr=new FileReader();fr.onload=()=>cb(String(fr.result||""),null);fr.onerror=()=>cb(null,"The file could not be read.");fr.readAsText(file);}
+  /* random generators (seeded) */
+  function normal(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  const GEN={
+    normal:{label:"Normal",params:[["mean",50],["sd",10]],draw:(r,p)=>p.mean+p.sd*normal(r)},
+    lognormal:{label:"Lognormal (right-skewed)",params:[["median",500],["spread σ",0.6]],draw:(r,p)=>p.median*Math.exp(p["spread σ"]*normal(r))},
+    exponential:{label:"Exponential",params:[["mean",10]],draw:(r,p)=>-p.mean*Math.log(1-r())},
+    uniform:{label:"Uniform",params:[["min",0],["max",100]],draw:(r,p)=>p.min+(p.max-p.min)*r()},
+    bimodal:{label:"Two humps (mixture)",params:[["mean 1",30],["mean 2",70],["sd",8],["share of hump 1",0.5]],draw:(r,p)=>(r()<p["share of hump 1"]?p["mean 1"]:p["mean 2"])+p.sd*normal(r)},
+    poisson:{label:"Poisson (counts)",params:[["mean λ",4]],draw:(r,p)=>{const L=Math.exp(-p["mean λ"]);let k=0,q=1;do{k++;q*=r();}while(q>L&&k<1000);return k-1;}},
+    binomial:{label:"Binomial (successes in n)",params:[["n trials",20],["p",0.3]],draw:(r,p)=>{let k=0;const n=Math.min(1000,Math.max(1,Math.round(p["n trials"])));for(let i=0;i<n;i++)if(r()<p.p)k++;return k;}}
+  };
+  function generate(kind,params,n,seed){const g=GEN[kind];const r=rng(seed||1);const out=[];n=Math.max(1,Math.min(MAX_ROWS,Math.round(n)));for(let i=0;i<n;i++)out.push(g.draw(r,params));return out;}
+  /* UI: a tabbed sandbox panel. levels = {controls:fn(el), generate:fn(el), own:fn(el)} — each optional */
+  function panel(root,title,levels,intro){
+    const box=el("div",{class:"sandbox"});
+    const head=el("div",{class:"sb-head"});head.appendChild(text("span","Sandbox · "+title,"eyebrow"));
+    const tabs=el("div",{class:"seg sb-tabs",role:"tablist","aria-label":"Sandbox mode"});
+    head.appendChild(tabs);box.appendChild(head);
+    if(intro)box.appendChild(text("p",intro,"note"));
+    const body=el("div",{class:"sb-body"});box.appendChild(body);
+    const defs=[["controls","Real data"],["generate","Generate"],["own","Your data"]].filter(([k])=>levels[k]);
+    const panes={};
+    defs.forEach(([k,lab],i)=>{const b=el("button",{type:"button",role:"tab","aria-pressed":i===0?"true":"false"});b.textContent=lab;tabs.appendChild(b);
+      const p=el("div",{class:"sb-pane"});p.hidden=i!==0;body.appendChild(p);panes[k]={b,p,built:false};
+      b.addEventListener("click",()=>{defs.forEach(([kk])=>{panes[kk].p.hidden=kk!==k;panes[kk].b.setAttribute("aria-pressed",kk===k);});if(!panes[k].built){panes[k].built=true;levels[k](p);}used();});});
+    if(defs.length){const k=defs[0][0];panes[k].built=true;levels[k](panes[k].p);}
+    root.appendChild(box);return box;
+  }
+  /* generator form: returns {el, get()} */
+  function genForm(kinds,defaults){
+    kinds=kinds||Object.keys(GEN);defaults=defaults||{};
+    const wrap=el("div",{class:"ctrl"});
+    const sel=el("select",{"aria-label":"Shape"});kinds.forEach(k=>{const o=el("option",{value:k});o.textContent=GEN[k].label;sel.appendChild(o);});
+    if(defaults.kind)sel.value=defaults.kind;
+    const params=el("div",{class:"sb-params"});
+    const nIn=el("input",{type:"number",min:"1",max:String(MAX_ROWS),step:"1",value:String(defaults.n||200),"aria-label":"How many values"});
+    const seedIn=el("input",{type:"number",min:"1",max:"999999",step:"1",value:String(defaults.seed||1),"aria-label":"Random seed"});
+    function drawParams(){params.innerHTML="";GEN[sel.value].params.forEach(([name,def])=>{const lab=el("label");lab.appendChild(text("span",name));const i=el("input",{type:"number",step:"any",value:String((defaults.params&&defaults.params[name]!=null)?defaults.params[name]:def)});i.dataset.p=name;lab.appendChild(i);params.appendChild(lab);});}
+    sel.addEventListener("change",drawParams);drawParams();
+    const row=el("div",{class:"sb-params"});
+    const l1=el("label");l1.appendChild(text("span","Shape"));l1.appendChild(sel);
+    const l2=el("label");l2.appendChild(text("span","How many values (n)"));l2.appendChild(nIn);
+    const l3=el("label");l3.appendChild(text("span","Seed"));l3.appendChild(seedIn);
+    row.append(l1,l2,l3);wrap.append(row,params);
+    return{el:wrap,get(){const p={};params.querySelectorAll("input").forEach(i=>{const v=parseFloat(i.value);p[i.dataset.p]=Number.isFinite(v)?v:0;});return{kind:sel.value,params:p,n:Math.max(1,Math.min(MAX_ROWS,parseInt(nIn.value)||1)),seed:Math.max(1,parseInt(seedIn.value)||1)};},
+      values(){const g=this.get();return generate(g.kind,g.params,g.n,g.seed);}};
+  }
+  /* your-data form: textarea + file input + column pickers by role.
+     roles: [{key, label, type:"num"|"cat"|"any", optional}]  onData(dataObj, info) where dataObj[key] = array */
+  function dataForm(root,roles,onData,opts){
+    opts=opts||{};
+    const wrap=el("div",{class:"ctrl"});
+    wrap.appendChild(text("p",opts.help||"Paste numbers (one per line, or separated by commas or spaces), or a small table with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared.","note"));
+    const ta=el("textarea",{rows:"6","aria-label":"Paste your data",spellcheck:"false",placeholder:opts.placeholder||"e.g.\n12\n15\n9\n31\n14"});
+    const file=el("input",{type:"file",accept:".csv,.tsv,.txt,text/csv,text/plain","aria-label":"Choose a CSV file"});
+    const row=el("div",{class:"btnrow"});const go=el("button",{class:"btn small",type:"button"});go.textContent="Use this data";
+    const ex=el("button",{class:"btn ghost small",type:"button"});ex.textContent="Load an example";
+    row.append(go,ex,file);
+    const picks=el("div",{class:"sb-params"});const msg=el("p",{class:"note",role:"status"});
+    wrap.append(ta,row,picks,msg);root.appendChild(wrap);
+    let table=null;
+    function say(s){msg.textContent=s;}
+    function build(){
+      picks.innerHTML="";const sels={};
+      if(!table||!table.rows.length){say("No rows found.");return;}
+      if(roles.length>1||table.header.length>1){
+        roles.forEach((ro,ri)=>{const lab=el("label");lab.appendChild(text("span",ro.label+(ro.optional?" (optional)":"")));const s=el("select");
+          if(ro.optional){const o=el("option",{value:"-1"});o.textContent="none";s.appendChild(o);}
+          table.header.forEach((h,i)=>{const o=el("option",{value:String(i)});o.textContent=h;s.appendChild(o);});
+          let guess=ri<table.header.length?ri:0;if(ro.type==="num"){const ni=table.header.findIndex((h,i)=>isNumericCol(table,i)&&!Object.values(sels).some(x=>+x.value===i));if(ni>=0)guess=ni;}
+          if(ro.type==="cat"){const ci=table.header.findIndex((h,i)=>!isNumericCol(table,i));if(ci>=0)guess=ci;}
+          s.value=ro.optional&&table.header.length<=ri?"-1":String(guess);s.addEventListener("change",emit);lab.appendChild(s);picks.appendChild(lab);sels[ro.key]=s;});
+      } else roles.forEach(ro=>{sels[ro.key]={value:"0"};});
+      table._sels=sels;emit();
+    }
+    function emit(){
+      if(!table)return;const sels=table._sels;const out={};let n=table.rows.length,dropped=0;
+      const keep=table.rows.map(()=>true);
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0){out[ro.key]=null;return;}const col=column(table,v);
+        if(ro.type==="num")col.forEach((x,i)=>{if(!Number.isFinite(num(x)))keep[i]=false;});
+        else col.forEach((x,i)=>{if(x==="")keep[i]=false;});});
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0)return;const col=column(table,v).filter((_,i)=>keep[i]);out[ro.key]=ro.type==="num"?col.map(num):col.map(cleanLabel);});
+      dropped=keep.filter(k=>!k).length;
+      const used_n=n-dropped;
+      if(used_n<(opts.minRows||2)){say(`Only ${used_n} usable row(s); at least ${opts.minRows||2} are needed.`);return;}
+      say(`Read ${ind(n)} row(s); using ${ind(used_n)}`+(dropped?`, skipped ${ind(dropped)} blank or non-numeric.`:".")+(table.note?" "+table.note:""));
+      used();onData(out,{n:used_n,dropped});
+    }
+    go.addEventListener("click",()=>{table=parse(ta.value);build();});
+    ex.addEventListener("click",()=>{ta.value=opts.example||"12\n15\n9\n31\n14\n18\n11\n16\n90\n13";table=parse(ta.value);build();});
+    file.addEventListener("change",()=>{readFile(file.files[0],(txt,err)=>{if(err){say(err);return;}ta.value=txt.length>20000?txt.slice(0,20000)+"\n…":txt;table=parse(txt);build();});});
+    return{set(str){ta.value=str;table=parse(str);build();}};
+  }
+  /* safe table renderer for user data (textContent only) */
+  function table(headers,rows){const w=el("div",{class:"tbl"});const t=document.createElement("table");const th=document.createElement("thead");const tr=document.createElement("tr");headers.forEach(h=>tr.appendChild(text("th",h)));th.appendChild(tr);t.appendChild(th);const tb=document.createElement("tbody");rows.forEach(r=>{const rr=document.createElement("tr");r.forEach((c,i)=>rr.appendChild(text("td",c,i?"num":"")));tb.appendChild(rr);});t.appendChild(tb);w.appendChild(t);return w;}
+  /* common statistics used by many sandboxes */
+  const st={
+    sorted:a=>[...a].sort((x,y)=>x-y),
+    mean:a=>a.reduce((s,x)=>s+x,0)/a.length,
+    q:(a,p)=>{const s=[...a].sort((x,y)=>x-y);const h=(s.length-1)*p;const lo=Math.floor(h);return s[lo]+(s[Math.min(lo+1,s.length-1)]-s[lo])*(h-lo);},
+    sd:a=>{const m=a.reduce((s,x)=>s+x,0)/a.length;return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));},
+    corr:(x,y)=>{const n=x.length,mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}return sxy/Math.sqrt(sxx*syy);}
+  };
+  /* a reusable histogram drawer (SVG) for any numeric array */
+  function histogram(container,values,o){
+    o=o||{};container.innerHTML="";if(!values.length)return;
+    const W=o.w||360,H=o.h||200,m={l:36,r:10,t:14,b:30};const s=st.sorted(values);let lo=o.lo!=null?o.lo:s[0],hi=o.hi!=null?o.hi:s[s.length-1];if(hi===lo){hi=lo+1;}
+    const k=o.bins||Math.max(5,Math.min(60,Math.ceil(Math.log2(values.length)+1)));const bw=(hi-lo)/k;const c=new Array(k).fill(0);
+    values.forEach(v=>{let i=Math.floor((v-lo)/bw);if(i>=k)i=k-1;if(i<0)i=0;c[i]++;});const mx=Math.max(...c);
+    const X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r),Y=v=>H-m.b-v/mx*(H-m.t-m.b);
+    const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label||"Histogram"});
+    svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(0),y2:Y(0),style:"stroke:var(--line)"}));
+    c.forEach((v,i)=>svg.appendChild(sv("rect",{x:X(lo+i*bw)+0.5,y:Y(v),width:Math.max(0.5,X(lo+(i+1)*bw)-X(lo+i*bw)-1),height:Y(0)-Y(v),style:"fill:var(--accent)"})));
+    [lo,(lo+hi)/2,hi].forEach((v,i)=>{const t=sv("text",{x:X(v),y:H-10,"font-size":10,"text-anchor":i===0?"start":i===2?"end":"middle"});t.textContent=Math.abs(v)>=1000?ind(Math.round(v)):(+v.toFixed(2)).toString();svg.appendChild(t);});
+    (o.marks||[]).forEach(([v,lab,col],i)=>{if(v<lo||v>hi)return;svg.appendChild(sv("line",{x1:X(v),x2:X(v),y1:m.t,y2:Y(0),style:`stroke:${col||"var(--gold)"};stroke-width:2;stroke-dasharray:4 3`}));const t=sv("text",{x:X(v)+3,y:m.t+10+12*i,"font-size":10});t.textContent=lab;svg.appendChild(t);});
+    container.appendChild(svg);
+  }
+  return{parse,num,numeric,column,isNumericCol,readFile,GEN,generate,panel,genForm,dataForm,table,text,histogram,st,used,MAX_ROWS};
+})();
 
 /* ---------- helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
@@ -897,7 +1404,7 @@ try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.pars
 const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
 
 const RANKS=COURSE.ranks;
-const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["explorer","Sandbox Explorer","Opened a sandbox and played with your own settings or data"],["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
 
 function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
 function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}

@@ -197,6 +197,17 @@ td.num{font-family:var(--mono)}
 .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .sheet .formula{font-size:.84rem}
 .sheet h3{font-size:1rem;margin-bottom:6px}
+.sandbox{border:1px dashed var(--accent);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;background:var(--sunk);min-width:0;margin-top:14px}
+.sb-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.sb-head .eyebrow{color:var(--accent)}
+.sb-tabs button{border:0;background:transparent;padding:5px 12px;font:600 .8rem/1.2 var(--mono)}
+.sb-tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.sb-pane{display:grid;gap:10px;min-width:0}
+.sb-params{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.sb-params label{display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.sb-params input,.sb-params select{width:9.5em;max-width:100%}
+.sandbox textarea{width:100%;max-width:100%;font:400 .88rem/1.4 var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+.sandbox input[type=file]{font-size:.82rem;max-width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -624,6 +635,7 @@ function labBoot(root){
     const lab=sv("text",{x:Wc-m.r,y:Hc-2,"font-size":10,"text-anchor":"end"});lab.textContent="n (log scale) · SE in minutes";s.appendChild(lab);
     const pc=$("#rchart",right);pc.innerHTML="";pc.appendChild(s);}
   $("#rn",right).addEventListener("input",drawR);drawR();
+  sbBoot(root);
 }
 
 function labTariff(root){
@@ -791,6 +803,7 @@ function labFamilies(root){
       $("#fread",right).innerHTML=R.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");}}
   left.querySelectorAll("[data-f]").forEach(b=>b.addEventListener("click",()=>{fam=b.dataset.f;left.querySelectorAll("[data-f]").forEach(x=>x.setAttribute("aria-pressed",x===b));draw();}));
   draw();
+  sbFamilies(root);
 }
 
 function labFitRace(root){
@@ -835,6 +848,7 @@ function labFitRace(root){
     for(let p=1;p<=99;p++){const q=151.489*Math.pow(-Math.log(1-p/100),1/1.3016);if(q>mx||ITQ[p]>mx)continue;s.appendChild(sv("circle",{cx:Xq(q),cy:Yq(ITQ[p]),r:2.5,style:"fill:var(--accent)"}));}
     const xl=sv("text",{x:Wc-mm.r,y:Hc-2,"font-size":9,"text-anchor":"end"});xl.textContent="Weibull quantile (min) → ; data quantile ↑";s.appendChild(xl);
     $("#qq",right).appendChild(s);})();
+  sbFitRace(root);
 }
 
 function labJoint(root){
@@ -914,6 +928,264 @@ function labMC(root){
     for(let k=0;k<2000;k++){let a=0,b=0;for(let i=0;i<198;i++)if(rr()<pA)a++;for(let i=0;i<190;i++)if(rr()<pB)b++;diffs.push(a/198-b/190);
       let a2=0,b2=0;for(let i=0;i<198;i++)if(rr()<pp)a2++;for(let i=0;i<190;i++)if(rr()<pp)b2++;if(Math.abs(a2/198-b2/190)>=0.0582)big++;}
     $("#nsd",right).textContent=sdev(diffs).toFixed(4);$("#nbig",right).textContent=`${big} of 2,000 (${pct(big/2000,1)})`;});
+  sbMC(root);
+}
+
+/* ---------- sandboxes: free play next to four labs (no XP; pasted data stays in the page and is only parsed into numbers) ---------- */
+/* SBCALC-BEGIN (pure maths; checked against scipy in verify/distributions_sandbox.md) */
+const srt=a=>Float64Array.from(a).sort();
+const hqSample=(Q,r)=>{const h=r()*Q.length-0.5;const i=Math.max(0,Math.min(Q.length-2,Math.floor(h)));const t=Math.max(0,Math.min(1,h-i));return Q[i]+(Q[i+1]-Q[i])*t;}; // draw from a table of mid-quantiles
+const sampleHub=(hub,N,seed)=>{const r=rng(seed),out=[];for(let i=0;i<N;i++)out.push(Math.round(hqSample(HQ[hub],r)*10)/10);return out;};
+const BSTAT={mean:{label:"mean",f:a=>mean(a)},median:{label:"median",f:a=>quant(srt(a),0.5)},q90:{label:"90th percentile",f:a=>quant(srt(a),0.9)}};
+function bootDraw(x,stat,r){const n=x.length,a=new Array(n);for(let i=0;i<n;i++)a[i]=x[Math.floor(r()*n)];return BSTAT[stat].f(a);}
+function bootSummary(vals){const s=srt(vals);return{B:vals.length,se:sdev(vals),lo:quant(s,0.025),hi:quant(s,0.975)};}
+function digamma(x){let r=0;while(x<6){r-=1/x;x+=1;}const f=1/(x*x);return r+Math.log(x)-0.5/x-f*(1/12-f*(1/120-f*(1/252-f*(1/240-f/132))));}
+function trigamma(x){let r=0;while(x<6){r+=1/(x*x);x+=1;}const f=1/(x*x);return r+1/x+f/2+(f/x)*(1/6-f*(1/30-f*(1/42-f/30)));}
+/* maximum likelihood for five families on positive data; AIC, BIC and the Kolmogorov–Smirnov distance for each */
+function fitAll(xs){
+  const x=srt(xs),n=x.length,m=mean(x),lx=Array.from(x,Math.log),L=mean(lx),SL=L*n,SX=m*n,out={};
+  out.exponential={k:1,par:[["mean",m]],logL:-n*Math.log(m)-n,cdf:v=>v<=0?0:1-Math.exp(-v/m)};
+  const s=Math.sqrt(x.reduce((a,v)=>a+(v-m)**2,0)/n);
+  if(s>0)out.normal={k:2,par:[["μ",m],["σ",s]],logL:-n/2*Math.log(2*Math.PI*s*s)-n/2,cdf:v=>normCDF((v-m)/s)};
+  const sl=Math.sqrt(lx.reduce((a,v)=>a+(v-L)**2,0)/n);
+  if(sl>0)out.lognormal={k:2,par:[["μ (log)",L],["σ (log)",sl]],logL:-SL-n/2*Math.log(2*Math.PI*sl*sl)-n/2,cdf:v=>v<=0?0:normCDF((Math.log(v)-L)/sl)};
+  const gap=Math.log(m)-L; // ≥ 0 by Jensen; Newton on ln k − ψ(k) = gap
+  if(gap>1e-12){let k=(3-gap+Math.sqrt((gap-3)**2+24*gap))/(12*gap);
+    for(let i=0;i<100;i++){const f=Math.log(k)-digamma(k)-gap,d=1/k-trigamma(k);let k2=k-f/d;if(!(k2>0))k2=k/2;const done=Math.abs(k2-k)<1e-12*k;k=k2;if(done)break;}
+    const th=m/k;out.gamma={k:2,par:[["shape k",k],["scale θ",th]],logL:(k-1)*SL-SX/th-n*k*Math.log(th)-n*lnGamma(k),cdf:v=>gammaCDF(v,k,th)};}
+  if(sl>0){const lM=lx[n-1];const gw=k=>{let s0=0,s1=0;for(let i=0;i<n;i++){const w=Math.exp(k*(lx[i]-lM));s0+=w;s1+=w*lx[i];}return s1/s0-1/k-L;};
+    let lo=0.01,hi=100;for(let i=0;i<100;i++){const mid=(lo+hi)/2;if(gw(mid)<0)lo=mid;else hi=mid;} // the score equation is increasing in k: bisection
+    const k=(lo+hi)/2,S=mean(lx.map(v=>Math.exp(k*(v-lM)))),lam=Math.exp(lM)*Math.pow(S,1/k),ll=Math.log(lam);
+    out.weibull={k:2,par:[["shape k",k],["scale λ",lam]],logL:n*Math.log(k)-n*k*ll+(k-1)*SL-lx.reduce((a,v)=>a+Math.exp(k*(v-ll)),0),cdf:v=>weibCDF(v,k,lam)};}
+  Object.values(out).forEach(f=>{f.AIC=2*f.k-2*f.logL;f.BIC=f.k*Math.log(n)-2*f.logL;let d=0;for(let i=0;i<n;i++){const F=f.cdf(x[i]);d=Math.max(d,(i+1)/n-F,F-i/n);}f.KS=d;});
+  return{x,n,fits:out};
+}
+/* Weibull(k, λ): exact mean and SD of max(D − t, 0) and of the indicator 1{D > t}, via the upper incomplete gamma function */
+function weibMoments(k,lam,t){t=Math.max(0,t);const z=Math.pow(t/lam,k),Q=a=>1-gammaP(a,z),pT=Math.exp(-z);
+  const e1=lam*Math.exp(lnGamma(1+1/k))*Q(1+1/k),e2=lam*lam*Math.exp(lnGamma(1+2/k))*Q(1+2/k);
+  const exc=e1-t*pT,exc2=e2-2*t*e1+t*t*pT;return{exc,excSD:Math.sqrt(Math.max(0,exc2-exc*exc)),p:pT,pSD:Math.sqrt(pT*(1-pT))};}
+const MCG={exc:{label:"overage max(D − t, 0)",g:(d,t)=>Math.max(d-t,0)},ind:{label:"indicator 1{D > t}",g:(d,t)=>d>t?1:0}};
+function empMoments(vals,fn,t){const g=vals.map(v=>MCG[fn].g(v,t)),m=mean(g);return{mean:m,sd:Math.sqrt(g.reduce((a,v)=>a+(v-m)**2,0)/g.length)};}
+/* the family explorer's generators: theory mean and SD, density or mass function, and a sampler */
+function gammaDraw(k,th,r){if(k<1)return gammaDraw(k+1,th,r)*Math.pow(1-r(),1/k);const d=k-1/3,c=1/Math.sqrt(9*d);for(let it=0;it<1000;it++){let x,v;do{x=nsample(r);v=1+c*x;}while(v<=0);v=v*v*v;const u=1-r();if(Math.log(u)<0.5*x*x+d-d*v+d*Math.log(v))return d*v*th;}return k*th;}
+const XFAM={
+  exponential:{label:"Exponential",ps:[["mean",16.9]],ok:p=>p.mean>0,pos:true,draw:(p,r)=>-p.mean*Math.log(1-r()),pdf:(x,p)=>x<0?0:Math.exp(-x/p.mean)/p.mean,mu:p=>p.mean,sd:p=>p.mean},
+  gamma:{label:"Gamma",ps:[["shape k",5],["scale θ",16.9]],ok:p=>p["shape k"]>=0.05&&p["shape k"]<=500&&p["scale θ"]>0,pos:true,draw:(p,r)=>gammaDraw(p["shape k"],p["scale θ"],r),pdf:(x,p)=>gammaPDF(x,p["shape k"],p["scale θ"]),mu:p=>p["shape k"]*p["scale θ"],sd:p=>Math.sqrt(p["shape k"])*p["scale θ"]},
+  weibull:{label:"Weibull",ps:[["shape k",1.3],["scale λ",151.5]],ok:p=>p["shape k"]>=0.1&&p["shape k"]<=20&&p["scale λ"]>0,pos:true,draw:(p,r)=>wsample(p["shape k"],p["scale λ"],r),pdf:(x,p)=>weibPDF(x,p["shape k"],p["scale λ"]),
+    mu:p=>p["scale λ"]*Math.exp(lnGamma(1+1/p["shape k"])),sd:p=>p["scale λ"]*Math.sqrt(Math.max(0,Math.exp(lnGamma(1+2/p["shape k"]))-Math.exp(2*lnGamma(1+1/p["shape k"]))))},
+  lognormal:{label:"Lognormal",ps:[["μ (log scale)",4.91],["σ (log scale)",0.62]],ok:p=>p["σ (log scale)"]>0&&p["σ (log scale)"]<=3&&Math.abs(p["μ (log scale)"])<=20,pos:true,draw:(p,r)=>Math.exp(p["μ (log scale)"]+p["σ (log scale)"]*nsample(r)),pdf:(x,p)=>lnormPDF(x,p["μ (log scale)"],p["σ (log scale)"]),
+    mu:p=>Math.exp(p["μ (log scale)"]+p["σ (log scale)"]**2/2),sd:p=>Math.exp(p["μ (log scale)"]+p["σ (log scale)"]**2/2)*Math.sqrt(Math.exp(p["σ (log scale)"]**2)-1)},
+  normal:{label:"Normal",ps:[["mean μ",7.2],["SD σ",0.3]],ok:p=>p["SD σ"]>0,draw:(p,r)=>p["mean μ"]+p["SD σ"]*nsample(r),pdf:(x,p)=>normPDF(x,p["mean μ"],p["SD σ"]),mu:p=>p["mean μ"],sd:p=>p["SD σ"]},
+  uniform:{label:"Uniform",ps:[["min a",0],["max b",60]],ok:p=>p["max b"]>p["min a"],draw:(p,r)=>p["min a"]+(p["max b"]-p["min a"])*r(),pdf:(x,p)=>x<p["min a"]||x>p["max b"]?0:1/(p["max b"]-p["min a"]),mu:p=>(p["min a"]+p["max b"])/2,sd:p=>(p["max b"]-p["min a"])/Math.sqrt(12)},
+  poisson:{label:"Poisson",disc:true,ps:[["mean λ",3.49]],ok:p=>p["mean λ"]>0&&p["mean λ"]<=200,draw:(p,r)=>{const E=Math.exp(-p["mean λ"]);let k=0,q=r();while(q>E&&k<2000){k++;q*=r();}return k;},pmf:(k,p)=>poisPMF(k,p["mean λ"]),mu:p=>p["mean λ"],sd:p=>Math.sqrt(p["mean λ"])},
+  binomial:{label:"Binomial",disc:true,ps:[["n trials",60],["p",0.0393]],ok:p=>p["n trials"]>=1&&p["n trials"]<=1000&&p.p>0&&p.p<1,draw:(p,r)=>{let k=0;const n=Math.round(p["n trials"]);for(let i=0;i<n;i++)if(r()<p.p)k++;return k;},pmf:(k,p)=>binomPMF(k,Math.round(p["n trials"]),p.p),mu:p=>Math.round(p["n trials"])*p.p,sd:p=>Math.sqrt(Math.round(p["n trials"])*p.p*(1-p.p))},
+  geometric:{label:"Geometric (trials to 1st success)",disc:true,ps:[["p",0.0393]],ok:p=>p.p>=0.001&&p.p<1,draw:(p,r)=>Math.max(1,Math.ceil(Math.log(1-r())/Math.log(1-p.p))),pmf:(k,p)=>k<1?0:Math.pow(1-p.p,k-1)*p.p,mu:p=>1/p.p,sd:p=>Math.sqrt(1-p.p)/p.p}};
+function xfamDraw(kind,p,n,seed){const F=XFAM[kind],r=rng(seed),out=[];for(let i=0;i<n;i++)out.push(F.draw(p,r));return out;}
+/* SBCALC-END */
+
+/* ---------- sandbox UI helpers (labels below are fixed strings; user data is never shown as HTML) ---------- */
+function sbField(label,val,attrs){const lab=el("label");lab.appendChild(SB.text("span",label));const i=el("input",Object.assign({type:"number",step:"any",value:String(val)},attrs||{}));lab.appendChild(i);lab.val=()=>{const x=parseFloat(i.value);return Number.isFinite(x)?x:NaN;};lab.input=i;return lab;}
+function sbSelect(label,opts,val){const lab=el("label");lab.appendChild(SB.text("span",label));const s=el("select");opts.forEach(([v,t])=>{const o=el("option",{value:v});o.textContent=t;s.appendChild(o);});if(val!=null)s.value=val;lab.appendChild(s);lab.val=()=>s.value;lab.input=s;return lab;}
+function sbRow(...items){const r=el("div",{class:"sb-params"});items.forEach(x=>r.appendChild(x));return r;}
+function sbBtn(txt,ghost){const b=el("button",{class:"btn small"+(ghost?" ghost":""),type:"button"});b.textContent=txt;return b;}
+function sbCells(rd,labels){return labels.map(t=>{const d=el("div");d.appendChild(SB.text("span",t));const b=el("b");b.textContent="—";d.appendChild(b);rd.appendChild(d);return b;});}
+const clampInt=(v,lo,hi,def)=>Number.isFinite(v)?Math.max(lo,Math.min(hi,Math.round(v))):def;
+const sig=v=>!Number.isFinite(v)?"—":v===0?"0":Math.abs(v)>=1000?ind(Math.round(v*10)/10):Math.abs(v)>=100?v.toFixed(1):Math.abs(v)>=1?v.toFixed(3):v.toPrecision(3);
+const ownExample=()=>"minutes\n"+SAMP200.filter((_,i)=>i%4===1).join("\n");
+function sbLayout(pane){const grid=el("div",{class:"labgrid",style:"min-width:0"});const L=el("div",{class:"ctrl",style:"min-width:0"}),R=el("div",{class:"ctrl",style:"min-width:0"});grid.append(L,R);pane.appendChild(grid);return{L,R};}
+
+/* (1) bootstrap: the lab's pile of resampled statistics, for any sample */
+function bootRunner(pane){
+  const st=sbSelect("Statistic",[["mean","mean"],["median","median"],["q90","90th percentile"]],"mean");
+  const Bf=sbField("Resamples B",1000,{min:"50",max:"5000",step:"50"}),sd=sbField("Resample seed",31,{min:"1",max:"999999",step:"1"});
+  const go=sbBtn("Run the bootstrap"),sp=el("span"),row=el("div",{class:"btnrow"});row.append(go,sp);
+  pane.append(sbRow(st,Bf,sd),row);const {L,R}=sbLayout(pane);
+  const box=el("div",{class:"svgbox"}),cv=el("canvas",{"aria-label":"Histogram of bootstrap statistics piling up"});box.appendChild(cv);L.appendChild(box);
+  const rd=el("div",{class:"readout"});R.appendChild(rd);const [cN,cS,cB,cSE,cCI,cF,cR]=sbCells(rd,["Sample size n","Sample statistic","Resamples done","Bootstrap SE","95% percentile CI","Formula s/√n (mean only)","SE × √n"]);
+  const msg=el("p",{class:"note",role:"status"});R.appendChild(msg);
+  const W=360,H=210,g=canvasSetup(cv,W,H);let data=null,vals=[],anim=null,speed=1,lo=0,hi=1,s0=0,last=null,stat="mean",r=null,Bt=0;
+  speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  const bin=v=>Math.min(32,Math.max(0,Math.floor((v-lo)/(hi-lo)*33)));
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const m={l:14,r:10,t:22,b:28},bw=(W-m.l-m.r)/33,X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r);
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";
+    if(!vals.length){g.fillText(data?"press Run to resample":"no sample yet",m.l,13);return;}
+    const h=new Array(33).fill(0);vals.forEach(v=>h[bin(v)]++);const mx=Math.max(8,...h);
+    g.fillStyle=cssVar("--accent");h.forEach((c,k)=>{const hh=c/mx*(H-m.t-m.b);g.fillRect(m.l+k*bw+1,H-m.b-hh,bw-2,hh);});
+    if(last!=null){const k=bin(last);g.fillStyle=cssVar("--gold");g.fillRect(m.l+k*bw+1,H-m.b-(h[k]/mx)*(H-m.t-m.b)-10,bw-2,8);}
+    g.strokeStyle=cssVar("--fraud");g.setLineDash([4,3]);g.beginPath();g.moveTo(X(s0),m.t);g.lineTo(X(s0),H-m.b);g.stroke();
+    if(vals.length>=Bt&&vals.length>=40){const S=bootSummary(vals);g.strokeStyle=cssVar("--ink");[S.lo,S.hi].forEach(v=>{g.beginPath();g.moveTo(X(v),m.t);g.lineTo(X(v),H-m.b);g.stroke();});}
+    g.setLineDash([]);const dg=(hi-lo)<10?2:(hi-lo)<100?1:0;
+    g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";[0,0.25,0.5,0.75,1].forEach(f=>axisText(g,(lo+f*(hi-lo)).toFixed(dg),m.l+f*(W-m.l-m.r),H-10,f===0?"left":f===1?"right":"center"));
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText(`bootstrap ${BSTAT[stat].label}s · red: sample`,m.l,13);}
+  function show(){cN.textContent=data?ind(data.length):"—";cS.textContent=data?sig(s0):"—";cB.textContent=ind(vals.length)+(Bt?" of "+ind(Bt):"");
+    cF.textContent=data&&stat==="mean"?sig(sdev(data)/Math.sqrt(data.length)):"—";
+    if(vals.length>=2){const S=bootSummary(vals);cSE.textContent=sig(S.se);cR.textContent=sig(S.se*Math.sqrt(data.length));cCI.textContent=vals.length>=40?`${sig(S.lo)} – ${sig(S.hi)}`:"need 40+";}else{cSE.textContent=cCI.textContent=cR.textContent="—";}}
+  function start(){if(anim){anim.stop();anim=null;}
+    if(!data){msg.textContent="Choose or paste a sample first.";return;}
+    stat=st.val();const n=data.length,want=clampInt(Bf.val(),50,5000,1000),cap=Math.max(50,Math.floor((stat==="mean"?2.5e7:5e6)/n));Bt=Math.min(want,cap);
+    msg.textContent=Bt<want?`B was capped at ${ind(Bt)} for a sample of ${ind(n)}, to keep the page responsive.`:"Each resample draws n values with replacement from the sample. Black lines: the 95% percentile interval.";
+    r=rng(clampInt(sd.val(),1,999999,31));vals=[];last=null;s0=BSTAT[stat].f(data);
+    while(vals.length<Math.min(30,Bt)){last=bootDraw(data,stat,r);vals.push(last);}
+    const spr=sdev(vals);const half=spr>0?4.5*spr:Math.max(1,Math.abs(s0)*0.05);lo=s0-half;hi=s0+half;
+    const finish=()=>{draw();show();};
+    if(REDUCED){while(vals.length<Bt){last=bootDraw(data,stat,r);vals.push(last);}finish();return;}
+    finish();anim=loop(()=>{const k=Math.max(1,Math.min(Math.round(speed*Math.max(2,Bt/300)),Math.floor(2e5/n)));for(let i=0;i<k&&vals.length<Bt;i++){last=bootDraw(data,stat,r);vals.push(last);}finish();if(vals.length>=Bt){anim.stop();anim=null;}});}
+  go.addEventListener("click",start);st.input.addEventListener("change",start);
+  draw();show();
+  return{set(arr,note){if(!arr||arr.length<5){data=null;vals=[];Bt=0;msg.textContent="At least 5 values are needed to bootstrap.";draw();show();return;}
+    data=arr;if(note)msg.textContent=note;start();}};
+}
+function sbBoot(root){
+  SB.panel(root,"bootstrap any statistic",{
+    controls:p=>{const hub=sbSelect("Hub",HUBS.map(h=>[h,h]),"ITPark"),Nf=sbField("Sessions drawn N",200,{min:"5",max:"5000",step:"1"}),sd=sbField("Draw seed",2026,{min:"1",max:"999999",step:"1"});
+      const go=sbBtn("Draw a sample and bootstrap");const row=el("div",{class:"btnrow"});row.appendChild(go);
+      p.append(sbRow(hub,Nf,sd),row,SB.text("p","Sessions are drawn from the hub's 200 duration quantiles (a compressed copy of the file). Try N = 50, 200, 800 and 3,200 with the mean: the SE halves each time N quadruples, so SE × √N stays put.","note"));
+      const run=bootRunner(p);const fire=()=>run.set(sampleHub(hub.val(),clampInt(Nf.val(),5,5000,200),clampInt(sd.val(),1,999999,2026)));go.addEventListener("click",fire);fire();},
+    generate:p=>{const f=SB.genForm(["lognormal","exponential","normal","uniform","bimodal","poisson"],{kind:"lognormal",n:200,params:{median:110,"spread σ":0.8}});p.appendChild(f.el);
+      const go=sbBtn("Generate and bootstrap");const row=el("div",{class:"btnrow"});row.appendChild(go);p.appendChild(row);
+      const run=bootRunner(p);go.addEventListener("click",()=>run.set(f.values()));},
+    own:p=>{let run=null;SB.dataForm(p,[{key:"x",label:"Values",type:"num"}],d=>run.set(d.x),{example:ownExample(),minRows:5,placeholder:"e.g.\nminutes\n42\n118\n77\n265"});run=bootRunner(p);}
+  },"Resample any sample with replacement and watch the statistic's sampling distribution pile up.");
+}
+
+/* (2) family explorer: draws from a named family against its density or mass function */
+function explorerView(pane){
+  const sp=el("span"),row=el("div",{class:"btnrow"});row.appendChild(SB.text("span","Speed","eyebrow"));row.appendChild(sp);pane.appendChild(row);
+  const {L,R}=sbLayout(pane);const box=el("div",{class:"svgbox"}),cv=el("canvas",{"aria-label":"Histogram of simulated draws filling in under the theoretical curve"});box.appendChild(cv);L.appendChild(box);
+  const lg=el("p",{class:"note"});L.appendChild(lg);
+  const rd=el("div",{class:"readout"});R.appendChild(rd);const [cN,cM,cTM,cS,cTS]=sbCells(rd,["Draws shown","Sample mean","Theory mean","Sample SD","Theory SD"]);
+  const msg=el("p",{class:"note",role:"status"});R.appendChild(msg);
+  const W=360,H=220,g=canvasSetup(cv,W,H);let vals=[],shown=0,spec=null,anim=null,speed=1,lo=0,hi=1,NB=30,w=1;
+  speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);if(!spec)return;const m={l:12,r:10,t:18,b:28},bw=(W-m.l-m.r)/NB;
+    const c=new Array(NB).fill(0);for(let i=0;i<shown;i++){const v=vals[i];const k=spec.disc?Math.floor((v-lo)/w):Math.floor((v-lo)/(hi-lo)*NB);if(k>=0&&k<NB)c[k]++;}
+    const bars=c.map(x=>shown?(spec.disc?x/shown:x/(shown*(hi-lo)/NB)):0);
+    const curves=spec.curves.map(cu=>{const ys=[];if(spec.disc){for(let b=0;b<NB;b++){let s=0;for(let k=lo+b*w;k<lo+(b+1)*w;k++)s+=cu.f(k);ys.push(s);}}else{for(let i=0;i<=160;i++)ys.push(cu.f(lo+(hi-lo)*i/160+1e-9));}return ys;});
+    const bmax=Math.max(...bars,1e-12);let cmax=0;curves.forEach(ys=>ys.forEach(y=>{if(Number.isFinite(y))cmax=Math.max(cmax,y);}));const ymax=Math.max(bmax,Math.min(cmax,shown?2.5*bmax:cmax))*1.12||1;
+    const Y=v=>H-m.b-Math.min(v,ymax)/ymax*(H-m.t-m.b);
+    g.fillStyle=cssVar("--accent");bars.forEach((v,b)=>g.fillRect(m.l+b*bw+1,Y(v),Math.max(0.5,bw-2),Y(0)-Y(v)));
+    spec.curves.forEach((cu,j)=>{const ys=curves[j];g.strokeStyle=g.fillStyle=cssVar(cu.col);g.lineWidth=2.2;
+      if(spec.disc){ys.forEach((y,b)=>{g.beginPath();g.arc(m.l+b*bw+bw/2,Y(y),3,0,7);g.fill();});}
+      else{g.beginPath();ys.forEach((y,i)=>{const x=m.l+i/160*(W-m.l-m.r);i?g.lineTo(x,Y(Number.isFinite(y)?y:ymax)):g.moveTo(x,Y(Number.isFinite(y)?y:ymax));});g.stroke();}});g.lineWidth=1;
+    g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";const dg=(hi-lo)<10?2:(hi-lo)<100?1:0;
+    [0,0.5,1].forEach(f=>axisText(g,(lo+f*(hi-lo)).toFixed(spec.disc?0:dg),m.l+f*(W-m.l-m.r),H-10,f===0?"left":f===1?"right":"center"));
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText(spec.disc?(w>1?`share of draws per bin of ${w}`:"share of draws at each value"):"density of the draws",m.l,12);}
+  function show(){cN.textContent=ind(shown)+" of "+ind(vals.length);const a=vals.slice(0,shown);cM.textContent=a.length?sig(mean(a)):"—";cS.textContent=a.length>1?sig(sdev(a)):"—";cTM.textContent=spec&&spec.mu!=null?sig(spec.mu):"—";cTS.textContent=spec&&spec.sd!=null?sig(spec.sd):"—";}
+  return{run(values,sp2){if(anim){anim.stop();anim=null;}vals=values;spec=sp2;shown=0;const s=srt(values),n=s.length;
+      if(spec.disc){lo=s[0];let top=s[n-1];if(top-lo>400)top=Math.ceil(quant(s,0.995));w=Math.max(1,Math.ceil((top-lo+1)/40));NB=Math.ceil((top-lo+1)/w);hi=lo+NB*w;}
+      else{lo=spec.pos?0:quant(s,0.002);hi=quant(s,0.995);if(!(hi>lo))hi=lo+1;NB=30;}
+      const out=values.filter(v=>v<lo||v>=hi+(spec.disc?0:1e-9)).length;
+      lg.textContent=spec.legend+(out?` · ${ind(out)} draw(s) beyond the axis are counted but not drawn`:"");msg.textContent=spec.note||"";
+      if(REDUCED){shown=n;draw();show();return;}
+      draw();show();anim=loop(()=>{shown=Math.min(n,shown+Math.max(1,Math.round(speed*n/150)));draw();show();if(shown>=n){anim.stop();anim=null;}});},
+    say(t){if(anim){anim.stop();anim=null;}vals=[];shown=0;spec=null;draw();cN.textContent=cM.textContent=cS.textContent=cTM.textContent=cTS.textContent="—";lg.textContent="";msg.textContent=t;}};
+}
+function sbFamilies(root){
+  SB.panel(root,"family explorer",{
+    controls:p=>{const hub=sbSelect("Hub",HUBS.map(h=>[h,h]),"ITPark"),Nf=sbField("Sessions drawn N",500,{min:"10",max:"5000",step:"1"}),sd=sbField("Draw seed",7,{min:"1",max:"999999",step:"1"});
+      const go=sbBtn("Draw sessions");const row=el("div",{class:"btnrow"});row.appendChild(go);p.append(sbRow(hub,Nf,sd),row);const v=explorerView(p);
+      const fire=()=>{const h=hub.val(),H0=HUB[h],k=H0.wShape,l=H0.wScale;v.run(sampleHub(h,clampInt(Nf.val(),10,5000,500),clampInt(sd.val(),1,999999,7)),{pos:true,mu:l*Math.exp(lnGamma(1+1/k)),sd:l*Math.sqrt(Math.exp(lnGamma(1+2/k))-Math.exp(2*lnGamma(1+1/k))),
+        curves:[{f:x=>weibPDF(x,k,l),col:"--gold"},{f:x=>x<0?0:Math.exp(-x/H0.mean)/H0.mean,col:"--fraud"}],legend:`bars: ${h} durations (min) · gold: fitted Weibull(${k.toFixed(2)}, ${l.toFixed(1)}) · red: Exponential with the same mean`,
+        note:"Theory columns are the fitted Weibull. Small N: the bars wander around the curve. Large N: they settle on it, and the Exponential's excess of very short sessions shows."});};
+      go.addEventListener("click",fire);fire();},
+    generate:p=>{const fam=sbSelect("Family",Object.keys(XFAM).map(k=>[k,XFAM[k].label]),"gamma"),params=el("div",{class:"sb-params"}),Nf=sbField("Draws n",2000,{min:"1",max:"5000",step:"1"}),sd=sbField("Seed",1,{min:"1",max:"999999",step:"1"});
+      let inputs={};const build=()=>{params.innerHTML="";inputs={};XFAM[fam.val()].ps.forEach(([nm,def])=>{const f=sbField(nm,def);inputs[nm]=f;params.appendChild(f);});};build();
+      const go=sbBtn("Simulate the draws");const row=el("div",{class:"btnrow"});row.appendChild(go);p.append(sbRow(fam,Nf,sd),params,row);const v=explorerView(p);
+      const fire=()=>{const k=fam.val(),F=XFAM[k],pr={};Object.keys(inputs).forEach(nm=>pr[nm]=inputs[nm].val());
+        if(Object.values(pr).some(x=>!Number.isFinite(x))||!F.ok(pr)){v.say("Those parameters are outside the family's allowed range (positive scales and SDs, 0 < p < 1, shapes within limits, n trials ≤ 1,000, λ ≤ 200). Nothing was drawn.");return;}
+        const n=clampInt(Nf.val(),1,5000,2000);v.run(xfamDraw(k,pr,n,clampInt(sd.val(),1,999999,1)),{disc:!!F.disc,pos:!!F.pos,mu:F.mu(pr),sd:F.sd(pr),curves:[{f:F.disc?(x=>F.pmf(x,pr)):(x=>F.pdf(x,pr)),col:"--gold"}],
+          legend:`bars: ${ind(n)} simulated draws · gold: the ${F.disc?"PMF":"density"} of the ${F.label}`});};
+      fam.input.addEventListener("change",()=>{build();fire();});go.addEventListener("click",fire);fire();}
+  },"Pick a family and its parameters, or the hub data, and watch the draws fill in under the theoretical curve.");
+}
+
+/* (3) the fitting race on any positive sample */
+function fitView(pane){
+  const go=sbBtn("Run the race"),sp=el("span"),row=el("div",{class:"btnrow"});row.append(go,sp);pane.appendChild(row);
+  const {L,R}=sbLayout(pane);const box=el("div",{class:"svgbox"}),cv=el("canvas",{"aria-label":"Empirical CDF swept from left to right with five fitted CDFs"});box.appendChild(cv);L.appendChild(box);
+  L.appendChild(SB.text("p","Black: the empirical CDF (ECDF). Gold Weibull · green Gamma · red Exponential · grey Lognormal · blue Normal. All fitted by maximum likelihood (MLE).","note"));
+  const rd=el("div",{class:"readout"});R.appendChild(rd);const [cN,cW,cK]=sbCells(rd,["Positive values used","Lowest AIC (Akaike information criterion)","Smallest Kolmogorov–Smirnov (KS) distance"]);
+  const tb=el("div",{style:"min-width:0"});pane.appendChild(tb);const msg=el("p",{class:"note",role:"status"});pane.appendChild(msg);
+  const W=360,H=240,g=canvasSetup(cv,W,H);let res=null,XM=1,sweep=0,anim=null,speed=1;speedSeg(sp,v=>{speed=v;},[1,4]);
+  const COL={weibull:"--gold",gamma:"--ok",exponential:"--fraud",lognormal:"--muted",normal:"--accent"},NAME={weibull:"Weibull",gamma:"Gamma",exponential:"Exponential",lognormal:"Lognormal",normal:"Normal"};
+  const m={l:34,r:10,t:16,b:28},X=x=>m.l+x/XM*(W-m.l-m.r),Y=p=>H-m.b-p*(H-m.t-m.b);
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);g.strokeStyle=cssVar("--line");g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";
+    [0,0.25,0.5,0.75,1].forEach(p=>{g.beginPath();g.moveTo(m.l,Y(p));g.lineTo(W-m.r,Y(p));g.stroke();axisText(g,p.toFixed(2),m.l-4,Y(p)+3,"right");});
+    if(!res)return;[0,0.5,1].forEach(f=>axisText(g,XM>=10?(f*XM).toFixed(0):sig(f*XM),X(f*XM),H-10,f===0?"left":f===1?"right":"center"));
+    Object.keys(res.fits).forEach(f=>{g.strokeStyle=cssVar(COL[f]);g.lineWidth=1.6;g.beginPath();for(let i=0;i<=120;i++){const x=sweep*i/120;const y=Y(res.fits[f].cdf(x));i?g.lineTo(X(x),y):g.moveTo(X(x),y);}g.stroke();});
+    g.strokeStyle=cssVar("--ink");g.lineWidth=2;g.beginPath();const x=res.x,n=res.n,step=Math.max(1,Math.floor(n/400));let px=X(0),py=Y(0);g.moveTo(px,py);
+    for(let i=0;i<n;i+=step){if(x[i]>sweep||x[i]>XM)break;const nx=X(x[i]);g.lineTo(nx,py);py=Y((i+1)/n);g.lineTo(nx,py);}g.lineTo(X(Math.min(sweep,XM)),py);g.stroke();g.lineWidth=1;
+    g.fillStyle=cssVar("--gold");g.fillRect(X(Math.min(sweep,XM))-1,m.t,2,H-m.t-m.b);g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText("ECDF vs fitted CDFs",m.l,11);}
+  function race(){if(anim){anim.stop();anim=null;}if(!res)return;sweep=0;if(REDUCED){sweep=XM;draw();return;}anim=loop(()=>{sweep=Math.min(XM,sweep+XM/200*speed);draw();if(sweep>=XM){anim.stop();anim=null;}});}
+  go.addEventListener("click",race);draw();
+  function say(t){if(anim){anim.stop();anim=null;}res=null;draw();cN.textContent=cW.textContent=cK.textContent="—";tb.innerHTML="";msg.textContent=t;}
+  return{say,run(values){const pos=values.filter(v=>Number.isFinite(v)&&v>0),drop=values.length-pos.length;
+      if(pos.length<10){say(`Only ${pos.length} positive value(s); the race needs at least 10. The five families here live on positive numbers.`);return;}
+      if(new Set(pos).size<3){say("The values barely vary (fewer than 3 distinct values), so the two-parameter families cannot be fitted.");return;}
+      res=fitAll(pos);XM=quant(res.x,0.99)*1.05;const f=res.fits,ks=Object.keys(f).sort((a,b)=>f[a].AIC-f[b].AIC);
+      cN.textContent=ind(res.n);cW.textContent=NAME[ks[0]];cK.textContent=NAME[Object.keys(f).reduce((a,b)=>f[b].KS<f[a].KS?b:a)];
+      tb.innerHTML="";tb.appendChild(SB.table(["Family","Estimates","log-lik","AIC","ΔAIC","BIC","KS D"],ks.map(k=>[NAME[k],f[k].par.map(([a,b])=>a+" "+sig(b)).join(", "),f[k].logL.toFixed(2),f[k].AIC.toFixed(2),(f[k].AIC-f[ks[0]].AIC).toFixed(2),f[k].BIC.toFixed(2),f[k].KS.toFixed(4)])));tb.querySelectorAll("th,td").forEach(c=>{c.style.whiteSpace="nowrap";});
+      msg.textContent=(drop?`${ind(drop)} value(s) at or below zero were left out. `:"")+"ΔAIC is the gap to the best model; gaps under about 2 are a tie. The axis stops at 1.05 × the 99th percentile.";race();}};
+}
+function sbFitRace(root){
+  SB.panel(root,"the fitting race on any sample",{
+    controls:p=>{const hub=sbSelect("Hub",HUBS.map(h=>[h,h]),"Highway"),Nf=sbField("Sessions drawn N",300,{min:"10",max:"5000",step:"1"}),sd=sbField("Draw seed",11,{min:"1",max:"999999",step:"1"});
+      const go=sbBtn("Draw and fit");const row=el("div",{class:"btnrow"});row.appendChild(go);p.append(sbRow(hub,Nf,sd),row,SB.text("p","Sessions are drawn from the hub's 200 duration quantiles. Small N: AIC often cannot separate Weibull from Gamma. Large N: the ranking firms up.","note"));
+      const v=fitView(p);const fire=()=>v.run(sampleHub(hub.val(),clampInt(Nf.val(),10,5000,300),clampInt(sd.val(),1,999999,11)));go.addEventListener("click",fire);fire();},
+    generate:p=>{const f=SB.genForm(["lognormal","exponential","normal","uniform","bimodal"],{kind:"exponential",n:500,params:{mean:16.9}});p.appendChild(f.el);
+      const go=sbBtn("Generate and fit");const row=el("div",{class:"btnrow"});row.appendChild(go);p.appendChild(row);const v=fitView(p);
+      const fire=()=>v.run(f.values());go.addEventListener("click",fire);fire();},
+    own:p=>{let v=null;SB.dataForm(p,[{key:"x",label:"Positive values",type:"num"}],d=>v.run(d.x),{example:ownExample(),minRows:10,placeholder:"e.g.\nminutes\n42\n118\n77\n265",
+      help:"Paste a column of positive numbers (durations, gaps, amounts), one per line or comma-separated, or a small table with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared."});v=fitView(p);}
+  },"Five families, fitted by maximum likelihood to any positive sample, refereed by AIC, BIC and the KS distance.");
+}
+
+/* (4) Monte Carlo: the running mean of g(D) for Weibull durations, hub data or your data */
+function mcView(pane,getCfg){
+  const go=sbBtn("Run the draws"),sp=el("span"),row=el("div",{class:"btnrow"});row.append(go,sp);pane.appendChild(row);
+  const {L,R}=sbLayout(pane);const box=el("div",{class:"svgbox"}),cv=el("canvas",{"aria-label":"Running mean of simulated draws converging to the target"});box.appendChild(cv);L.appendChild(box);
+  L.appendChild(SB.text("p","Blue: the running mean (log-scale n). Gold dashed: the target. Shaded: target ± 2·SD/√n.","note"));
+  const rd=el("div",{class:"readout"});R.appendChild(rd);const [cN,cM,cT,cSE,cZ]=sbCells(rd,["Draws n","Running mean","Target","SE estimate s/√n","Error in SEs"]);
+  const msg=el("p",{class:"note",role:"status"});R.appendChild(msg);
+  const W=360,H=220,g=canvasSetup(cv,W,H);let C=null,r=null,n=0,sum=0,sum2=0,pts=[],anim=null,speed=1,lo=0,hi=1,every=1;speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  const m={l:46,r:10,t:14,b:26},X=i=>m.l+Math.log10(Math.max(1,i))/Math.log10(Math.max(10,C?C.n:10))*(W-m.l-m.r);
+  function draw(){g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);if(!C)return;const Y=v=>H-m.b-(Math.min(hi,Math.max(lo,v))-lo)/(hi-lo)*(H-m.t-m.b);
+    g.strokeStyle=cssVar("--line");g.fillStyle=cssVar("--muted");g.font="10px IBM Plex Mono, monospace";const dg=(hi-lo)<0.5?3:(hi-lo)<5?2:(hi-lo)<50?1:0;
+    for(let k=0;k<=4;k++){const v=lo+k*(hi-lo)/4;g.beginPath();g.moveTo(m.l,Y(v));g.lineTo(W-m.r,Y(v));g.stroke();axisText(g,v.toFixed(dg),m.l-4,Y(v)+3,"right");}
+    for(let v=1;v<=C.n;v*=10)axisText(g,ind(v),X(v),H-8,v===1?"left":v*10>C.n&&X(v)>W-m.r-20?"right":"center");
+    if(C.sd>0){g.fillStyle=cssVar("--accent-soft");g.beginPath();for(let i=1;i<=C.n;i*=1.1)g.lineTo(X(i),Y(C.target+2*C.sd/Math.sqrt(i)));for(let i=C.n;i>=1;i/=1.1)g.lineTo(X(i),Y(C.target-2*C.sd/Math.sqrt(i)));g.closePath();g.fill();}
+    g.strokeStyle=cssVar("--gold");g.setLineDash([4,3]);g.beginPath();g.moveTo(m.l,Y(C.target));g.lineTo(W-m.r,Y(C.target));g.stroke();g.setLineDash([]);
+    g.strokeStyle=cssVar("--accent");g.lineWidth=2;g.beginPath();pts.forEach(([i,v],j)=>{j?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v));});g.stroke();g.lineWidth=1;
+    if(pts.length){const [i,v]=pts[pts.length-1];g.fillStyle=cssVar("--fraud");g.beginPath();g.arc(X(i),Y(v),4,0,7);g.fill();}
+    g.fillStyle=cssVar("--ink");g.font="11px IBM Plex Mono, monospace";g.fillText(C.title,m.l,10);}
+  function step(){if(n>=C.n)return false;const v=C.g(C.draw(r));n++;sum+=v;sum2+=v*v;if(n<=1000||n%every===0||n===C.n)pts.push([n,sum/n]);return true;}
+  function show(){cN.textContent=ind(n);cT.textContent=C?sig(C.target):"—";if(n>=2){const mn=sum/n,s=Math.sqrt(Math.max(0,(sum2-n*mn*mn)/(n-1))),se=s/Math.sqrt(n);cM.textContent=sig(mn);cSE.textContent=sig(se);cZ.textContent=se>0?(Math.abs(mn-C.target)/se).toFixed(2):"—";}else{cM.textContent=n?sig(sum):"—";cSE.textContent=cZ.textContent="—";}}
+  function start(){if(anim){anim.stop();anim=null;}const c=getCfg();if(typeof c==="string"){C=null;n=0;pts=[];draw();cN.textContent=cM.textContent=cT.textContent=cSE.textContent=cZ.textContent="—";msg.textContent=c;return;}
+    C=c;r=rng(C.seed);n=sum=sum2=0;pts=[];every=Math.max(1,Math.ceil(C.n/2000));const spr=C.sd>0?2.6*C.sd/Math.sqrt(10):Math.max(1e-3,Math.abs(C.target)*0.1);lo=C.target-spr;hi=C.target+spr;if(C.lo0&&lo<0){hi-=lo;lo=0;}msg.textContent=C.note||"";
+    if(REDUCED){while(step());draw();show();return;}draw();show();anim=loop(()=>{let ok=true;for(let k=0;k<Math.max(1,Math.round(speed*(1+n/60)))&&ok;k++)ok=step();draw();show();if(!ok){anim.stop();anim=null;}});}
+  go.addEventListener("click",start);draw();return{start};
+}
+function mcInputs(t0){const fn=sbSelect("Function g(D)",[["exc","max(D − t, 0)"],["ind","1{D > t}"]],"exc"),t=sbField("Threshold t (min)",t0,{min:"0",step:"any"}),Nf=sbField("Draws n",10000,{min:"10",max:"50000",step:"10"}),sd=sbField("Seed",5,{min:"1",max:"999999",step:"1"});
+  return{fn,t,Nf,sd,row:sbRow(fn,t,Nf,sd),get(){const tv=t.val();if(!(tv>=0))return "The threshold t must be a number of minutes, 0 or more.";return{fn:fn.val(),t:tv,n:clampInt(Nf.val(),10,50000,10000),seed:clampInt(sd.val(),1,999999,5)};}};}
+function sbMC(root){
+  SB.panel(root,"Monte Carlo for any g(D)",{
+    controls:p=>{const hub=sbSelect("Hub",HUBS.map(h=>[h,h]),"ITPark"),I=mcInputs(60);p.append(sbRow(hub),I.row);
+      const v=mcView(p,()=>{const q=I.get();if(typeof q==="string")return q;const h=hub.val(),Q=HQ[h],E=empMoments(Q,q.fn,q.t),Wm=weibMoments(HUB[h].wShape,HUB[h].wScale,q.t),wv=q.fn==="exc"?Wm.exc:Wm.p;
+        return{n:q.n,seed:q.seed,lo0:true,target:E.mean,sd:E.sd,draw:r=>Q[Math.floor(r()*Q.length)],g:d=>MCG[q.fn].g(d,q.t),title:`${h}: mean of ${q.fn==="exc"?"max(D − t, 0)":"1{D > t}"}`,
+          note:`Draws are sessions picked at random from the hub's 200 quantiles, so the target is exact for that table: ${sig(E.mean)}. The hub's fitted Weibull(${HUB[h].wShape.toFixed(2)}, ${HUB[h].wScale.toFixed(1)}) gives ${sig(wv)}; that gap is model error, which more draws cannot remove.`};});
+      [hub.input,I.fn.input].forEach(x=>x.addEventListener("change",v.start));v.start();},
+    generate:p=>{const k=sbField("Weibull shape k",1.3016,{min:"0.1",max:"20",step:"any"}),l=sbField("Weibull scale λ",151.489,{min:"0.001",step:"any"}),I=mcInputs(60);p.append(sbRow(k,l),I.row);
+      const v=mcView(p,()=>{const q=I.get();if(typeof q==="string")return q;const kv=k.val(),lv=l.val();if(!(kv>=0.1&&kv<=20)||!(lv>0))return "The shape k must lie between 0.1 and 20 and the scale λ must be positive.";
+        const Wm=weibMoments(kv,lv,q.t);const target=q.fn==="exc"?Wm.exc:Wm.p,sdv=q.fn==="exc"?Wm.excSD:Wm.pSD;
+        return{n:q.n,seed:q.seed,lo0:true,target,sd:sdv,draw:r=>wsample(kv,lv,r),g:d=>MCG[q.fn].g(d,q.t),title:`Weibull(${sig(kv)}, ${sig(lv)}): ${q.fn==="exc"?"E[max(D − t, 0)]":"P(D > t)"}`,
+          note:q.fn==="exc"?`Exact target λΓ(1+1/k)Q(1+1/k, (t/λ)ᵏ) − t·e^(−(t/λ)ᵏ) = ${sig(target)}, with Q the upper regularised incomplete gamma function. SD of g(D) = ${sig(sdv)}.`:`Exact target e^(−(t/λ)ᵏ) = ${sig(target)}; SD of the indicator √(p(1−p)) = ${sig(sdv)}.`};});
+      [I.fn.input].forEach(x=>x.addEventListener("change",v.start));v.start();},
+    own:p=>{const I=mcInputs(60);p.appendChild(I.row);let data=null;let v=null;
+      SB.dataForm(p,[{key:"x",label:"Durations",type:"num"}],d=>{data=d.x;v.start();},{example:ownExample(),minRows:5,placeholder:"e.g.\nminutes\n42\n118\n77\n265"});
+      v=mcView(p,()=>{if(!data)return "Paste or load some durations above, then press \"Use this data\".";const q=I.get();if(typeof q==="string")return q;const E=empMoments(data,q.fn,q.t),D=data;
+        return{n:q.n,seed:q.seed,target:E.mean,sd:E.sd,draw:r=>D[Math.floor(r()*D.length)],g:d=>MCG[q.fn].g(d,q.t),title:`your data: mean of ${q.fn==="exc"?"max(D − t, 0)":"1{D > t}"}`,
+          note:`Each draw picks one of your ${ind(D.length)} values at random (with replacement), so the target is the average of g over your values: ${sig(E.mean)}.`};});}
+  },"Estimate E[g(D)] by simulation and watch the error shrink like 1/√n.");
 }
 
 const COURSE={
@@ -943,6 +1215,173 @@ const COURSE={
    ["Simulation","(1/n)Σ g(Xᵢ) → E[g(X)]  (LLN)\nSE_MC = SD(g)/√n\nPois(λ₁)+Pois(λ₂) = Pois(λ₁+λ₂)\nSₙ ≈ N(nμ, nσ²)  (CLT)\nSE(p̂₁−p̂₂)\n = √(p₁q₁/n₁ + p₂q₂/n₂)"]],
   L, BOARD
 };
+
+/* ---------- sandbox toolkit (shared by every module) ----------
+   Three levels of free play next to a lab:
+     1. controls on the real data   2. generate your own data   3. bring your own data
+   SAFETY: everything runs in the visitor's browser. Uploaded or pasted text is never sent anywhere,
+   never stored, never put in the URL, and never inserted as HTML: it is only parsed into numbers and
+   short labels, which are always displayed with textContent (SB.text / SB.table). Size caps keep phones responsive. */
+const SB=(function(){
+  const MAX_BYTES=2*1024*1024, MAX_ROWS=5000, MAX_COLS=50, MAX_LABEL=40;
+  const used=()=>{try{award("explorer");}catch(e){}};
+  /* safe text node helpers */
+  function text(tag,str,cls){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=String(str);return e;}
+  /* control characters, bidirectional embedding/override/isolate controls (U+202A–202E, U+2066–2069, which could
+     reorder the surrounding sentence on screen) and invisible U+200B, U+2060, U+FEFF are removed; ZWJ/ZWNJ stay (Indic scripts) */
+  function cleanLabel(s){s=String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u200b\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g,"").trim();return s.length>MAX_LABEL?s.slice(0,MAX_LABEL)+"…":s;}
+  /* parse delimited text into {header:[...], rows:[[...]], note} — all values stay plain strings */
+  function parse(str){
+    str=String(str||"");if(str.length>MAX_BYTES)str=str.slice(0,MAX_BYTES);
+    let lines=str.replace(/\r\n?/g,"\n").split("\n").map(l=>l.trim()).filter(l=>l.length);
+    let truncated=false;if(lines.length>MAX_ROWS+1){lines=lines.slice(0,MAX_ROWS+1);truncated=true;}
+    const note=()=>truncated?`Only the first ${ind(MAX_ROWS)} rows were read.`:"";
+    if(!lines.length)return{header:[],rows:[],note:"Nothing to read."};
+    // pick a delimiter that splits the first lines into the same number (>1) of fields
+    let delim=null,best=1;
+    for(const d of [",","\t",";","|"]){const c=lines.slice(0,20).map(l=>splitLine(l,d).length);if(c.every(x=>x===c[0])&&c[0]>best){best=c[0];delim=d;}}
+    if(!delim){const c=lines.slice(0,20).map(l=>l.split(/\s+/).length);if(c.every(x=>x===c[0])&&c[0]>1&&lines.length>1)delim="ws";}
+    // one line of values, or one value per line: a single column
+    if(!delim||lines.length===1){
+      const flat=(lines.length>1?lines:lines[0].split(/[\s,;\t|]+/)).map(cleanLabel).filter(x=>x.length);
+      const hasHead=flat.length>1&&isNaN(num(flat[0]))&&!isNaN(num(flat[1]));
+      const vals=(hasHead?flat.slice(1):flat).slice(0,MAX_ROWS);
+      return{header:[hasHead?flat[0]:"value"],rows:vals.map(v=>[v]),note:(flat.length>MAX_ROWS?`Only the first ${ind(MAX_ROWS)} values were read.`:note())};
+    }
+    const rows=lines.map(l=>(delim==="ws"?l.split(/\s+/):splitLine(l,delim)).slice(0,MAX_COLS).map(cleanLabel));
+    const first=rows[0];
+    const hasHead=first.some(v=>v!==""&&isNaN(num(v)))&&rows.slice(1,6).some(r=>r.some(v=>!isNaN(num(v))));
+    const width=first.length;
+    const header=hasHead?first.map((h,i)=>h||("column "+(i+1))):first.map((_,i)=>"column "+(i+1));
+    const body=(hasHead?rows.slice(1):rows).map(r=>{r=r.slice(0,width);while(r.length<width)r.push("");return r;});
+    return{header,rows:body,note:note()};
+  }
+  function splitLine(l,d){const out=[];let cur="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur="";}else cur+=ch;}out.push(cur);return out;}
+  function num(v){if(typeof v==="number")return v;const s=String(v).replace(/[₹$€£,\s]/g,"");if(s===""||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?%?$/.test(s))return NaN;let x=parseFloat(s);if(s.endsWith("%"))x/=100;return isFinite(x)?x:NaN;}
+  function column(t,i){return t.rows.map(r=>r[i]);}
+  function numeric(vals){const out=[];let dropped=0;vals.forEach(v=>{const x=num(v);if(Number.isFinite(x))out.push(x);else dropped++;});return{values:out,dropped};}
+  function isNumericCol(t,i){const c=column(t,i).filter(v=>v!=="");return c.length>0&&c.filter(v=>!isNaN(num(v))).length/c.length>=0.8;}
+  function readFile(file,cb){if(!file)return;if(file.size>MAX_BYTES){cb(null,`That file is ${(file.size/1048576).toFixed(1)} MB; the limit is 2 MB. Use a smaller extract.`);return;}
+    const fr=new FileReader();fr.onload=()=>cb(String(fr.result||""),null);fr.onerror=()=>cb(null,"The file could not be read.");fr.readAsText(file);}
+  /* random generators (seeded) */
+  function normal(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  const GEN={
+    normal:{label:"Normal",params:[["mean",50],["sd",10]],draw:(r,p)=>p.mean+p.sd*normal(r)},
+    lognormal:{label:"Lognormal (right-skewed)",params:[["median",500],["spread σ",0.6]],draw:(r,p)=>p.median*Math.exp(p["spread σ"]*normal(r))},
+    exponential:{label:"Exponential",params:[["mean",10]],draw:(r,p)=>-p.mean*Math.log(1-r())},
+    uniform:{label:"Uniform",params:[["min",0],["max",100]],draw:(r,p)=>p.min+(p.max-p.min)*r()},
+    bimodal:{label:"Two humps (mixture)",params:[["mean 1",30],["mean 2",70],["sd",8],["share of hump 1",0.5]],draw:(r,p)=>(r()<p["share of hump 1"]?p["mean 1"]:p["mean 2"])+p.sd*normal(r)},
+    poisson:{label:"Poisson (counts)",params:[["mean λ",4]],draw:(r,p)=>{const L=Math.exp(-p["mean λ"]);let k=0,q=1;do{k++;q*=r();}while(q>L&&k<1000);return k-1;}},
+    binomial:{label:"Binomial (successes in n)",params:[["n trials",20],["p",0.3]],draw:(r,p)=>{let k=0;const n=Math.min(1000,Math.max(1,Math.round(p["n trials"])));for(let i=0;i<n;i++)if(r()<p.p)k++;return k;}}
+  };
+  function generate(kind,params,n,seed){const g=GEN[kind];const r=rng(seed||1);const out=[];n=Math.max(1,Math.min(MAX_ROWS,Math.round(n)));for(let i=0;i<n;i++)out.push(g.draw(r,params));return out;}
+  /* UI: a tabbed sandbox panel. levels = {controls:fn(el), generate:fn(el), own:fn(el)} — each optional */
+  function panel(root,title,levels,intro){
+    const box=el("div",{class:"sandbox"});
+    const head=el("div",{class:"sb-head"});head.appendChild(text("span","Sandbox · "+title,"eyebrow"));
+    const tabs=el("div",{class:"seg sb-tabs",role:"tablist","aria-label":"Sandbox mode"});
+    head.appendChild(tabs);box.appendChild(head);
+    if(intro)box.appendChild(text("p",intro,"note"));
+    const body=el("div",{class:"sb-body"});box.appendChild(body);
+    const defs=[["controls","Real data"],["generate","Generate"],["own","Your data"]].filter(([k])=>levels[k]);
+    const panes={};
+    defs.forEach(([k,lab],i)=>{const b=el("button",{type:"button",role:"tab","aria-pressed":i===0?"true":"false"});b.textContent=lab;tabs.appendChild(b);
+      const p=el("div",{class:"sb-pane"});p.hidden=i!==0;body.appendChild(p);panes[k]={b,p,built:false};
+      b.addEventListener("click",()=>{defs.forEach(([kk])=>{panes[kk].p.hidden=kk!==k;panes[kk].b.setAttribute("aria-pressed",kk===k);});if(!panes[k].built){panes[k].built=true;levels[k](p);}used();});});
+    if(defs.length){const k=defs[0][0];panes[k].built=true;levels[k](panes[k].p);}
+    root.appendChild(box);return box;
+  }
+  /* generator form: returns {el, get()} */
+  function genForm(kinds,defaults){
+    kinds=kinds||Object.keys(GEN);defaults=defaults||{};
+    const wrap=el("div",{class:"ctrl"});
+    const sel=el("select",{"aria-label":"Shape"});kinds.forEach(k=>{const o=el("option",{value:k});o.textContent=GEN[k].label;sel.appendChild(o);});
+    if(defaults.kind)sel.value=defaults.kind;
+    const params=el("div",{class:"sb-params"});
+    const nIn=el("input",{type:"number",min:"1",max:String(MAX_ROWS),step:"1",value:String(defaults.n||200),"aria-label":"How many values"});
+    const seedIn=el("input",{type:"number",min:"1",max:"999999",step:"1",value:String(defaults.seed||1),"aria-label":"Random seed"});
+    function drawParams(){params.innerHTML="";GEN[sel.value].params.forEach(([name,def])=>{const lab=el("label");lab.appendChild(text("span",name));const i=el("input",{type:"number",step:"any",value:String((defaults.params&&defaults.params[name]!=null)?defaults.params[name]:def)});i.dataset.p=name;lab.appendChild(i);params.appendChild(lab);});}
+    sel.addEventListener("change",drawParams);drawParams();
+    const row=el("div",{class:"sb-params"});
+    const l1=el("label");l1.appendChild(text("span","Shape"));l1.appendChild(sel);
+    const l2=el("label");l2.appendChild(text("span","How many values (n)"));l2.appendChild(nIn);
+    const l3=el("label");l3.appendChild(text("span","Seed"));l3.appendChild(seedIn);
+    row.append(l1,l2,l3);wrap.append(row,params);
+    return{el:wrap,get(){const p={};params.querySelectorAll("input").forEach(i=>{const v=parseFloat(i.value);p[i.dataset.p]=Number.isFinite(v)?v:0;});return{kind:sel.value,params:p,n:Math.max(1,Math.min(MAX_ROWS,parseInt(nIn.value)||1)),seed:Math.max(1,parseInt(seedIn.value)||1)};},
+      values(){const g=this.get();return generate(g.kind,g.params,g.n,g.seed);}};
+  }
+  /* your-data form: textarea + file input + column pickers by role.
+     roles: [{key, label, type:"num"|"cat"|"any", optional}]  onData(dataObj, info) where dataObj[key] = array */
+  function dataForm(root,roles,onData,opts){
+    opts=opts||{};
+    const wrap=el("div",{class:"ctrl"});
+    wrap.appendChild(text("p",opts.help||"Paste numbers (one per line, or separated by commas or spaces), or a small table with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared.","note"));
+    const ta=el("textarea",{rows:"6","aria-label":"Paste your data",spellcheck:"false",placeholder:opts.placeholder||"e.g.\n12\n15\n9\n31\n14"});
+    const file=el("input",{type:"file",accept:".csv,.tsv,.txt,text/csv,text/plain","aria-label":"Choose a CSV file"});
+    const row=el("div",{class:"btnrow"});const go=el("button",{class:"btn small",type:"button"});go.textContent="Use this data";
+    const ex=el("button",{class:"btn ghost small",type:"button"});ex.textContent="Load an example";
+    row.append(go,ex,file);
+    const picks=el("div",{class:"sb-params"});const msg=el("p",{class:"note",role:"status"});
+    wrap.append(ta,row,picks,msg);root.appendChild(wrap);
+    let table=null;
+    function say(s){msg.textContent=s;}
+    function build(){
+      picks.innerHTML="";const sels={};
+      if(!table||!table.rows.length){say("No rows found.");return;}
+      if(roles.length>1||table.header.length>1){
+        roles.forEach((ro,ri)=>{const lab=el("label");lab.appendChild(text("span",ro.label+(ro.optional?" (optional)":"")));const s=el("select");
+          if(ro.optional){const o=el("option",{value:"-1"});o.textContent="none";s.appendChild(o);}
+          table.header.forEach((h,i)=>{const o=el("option",{value:String(i)});o.textContent=h;s.appendChild(o);});
+          let guess=ri<table.header.length?ri:0;if(ro.type==="num"){const ni=table.header.findIndex((h,i)=>isNumericCol(table,i)&&!Object.values(sels).some(x=>+x.value===i));if(ni>=0)guess=ni;}
+          if(ro.type==="cat"){const ci=table.header.findIndex((h,i)=>!isNumericCol(table,i));if(ci>=0)guess=ci;}
+          s.value=ro.optional&&table.header.length<=ri?"-1":String(guess);s.addEventListener("change",emit);lab.appendChild(s);picks.appendChild(lab);sels[ro.key]=s;});
+      } else roles.forEach(ro=>{sels[ro.key]={value:"0"};});
+      table._sels=sels;emit();
+    }
+    function emit(){
+      if(!table)return;const sels=table._sels;const out={};let n=table.rows.length,dropped=0;
+      const keep=table.rows.map(()=>true);
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0){out[ro.key]=null;return;}const col=column(table,v);
+        if(ro.type==="num")col.forEach((x,i)=>{if(!Number.isFinite(num(x)))keep[i]=false;});
+        else col.forEach((x,i)=>{if(x==="")keep[i]=false;});});
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0)return;const col=column(table,v).filter((_,i)=>keep[i]);out[ro.key]=ro.type==="num"?col.map(num):col.map(cleanLabel);});
+      dropped=keep.filter(k=>!k).length;
+      const used_n=n-dropped;
+      if(used_n<(opts.minRows||2)){say(`Only ${used_n} usable row(s); at least ${opts.minRows||2} are needed.`);return;}
+      say(`Read ${ind(n)} row(s); using ${ind(used_n)}`+(dropped?`, skipped ${ind(dropped)} blank or non-numeric.`:".")+(table.note?" "+table.note:""));
+      used();onData(out,{n:used_n,dropped});
+    }
+    go.addEventListener("click",()=>{table=parse(ta.value);build();});
+    ex.addEventListener("click",()=>{ta.value=opts.example||"12\n15\n9\n31\n14\n18\n11\n16\n90\n13";table=parse(ta.value);build();});
+    file.addEventListener("change",()=>{readFile(file.files[0],(txt,err)=>{if(err){say(err);return;}ta.value=txt.length>20000?txt.slice(0,20000)+"\n…":txt;table=parse(txt);build();});});
+    return{set(str){ta.value=str;table=parse(str);build();}};
+  }
+  /* safe table renderer for user data (textContent only) */
+  function table(headers,rows){const w=el("div",{class:"tbl"});const t=document.createElement("table");const th=document.createElement("thead");const tr=document.createElement("tr");headers.forEach(h=>tr.appendChild(text("th",h)));th.appendChild(tr);t.appendChild(th);const tb=document.createElement("tbody");rows.forEach(r=>{const rr=document.createElement("tr");r.forEach((c,i)=>rr.appendChild(text("td",c,i?"num":"")));tb.appendChild(rr);});t.appendChild(tb);w.appendChild(t);return w;}
+  /* common statistics used by many sandboxes */
+  const st={
+    sorted:a=>[...a].sort((x,y)=>x-y),
+    mean:a=>a.reduce((s,x)=>s+x,0)/a.length,
+    q:(a,p)=>{const s=[...a].sort((x,y)=>x-y);const h=(s.length-1)*p;const lo=Math.floor(h);return s[lo]+(s[Math.min(lo+1,s.length-1)]-s[lo])*(h-lo);},
+    sd:a=>{const m=a.reduce((s,x)=>s+x,0)/a.length;return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));},
+    corr:(x,y)=>{const n=x.length,mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}return sxy/Math.sqrt(sxx*syy);}
+  };
+  /* a reusable histogram drawer (SVG) for any numeric array */
+  function histogram(container,values,o){
+    o=o||{};container.innerHTML="";if(!values.length)return;
+    const W=o.w||360,H=o.h||200,m={l:36,r:10,t:14,b:30};const s=st.sorted(values);let lo=o.lo!=null?o.lo:s[0],hi=o.hi!=null?o.hi:s[s.length-1];if(hi===lo){hi=lo+1;}
+    const k=o.bins||Math.max(5,Math.min(60,Math.ceil(Math.log2(values.length)+1)));const bw=(hi-lo)/k;const c=new Array(k).fill(0);
+    values.forEach(v=>{let i=Math.floor((v-lo)/bw);if(i>=k)i=k-1;if(i<0)i=0;c[i]++;});const mx=Math.max(...c);
+    const X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r),Y=v=>H-m.b-v/mx*(H-m.t-m.b);
+    const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label||"Histogram"});
+    svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(0),y2:Y(0),style:"stroke:var(--line)"}));
+    c.forEach((v,i)=>svg.appendChild(sv("rect",{x:X(lo+i*bw)+0.5,y:Y(v),width:Math.max(0.5,X(lo+(i+1)*bw)-X(lo+i*bw)-1),height:Y(0)-Y(v),style:"fill:var(--accent)"})));
+    [lo,(lo+hi)/2,hi].forEach((v,i)=>{const t=sv("text",{x:X(v),y:H-10,"font-size":10,"text-anchor":i===0?"start":i===2?"end":"middle"});t.textContent=Math.abs(v)>=1000?ind(Math.round(v)):(+v.toFixed(2)).toString();svg.appendChild(t);});
+    (o.marks||[]).forEach(([v,lab,col],i)=>{if(v<lo||v>hi)return;svg.appendChild(sv("line",{x1:X(v),x2:X(v),y1:m.t,y2:Y(0),style:`stroke:${col||"var(--gold)"};stroke-width:2;stroke-dasharray:4 3`}));const t=sv("text",{x:X(v)+3,y:m.t+10+12*i,"font-size":10});t.textContent=lab;svg.appendChild(t);});
+    container.appendChild(svg);
+  }
+  return{parse,num,numeric,column,isNumericCol,readFile,GEN,generate,panel,genForm,dataForm,table,text,histogram,st,used,MAX_ROWS};
+})();
 
 /* ---------- helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
@@ -975,7 +1414,7 @@ try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.pars
 const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
 
 const RANKS=COURSE.ranks;
-const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["explorer","Sandbox Explorer","Opened a sandbox and played with your own settings or data"],["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
 
 function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
 function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}

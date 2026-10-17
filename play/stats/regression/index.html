@@ -197,6 +197,17 @@ td.num{font-family:var(--mono)}
 .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .sheet .formula{font-size:.84rem}
 .sheet h3{font-size:1rem;margin-bottom:6px}
+.sandbox{border:1px dashed var(--accent);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;background:var(--sunk);min-width:0;margin-top:14px}
+.sb-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.sb-head .eyebrow{color:var(--accent)}
+.sb-tabs button{border:0;background:transparent;padding:5px 12px;font:600 .8rem/1.2 var(--mono)}
+.sb-tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.sb-pane{display:grid;gap:10px;min-width:0}
+.sb-params{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.sb-params label{display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.sb-params input,.sb-params select{width:9.5em;max-width:100%}
+.sandbox textarea{width:100%;max-width:100%;font:400 .88rem/1.4 var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+.sandbox input[type=file]{font-size:.82rem;max-width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -573,6 +584,7 @@ function labScatter(root){
     const t=sv("text",{x:ox+14,y:oy+22,"font-size":11,"font-weight":"600"});t.textContent=`${k}  r = ${q.r.toFixed(2)}`;s.appendChild(t);
     const t2=sv("text",{x:ox+14,y:oy+138,"font-size":9,style:"fill:var(--muted)"});t2.textContent=`ŷ = ${q.b0.toFixed(2)} + ${q.b1.toFixed(2)}x`;s.appendChild(t2);});
   $("#quart",right).appendChild(s);
+  sbScatter(root);
 }
 
 function labHandFit(root){
@@ -653,6 +665,7 @@ SE(β̂₁) = RSE / √Sxx
   $("#ssreset",left).addEventListener("click",()=>{if(anim)anim.stop();r=rng(31);slopes=[];seSum=0;cur=null;stats();draw();});
   speedSeg($("#sssp",left),v=>{speed=v;},[1,4,16]);
   stats();draw();
+  sbInference(root);
 }
 
 function labMultiple(root){
@@ -687,6 +700,7 @@ function labMultiple(root){
     const xl=sv("text",{x:W-m.r,y:H-3,"font-size":10,"text-anchor":"end"});xl.textContent="distance (km)";s.appendChild(xl);
     const b=$("#plines",right);b.innerHTML="";b.appendChild(s);}
   $("#pkm",right).addEventListener("input",price);right.querySelectorAll("[data-v]").forEach(b=>b.addEventListener("click",()=>{veh=+b.dataset.v;right.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-pressed",x===b));price();}));price();
+  sbMultiple(root);
 }
 
 function labDiagnostics(root){
@@ -820,6 +834,7 @@ function labLogistic(root){
     const xl=sv("text",{x:W2-m.r,y:H2-2,"font-size":10,"text-anchor":"end"});xl.textContent="false positive rate";s.appendChild(xl);const yl=sv("text",{x:m.l,y:m.t-2,"font-size":10});yl.textContent="recall (true positive rate)";s.appendChild(yl);
     const b=$("#roc",right);b.innerHTML="";b.appendChild(s);}
   $("#lth",right).addEventListener("input",conf);conf();
+  sbLogisticBox(root);
 }
 
 function labAB(root){
@@ -869,6 +884,372 @@ significant at 5% if |z| > 1.96</div>
   params();draw();
 }
 
+/* ---------- sandboxes: free play beside Files 1, 3, 4 and 7 ----------
+   User text is only parsed into numbers and short labels by the shared toolkit; labels reach the page through
+   textContent (SB.text / SB.table) or canvas fillText, never as HTML. Nothing is stored. */
+/* SBNUM-BEGIN: pure numerics (checked against statsmodels in verify/regression_sandbox.md) */
+function sbLgamma(x){const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(x<0.5)return Math.log(Math.PI/Math.abs(Math.sin(Math.PI*x)))-sbLgamma(1-x);x-=1;let a=c[0];const t=x+7.5;for(let i=1;i<9;i++)a+=c[i]/(x+i);return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);}
+function sbBetacf(a,b,x){const FP=1e-300,qab=a+b,qap=a+1,qam=a-1;let c=1,d=1-qab*x/qap;if(Math.abs(d)<FP)d=FP;d=1/d;let h=d;
+  for(let m=1;m<=400;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-15)break;}return h;}
+function sbIbeta(x,a,b){if(!(x>0))return 0;if(x>=1)return 1;const bt=Math.exp(sbLgamma(a+b)-sbLgamma(a)-sbLgamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  return x<(a+1)/(a+b+2)?bt*sbBetacf(a,b,x)/a:1-bt*sbBetacf(b,a,1-x)/b;}
+function sbGammaQ(a,x){const FP=1e-300;if(!(x>0))return 1;const lead=Math.exp(-x+a*Math.log(x)-sbLgamma(a));
+  if(x<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<1000;n++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-16)break;}return 1-sum*lead;}
+  let b=x+1-a,c=1/FP,d=1/b,h=d;for(let i=1;i<1000;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<FP)d=FP;c=b+an/c;if(Math.abs(c)<FP)c=FP;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-16)break;}return lead*h;}
+const sbTp2=(t,df)=>Number.isNaN(t)?NaN:!Number.isFinite(t)?0:Math.min(1,sbIbeta(df/(df+t*t),df/2,0.5));   // two-sided p of Student t
+const sbTcdf=(t,df)=>{const h=0.5*sbTp2(t,df);return t>0?1-h:h;};
+function sbTq(p,df){let lo=-1,hi=1;while(sbTcdf(lo,df)>p&&lo>-1e8)lo*=2;while(sbTcdf(hi,df)<p&&hi<1e8)hi*=2;
+  for(let i=0;i<300;i++){const m=(lo+hi)/2;if(sbTcdf(m,df)<p)lo=m;else hi=m;if(hi-lo<1e-13*Math.max(1,Math.abs(m)))break;}return (lo+hi)/2;}
+const sbZp2=z=>Number.isNaN(z)?NaN:!Number.isFinite(z)?0:sbGammaQ(0.5,z*z/2);        // two-sided p of a standard Normal
+const sbFp=(F,d1,d2)=>!Number.isFinite(F)?(F>0?0:NaN):F<=0?1:sbIbeta(d2/(d2+d1*F),d2/2,d1/2);
+function sbInv(A){const n=A.length,M=A.map((r,i)=>[...r,...A.map((_,j)=>i===j?1:0)]);let sc=0;A.forEach((r,i)=>{sc=Math.max(sc,Math.abs(r[i]));});
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(!(Math.abs(M[p][c])>1e-9*sc))return null;
+    [M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let k=0;k<2*n;k++)M[c][k]/=d;
+    for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];if(f)for(let k=0;k<2*n;k++)M[r][k]-=f*M[c][k];}}
+  return M.map(r=>r.slice(n));}
+/* centre and scale each predictor (for a well-conditioned X'X), returning the back-transform T: β = T·β̃ */
+function sbStd(cols,n){const m=cols.map(c=>{let s=0;for(let i=0;i<n;i++)s+=c[i];return s/n;});
+  const s=cols.map((c,j)=>{let v=0;for(let i=0;i<n;i++)v+=(c[i]-m[j])**2;return Math.sqrt(v/(n-1));});
+  const p=cols.length+1,T=Array.from({length:p},(_,a)=>Array.from({length:p},(_,b)=>a===b?1:0));
+  cols.forEach((_,j)=>{T[0][j+1]=-m[j]/s[j];T[j+1][j+1]=1/s[j];});
+  const row=i=>{const z=[1];for(let j=0;j<cols.length;j++)z.push((cols[j][i]-m[j])/s[j]);return z;};
+  return {m,s,T,row,zero:s.findIndex((v,j)=>!(v>1e-12*Math.max(1,Math.abs(m[j]))))};}
+function sbBack(T,g,C){const p=g.length,b=T.map(r=>r.reduce((a,v,k)=>a+v*g[k],0));
+  const TC=T.map(r=>C[0].map((_,j)=>r.reduce((a,v,k)=>a+v*C[k][j],0)));const V=TC.map(r=>T.map(t=>r.reduce((a,v,k)=>a+v*t[k],0)));return {b,V};}
+/* ordinary least squares with an intercept: y on the predictor columns */
+function sbOLS(y,cols){const n=y.length,k=cols.length,p=k+1;
+  if(n<=p)return {err:`Need more rows than coefficients: ${n} rows for ${p} coefficients.`};
+  const ym=y.reduce((a,b)=>a+b,0)/n;let sst=0;for(let i=0;i<n;i++)sst+=(y[i]-ym)**2;
+  const S=sbStd(cols,n);if(k&&S.zero>=0)return {err:"A predictor has the same value in every row (zero variance), so its slope cannot be estimated.",zero:S.zero};
+  const A=Array.from({length:p},()=>new Array(p).fill(0)),bv=new Array(p).fill(0);
+  for(let i=0;i<n;i++){const z=S.row(i);for(let a=0;a<p;a++){bv[a]+=z[a]*y[i];for(let c=a;c<p;c++)A[a][c]+=z[a]*z[c];}}
+  for(let a=0;a<p;a++)for(let c=0;c<a;c++)A[a][c]=A[c][a];
+  const Ai=sbInv(A);if(!Ai)return {err:"The predictors are perfectly collinear (one is an exact linear combination of the others), so X′X cannot be inverted."};
+  const g=Ai.map(r=>r.reduce((a,v,j)=>a+v*bv[j],0));let sse=0;const fit=new Array(n),res=new Array(n);
+  for(let i=0;i<n;i++){const z=S.row(i);fit[i]=z.reduce((a,v,j)=>a+v*g[j],0);res[i]=y[i]-fit[i];sse+=res[i]*res[i];}
+  const df=n-p,s2=sse/df;const {b,V}=sbBack(S.T,g,Ai.map(r=>r.map(v=>v*s2)));
+  const se=V.map((r,i)=>Math.sqrt(Math.max(0,r[i])));const t=b.map((v,i)=>se[i]>0?v/se[i]:(v===0?NaN:Infinity*Math.sign(v)));
+  const r2=sst>0?1-sse/sst:NaN,F=k&&s2>0?((sst-sse)/k)/s2:(k?Infinity:NaN);
+  return {n,k,p,df,b,se,t,pv:t.map(v=>sbTp2(v,df)),V,sse,sst,s2,rse:Math.sqrt(s2),r2,adj:1-(1-r2)*(n-1)/df,F,Fp:k?sbFp(F,k,df):NaN,fit,res};}
+/* simple regression with a CI for the slope, a CI for the mean response and a prediction interval at x0 */
+function sbSimpleInf(xs,ys,x0,conf){const f=sbOLS(ys,[xs]);if(f.err)return f;const tq=sbTq(1-(1-conf)/2,f.df);
+  const y0=f.b[0]+f.b[1]*x0,vm=f.V[0][0]+2*x0*f.V[0][1]+x0*x0*f.V[1][1];const sm=Math.sqrt(Math.max(0,vm)),sp=Math.sqrt(Math.max(0,vm+f.s2));
+  return Object.assign(f,{tq,conf,x0,y0,ci:f.b.map((v,i)=>[v-tq*f.se[i],v+tq*f.se[i]]),mean:[y0-tq*sm,y0+tq*sm],pi:[y0-tq*sp,y0+tq*sp],sem:sm,sep:sp});}
+/* variance inflation factor of each predictor: 1/(1 − R²ⱼ), R²ⱼ from regressing it on the others */
+function sbVIF(cols){return cols.map((c,j)=>{if(cols.length<2)return 1;const f=sbOLS(c,cols.filter((_,k)=>k!==j));return f.err?Infinity:1/(1-f.r2);});}
+const sbLogSig=e=>e>=0?-Math.log1p(Math.exp(-e)):e-Math.log1p(Math.exp(e));
+/* logistic regression by iteratively reweighted least squares (Newton–Raphson); capped iterations, separation check */
+function sbLogit(y,cols,maxIt){maxIt=maxIt||50;const n=y.length,k=cols.length,p=k+1;
+  if(y.some(v=>v!==0&&v!==1))return {err:"The outcome must be coded 0 and 1 only."};
+  const n1=y.reduce((a,b)=>a+b,0);if(n1===0||n1===n)return {err:`All ${n} outcomes are ${n1?1:0}; a logistic fit needs both 0s and 1s.`};
+  if(n<=p)return {err:`Need more rows than coefficients: ${n} rows for ${p} coefficients.`};
+  const S=sbStd(cols,n);if(S.zero>=0)return {err:"A predictor has the same value in every row (zero variance)."};
+  const Z=Array.from({length:n},(_,i)=>S.row(i));let g=new Array(p).fill(0),it=0,conv=false,sep=false;
+  function hess(){const H=Array.from({length:p},()=>new Array(p).fill(0)),gr=new Array(p).fill(0);let ll=0;
+    for(let i=0;i<n;i++){const z=Z[i],e=z.reduce((a,v,j)=>a+v*g[j],0),pr=1/(1+Math.exp(-e)),w=pr*(1-pr);ll+=y[i]?sbLogSig(e):sbLogSig(-e);
+      for(let a=0;a<p;a++){gr[a]+=(y[i]-pr)*z[a];for(let c=0;c<p;c++)H[a][c]+=w*z[a]*z[c];}}return {H,gr,ll};}
+  for(it=1;it<=maxIt;it++){const {H,gr}=hess();const Hi=sbInv(H);if(!Hi){sep=true;break;}
+    const d=Hi.map(r=>r.reduce((a,v,j)=>a+v*gr[j],0));g=g.map((v,j)=>v+d[j]);
+    if(g.slice(1).some(v=>Math.abs(v)>25)||Math.abs(g[0])>40){sep=true;break;}
+    if(Math.max(...d.map(Math.abs))<1e-10){conv=true;break;}}
+  if(sep)return {err:"separation",sep:true,it};
+  if(!conv)return {err:`The fit did not settle within ${maxIt} iterations; the data may be (nearly) separated.`,it};
+  const {H,ll}=hess();const Hi=sbInv(H);if(!Hi)return {err:"separation",sep:true,it};
+  const {b,V}=sbBack(S.T,g,Hi);const se=V.map((r,i)=>Math.sqrt(Math.max(0,r[i])));const z=b.map((v,i)=>v/se[i]);
+  const pr=Z.map(r=>1/(1+Math.exp(-r.reduce((a,v,j)=>a+v*g[j],0))));const yb=n1/n,ll0=n*(yb*Math.log(yb)+(1-yb)*Math.log(1-yb));
+  if(pr.every((q,i)=>y[i]?q>1-1e-9:q<1e-9))return {err:"separation",sep:true,it};
+  const zc=1.959963984540054;
+  return {n,n1,k,p,it,b,se,z,pv:z.map(sbZp2),or:b.map(Math.exp),orci:b.map((v,i)=>[Math.exp(v-zc*se[i]),Math.exp(v+zc*se[i])]),ll,ll0,mcf:1-ll/ll0,pr};}
+/* SBNUM-END */
+
+/* illustrative example inputs for the "Your data" boxes (made up; not NimbusRide data) */
+const EX_XY="distance_km,fare\n3.0,82\n15.4,236\n14.6,277\n1.3,44\n2.3,77\n9.4,200\n15.1,279\n5.5,168\n6.3,140\n13.3,266\n1.8,53\n15.0,312\n17.4,240\n14.5,265\n17.7,285";
+const EX_MULTI="fare,distance_km,duration_min,wait_min,hour,vehicle\n316,13.8,44,0.1,13,mini\n286,11.7,35,3.7,14,sedan\n136,8.4,24,1.2,20,auto\n158,1.4,4,7.5,20,sedan\n230,14.7,38,2.4,12,auto\n182,5.9,12,1.5,17,sedan\n100,2.7,16,9.9,7,mini\n317,16.0,43,10.5,21,mini\n113,4.2,23,12.9,22,auto\n238,17.6,52,3.2,15,auto\n153,7.9,21,0.7,23,auto\n428,18.9,60,7.5,11,sedan\n342,19.8,62,3.1,17,auto\n340,19.6,56,1.4,8,mini\n266,16.1,36,6.8,11,auto\n107,5.9,23,8.1,6,mini\n287,14.6,46,2.0,6,auto\n282,11.2,36,4.1,13,sedan\n227,14.5,38,2.8,13,auto\n240,8.1,19,8.3,14,sedan\n235,12.0,27,0.5,17,auto\n150,10.0,21,1.4,21,auto\n192,8.7,22,1.7,20,mini\n192,8.6,32,10.1,20,mini\n279,14.2,48,5.3,11,mini\n158,7.5,22,4.5,19,auto\n215,10.3,28,0.1,6,auto\n230,10.7,36,4.0,10,mini\n129,4.6,18,0.4,21,mini\n296,15.0,48,4.1,14,mini";
+const EX_LOGIT="cancelled,wait_min,surge\n0,5.3,0\n1,7.9,0\n1,10.4,0\n1,22.1,0\n0,1.4,0\n1,6.1,1\n0,3.6,0\n0,1.2,1\n1,2.4,0\n0,1.3,1\n0,9.0,0\n0,0.2,0\n0,4.9,0\n0,0.9,1\n1,1.3,0\n1,19.8,1\n0,4.5,0\n1,5.5,1\n0,2.8,0\n0,2.3,1\n0,2.3,0\n1,3.3,1\n1,9.9,0\n0,0.2,0\n0,0.8,0\n0,1.6,0\n1,0.9,1\n1,5.4,1\n0,3.5,0\n0,1.2,0\n0,1.4,1\n0,1.6,1\n0,8.7,0\n1,15.6,0\n1,0.1,0\n0,7.6,0\n0,6.0,1\n1,6.3,1\n0,7.3,1\n0,4.1,0";
+const SBTERM={0:"distance (per km)",3:"duration (per min)",4:"wait (per min)",6:"hour of day (per hour)",5:"rating (per point)"};
+const SBVARS={0:"distance (km)",1:"fare (₹)",3:"duration (min)",4:"wait (min)",5:"rating",6:"hour of day"};
+
+/* ---------- small UI helpers (labels are our own strings; user text never passes through here as HTML) ---------- */
+function sbField(parent,label,attrs){const lab=el("label");lab.appendChild(SB.text("span",label));const i=el("input",Object.assign({type:"number",step:"any"},attrs||{}));lab.appendChild(i);parent.appendChild(lab);return i;}
+function sbSelect(parent,label,opts,val){const lab=el("label");lab.appendChild(SB.text("span",label));const s=el("select");opts.forEach(([v,t])=>{const o=el("option",{value:String(v)});o.textContent=t;s.appendChild(o);});if(val!=null)s.value=String(val);lab.appendChild(s);parent.appendChild(lab);return s;}
+function sbCheck(parent,label,on){const lab=el("label",{class:"confirm",style:"font-size:.85rem"});const c=el("input",{type:"checkbox"});c.checked=!!on;lab.appendChild(c);lab.appendChild(SB.text("span",label));parent.appendChild(lab);return c;}
+function sbBtn(parent,txt,ghost){const b=el("button",{type:"button",class:"btn small"+(ghost?" ghost":"")});b.textContent=txt;parent.appendChild(b);return b;}
+const sbV=(inp,def,lo,hi)=>{let v=parseFloat(inp.value);if(!Number.isFinite(v))v=def;return Math.max(lo,Math.min(hi,v));};
+const sbF=(x,d)=>!Number.isFinite(x)?"—":(Math.abs(x)>=1e6||(Math.abs(x)<1e-4&&x!==0))?x.toExponential(2):x.toFixed(d);
+const sbP=p=>!Number.isFinite(p)?"—":p<0.0001?"< 0.0001":p.toFixed(4);
+function sbReadout(host,pairs){const r=el("div",{class:"readout"});pairs.forEach(([k,v])=>{const d=el("div");d.appendChild(SB.text("span",k));d.appendChild(SB.text("b",v));r.appendChild(d);});host.appendChild(r);return r;}
+function sbSay(host,s){host.appendChild(SB.text("p",s,"note"));}
+function sbNorm(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+const sbDraw=(N,seed)=>shuffled(SUB300.length,seed).slice(0,N).map(i=>SUB300[i]);
+function sbTicks(lo,hi,k){const span=hi-lo;if(!(span>0))return [lo];const st0=span/k,mag=Math.pow(10,Math.floor(Math.log10(st0)));const st=[1,2,2.5,5,10].map(f=>f*mag).find(s=>s>=st0)||10*mag;
+  const out=[];for(let v=Math.ceil(lo/st)*st;v<=hi+1e-9*span&&out.length<12;v+=st)out.push(+v.toPrecision(10));return out;}
+function sbRange(vals,padF){let lo=Infinity,hi=-Infinity;vals.forEach(v=>{if(Number.isFinite(v)){if(v<lo)lo=v;if(v>hi)hi=v;}});if(!Number.isFinite(lo)){lo=0;hi=10;}if(hi-lo<1e-9*Math.max(1,Math.abs(hi))){lo-=1;hi+=1;}const pad=(hi-lo)*(padF==null?0.08:padF);return [lo-pad,hi+pad];}
+function sbBoxEl(){const d=el("div",{class:"svgbox"});d.style.maxWidth="560px";return d;}
+function sbClip(g,W,H,m){g.save();g.beginPath();g.rect(m.l,m.t,W-m.l-m.r,H-m.t-m.b);g.clip();}
+
+/* ---------- File 1 sandbox: the scatter playground (tap to add, drag to move, live least squares) ---------- */
+function sbPlayground(host){
+  const box=el("div",{class:"ctrl"});host.appendChild(box);
+  const tools=el("div",{class:"btnrow"});box.appendChild(tools);
+  const rmc=sbCheck(tools,"tap removes a point",false),resc=sbCheck(tools,"residuals",true);
+  const bReset=sbBtn(tools,"Restore points",true),bClear=sbBtn(tools,"Clear",true),bScale=sbBtn(tools,"Rescale axes",true);
+  const sbx=sbBoxEl();const cv=el("canvas",{"aria-label":"Scatter playground: tap or click to add a point, drag a point to move it; the least-squares line refits live"});
+  cv.style.touchAction="none";cv.style.cursor="crosshair";sbx.appendChild(cv);box.appendChild(sbx);
+  const sbx2=sbBoxEl();const cv2=el("canvas",{"aria-label":"Residuals against x"});sbx2.appendChild(cv2);box.appendChild(sbx2);
+  const out=el("div");box.appendChild(out);const status=SB.text("p","","note");status.setAttribute("role","status");box.appendChild(status);
+  const W=360,H=260,H2=110,g=canvasSetup(cv,W,H),g2=canvasSetup(cv2,W,H2),m={l:50,r:12,t:20,b:32},m2={l:50,r:12,t:16,b:22};
+  let pts=[],orig=[],xr=[0,10],yr=[0,10],xl="x",yl="y",drag=-1;
+  const PX=v=>m.l+(v-xr[0])/(xr[1]-xr[0])*(W-m.l-m.r),PY=v=>H-m.b-(v-yr[0])/(yr[1]-yr[0])*(H-m.t-m.b);
+  function rescale(){xr=sbRange(pts.map(p=>p[0]));yr=sbRange(pts.map(p=>p[1]));}
+  function at(e){const rc=cv.getBoundingClientRect();const lx=(e.clientX-rc.left)/rc.width*W,ly=(e.clientY-rc.top)/rc.height*H;
+    return {lx,ly,k:W/Math.max(1,rc.width),x:xr[0]+(lx-m.l)/(W-m.l-m.r)*(xr[1]-xr[0]),y:yr[0]+(H-m.b-ly)/(H-m.t-m.b)*(yr[1]-yr[0])};}
+  cv.addEventListener("pointerdown",e=>{const q=at(e);let best=-1,bd=(16*q.k)**2;
+    pts.forEach((p,i)=>{const d=(PX(p[0])-q.lx)**2+(PY(p[1])-q.ly)**2;if(d<bd){bd=d;best=i;}});
+    e.preventDefault();
+    if(rmc.checked){if(best>=0){pts.splice(best,1);draw();}return;}
+    if(best<0){if(q.lx<m.l||q.lx>W-m.r||q.ly<m.t||q.ly>H-m.b||pts.length>=SB.MAX_ROWS)return;pts.push([q.x,q.y]);best=pts.length-1;}
+    drag=best;try{cv.setPointerCapture(e.pointerId);}catch(_){}draw();});
+  cv.addEventListener("pointermove",e=>{if(drag<0)return;e.preventDefault();const q=at(e);pts[drag]=[Math.max(xr[0],Math.min(xr[1],q.x)),Math.max(yr[0],Math.min(yr[1],q.y))];draw();});
+  const up=()=>{if(drag>=0){drag=-1;draw();}};cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+  [rmc,resc].forEach(c=>c.addEventListener("change",draw));
+  bReset.addEventListener("click",()=>{pts=orig.map(p=>[...p]);rescale();draw();});
+  bClear.addEventListener("click",()=>{pts=[];draw();});
+  bScale.addEventListener("click",()=>{rescale();draw();});
+  function draw(){const C=cssVar("--accent"),Gd=cssVar("--gold"),Rd=cssVar("--fraud");
+    g.clearRect(0,0,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);
+    axes(g,W,H,m,xr,yr,sbTicks(xr[0],xr[1],4),sbTicks(yr[0],yr[1],4),xl,yl);
+    const n=pts.length,xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);const f=n>=2?ols(xs,ys):null,ok=f&&f.sxx>0;
+    sbClip(g,W,H,m);
+    if(ok&&resc.checked){g.strokeStyle=Rd;g.globalAlpha=0.45;pts.forEach(p=>{g.beginPath();g.moveTo(PX(p[0]),PY(p[1]));g.lineTo(PX(p[0]),PY(f.b0+f.b1*p[0]));g.stroke();});g.globalAlpha=1;}
+    let hmax=-1,hi=-1,emax=-1,ei=-1;
+    if(ok)pts.forEach((p,i)=>{const h=1/n+(p[0]-f.mx)**2/f.sxx,e=Math.abs(p[1]-f.b0-f.b1*p[0]);if(h>hmax){hmax=h;hi=i;}if(e>emax){emax=e;ei=i;}});
+    pts.forEach((p,i)=>{g.beginPath();g.arc(PX(p[0]),PY(p[1]),i===drag?6:3.6,0,7);g.fillStyle=i===drag?Gd:C;g.globalAlpha=i===drag?1:0.7;g.fill();g.globalAlpha=1;});
+    if(ok&&n>=3){g.strokeStyle=cssVar("--ink");g.lineWidth=1.5;g.beginPath();g.arc(PX(pts[hi][0]),PY(pts[hi][1]),8,0,7);g.stroke();g.lineWidth=1;}
+    if(ok){g.strokeStyle=Gd;g.lineWidth=2.5;g.beginPath();g.moveTo(PX(xr[0]),PY(f.b0+f.b1*xr[0]));g.lineTo(PX(xr[1]),PY(f.b0+f.b1*xr[1]));g.stroke();g.lineWidth=1;}
+    g.restore();
+    g.fillStyle=cssVar("--ink");g.font=FONT;g.textAlign="right";g.fillText(ok?"r = "+f.r.toFixed(3):"",W-m.r,m.t-6);g.textAlign="left";
+    // residual plot
+    g2.clearRect(0,0,W,H2);g2.fillStyle=cssVar("--sunk");g2.fillRect(0,0,W,H2);
+    if(ok){const es=pts.map(p=>p[1]-f.b0-f.b1*p[0]);const em=Math.max(1e-9,...es.map(Math.abs))*1.15;const ax=axes(g2,W,H2,m2,xr,[-em,em],[],sbTicks(-em,em,4),"","residual eᵢ");
+      g2.strokeStyle=cssVar("--muted");g2.setLineDash([4,3]);g2.beginPath();g2.moveTo(m2.l,ax.Y(0));g2.lineTo(W-m2.r,ax.Y(0));g2.stroke();g2.setLineDash([]);
+      g2.fillStyle=Rd;g2.globalAlpha=0.75;es.forEach((e,i)=>{g2.beginPath();g2.arc(ax.X(pts[i][0]),ax.Y(e),3,0,7);g2.fill();});g2.globalAlpha=1;}
+    out.textContent="";
+    sbReadout(out,[["Points n",String(n)],["Intercept β̂₀",ok?sbF(f.b0,3):"—"],["Slope β̂₁",ok?sbF(f.b1,4):"—"],["r",ok?f.r.toFixed(4):"—"],["R²",ok?(f.r*f.r).toFixed(4):"—"],["Residual SE",ok&&n>2?sbF(f.rse,3):"—"],
+      ["Largest |residual|",ok?sbF(emax,3)+" at x = "+sbF(pts[ei][0],2):"—"],["Highest leverage hᵢᵢ",ok?hmax.toFixed(3)+" (2p/n = "+(4/n).toFixed(3)+")":"—"]]);
+    status.textContent=n<2?"Tap or click inside the plot to add points (at least two).":!ok?"All points share one x value, so the slope is undefined (Sxx = 0).":
+      "Ringed: the point with the highest leverage hᵢᵢ = 1/n + (xᵢ − x̄)²/Sxx. Drag it up and down and watch how far the line follows; drag a point near x̄ and the slope barely moves.";}
+  return {set(p,xlab,ylab){pts=p.map(q=>[q[0],q[1]]);orig=pts.map(q=>[...q]);xl=xlab||"x";yl=ylab||"y";rescale();draw();}};
+}
+function sbScatter(root){
+  SB.panel(root,"scatter playground",{
+    controls:p=>{const row=el("div",{class:"sb-params"});p.appendChild(row);
+      const xs=sbSelect(row,"x",[[0,"distance"],[3,"duration"],[4,"wait"],[6,"hour"]],0),ys=sbSelect(row,"y",[[1,"fare"],[5,"rating"],[3,"duration"]],1);
+      const nI=sbField(row,"Trips to draw (N)",{min:"2",max:"300",step:"1",value:"40"}),sI=sbField(row,"Seed",{min:"1",max:"999999",step:"1",value:"1"});
+      const br=el("div",{class:"btnrow"});p.appendChild(br);const go=sbBtn(br,"Draw trips");const info=SB.text("p","","note");p.appendChild(info);const pg=sbPlayground(p);
+      function run(){const N=Math.round(sbV(nI,40,2,300)),seed=Math.round(sbV(sI,1,1,999999)),xi=+xs.value,yi=+ys.value;
+        const rows=sbDraw(N,seed);pg.set(rows.map(r=>[r[xi],r[yi]]),SBVARS[xi],SBVARS[yi]);const a=ols(SUB300.map(r=>r[xi]),SUB300.map(r=>r[yi]));
+        info.textContent=`Drawn ${N} of the 300 sample trips (seed ${seed}). On all 300: slope ${a.b1.toFixed(3)}, r = ${a.r.toFixed(3)}. Small N wobbles around those values; redraw with another seed to see by how much.`;}
+      go.addEventListener("click",run);[xs,ys].forEach(s=>s.addEventListener("change",run));run();},
+    generate:p=>{const row=el("div",{class:"sb-params"});p.appendChild(row);
+      const b1I=sbField(row,"True slope β₁",{value:"15"}),b0I=sbField(row,"True intercept β₀",{value:"40"}),sdI=sbField(row,"Noise SD σ",{value:"30",min:"0"}),
+        nI=sbField(row,"Points n",{value:"30",min:"2",max:"2000",step:"1"}),loI=sbField(row,"x from",{value:"1"}),hiI=sbField(row,"x to",{value:"20"}),sI=sbField(row,"Seed",{value:"1",min:"1",step:"1"});
+      const ex=sbSelect(row,"Extra point",[["none","none"],["out","outlier in y (middle x)"],["levon","high-leverage, on the line"],["levoff","high-leverage, off the line"]],"none");
+      const br=el("div",{class:"btnrow"});p.appendChild(br);const go=sbBtn(br,"Generate");const info=SB.text("p","","note");p.appendChild(info);const pg=sbPlayground(p);
+      function run(){const b1=sbV(b1I,15,-1e6,1e6),b0=sbV(b0I,40,-1e6,1e6),sd=sbV(sdI,30,0,1e6),n=Math.round(sbV(nI,30,2,2000)),seed=Math.round(sbV(sI,1,1,999999));
+        let lo=sbV(loI,1,-1e6,1e6),hi=sbV(hiI,20,-1e6,1e6);if(hi<lo)[lo,hi]=[hi,lo];if(hi===lo)hi=lo+1;const r=rng(seed),span=hi-lo;
+        const P=[];for(let i=0;i<n;i++){const x=lo+span*r();P.push([x,b0+b1*x+sd*sbNorm(r)]);}
+        const dev=sd>0?6*sd:Math.max(1,0.25*Math.abs(b1)*span),fx=hi+1.5*span;
+        if(ex.value==="out"){const x=(lo+hi)/2;P.push([x,b0+b1*x+dev]);}
+        if(ex.value==="levon")P.push([fx,b0+b1*fx]);
+        if(ex.value==="levoff")P.push([fx,b0+b1*lo]);
+        pg.set(P,"x","y");
+        info.textContent=`True line: y = ${sbF(b0,2)} + ${sbF(b1,3)}·x, noise SD ${sbF(sd,2)}.`+(ex.value==="none"?" Add an extra point to see the difference between an outlier (large residual) and a leverage point (extreme x).":ex.value==="out"?" The outlier shifts the intercept a little and barely tilts the slope: it sits near x̄.":ex.value==="levon"?" A far-away point on the true line has high leverage but does no harm: it even shrinks the slope's standard error.":" A far-away point off the line has high leverage and drags the slope towards itself: high leverage plus a large residual is high influence (Cook's distance, File 5).");}
+      go.addEventListener("click",run);ex.addEventListener("change",run);run();},
+    own:p=>{let pg=null;
+      SB.dataForm(p,[{key:"x",label:"x",type:"num"},{key:"y",label:"y",type:"num"}],d=>{pg.set(d.x.map((x,i)=>[x,d.y[i]]),"x","y");},
+        {example:EX_XY,minRows:2,placeholder:"x,y\n3.0,82\n15.4,236\n…",help:"Paste two numeric columns (x, y) with or without a header row, or choose a CSV file. Then drag points, add or remove them. The example is illustrative (made-up distances and fares). Your data stays in this browser: it is not uploaded, saved or shared."});
+      pg=sbPlayground(p);pg.set([],"x","y");}
+  },"Tap the plot to add points, drag them to move; the least-squares line, r, R² and the residuals update as you go.");
+}
+
+/* ---------- File 3 sandbox: the inference lab (slope SE, t, p, CI; CI for the mean and PI at x0) ---------- */
+function sbInferView(host){
+  const row=el("div",{class:"sb-params"});host.appendChild(row);
+  const x0I=sbField(row,"Predict at x₀",{value:"",placeholder:"mean of x"}),cI=sbSelect(row,"Confidence level",[["0.9","90%"],["0.95","95%"],["0.99","99%"]],"0.95");
+  const out=el("div",{class:"sb-pane"});host.appendChild(out);let last=null;
+  function render(){out.textContent="";if(!last)return;const {xs,ys,truth,xl,yl}=last;const n=xs.length;
+    if(n<3){sbSay(out,`Only ${n} row(s): a slope's standard error needs at least 3.`);return;}
+    let mx=0;xs.forEach(v=>mx+=v);mx/=n;let x0=parseFloat(x0I.value);if(!Number.isFinite(x0))x0=+mx.toPrecision(3);
+    const conf=+cI.value,f=sbSimpleInf(xs,ys,x0,conf);if(f.err){sbSay(out,f.err);return;}
+    const L=Math.round(conf*100)+"%";
+    out.appendChild(SB.table(["Term","Estimate","SE","t","p (two-sided)",L+" CI low",L+" CI high"],[["Intercept β̂₀",0],["Slope β̂₁",1]].map(([nm,i])=>[nm,sbF(f.b[i],4),sbF(f.se[i],4),sbF(f.t[i],2),sbP(f.pv[i]),sbF(f.ci[i][0],4),sbF(f.ci[i][1],4)])));
+    sbReadout(out,[["n, degrees of freedom",n+", "+f.df],["R²",sbF(f.r2,4)],["Residual SE",sbF(f.rse,4)],["t critical value",sbF(f.tq,4)],["F = t²",sbF(f.F,2)],
+      ["ŷ at x₀ = "+sbF(x0,3),sbF(f.y0,3)],[L+" CI for the mean at x₀",sbF(f.mean[0],2)+" to "+sbF(f.mean[1],2)],[L+" prediction interval at x₀",sbF(f.pi[0],2)+" to "+sbF(f.pi[1],2)]]);
+    let xmin=Infinity,xmax=-Infinity;xs.forEach(v=>{xmin=Math.min(xmin,v);xmax=Math.max(xmax,v);});
+    const notes=[];if(x0<xmin||x0>xmax)notes.push(`x₀ = ${sbF(x0,3)} is outside the data (${sbF(xmin,3)} to ${sbF(xmax,3)}): this is extrapolation, and the intervals assume the line still holds there.`);
+    if(truth){const inside=truth.b1>=f.ci[1][0]&&truth.b1<=f.ci[1][1];notes.push(`The true slope ${sbF(truth.b1,3)} is ${inside?"inside":"outside"} this ${L} interval. Over many data sets about ${L} of such intervals cover it; any single one either does or does not.`);}
+    notes.push("The prediction interval is wider than the CI for the mean because it adds one trip's own noise (the +1 under the root); more data shrinks the CI towards zero width but never the PI.");
+    notes.forEach(s=>sbSay(out,s));
+    // picture: points, line, CI band (solid), PI band (dashed)
+    const W=360,H=250,m={l:50,r:12,t:34,b:32},cv=el("canvas",{"aria-label":"Scatter with fitted line, confidence band for the mean and prediction band"}),bx=sbBoxEl();bx.appendChild(cv);out.appendChild(bx);
+    const g=canvasSetup(cv,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);
+    const xr=sbRange([...xs,x0]);const band=(x,pi)=>{const v=f.V[0][0]+2*x*f.V[0][1]+x*x*f.V[1][1]+(pi?f.s2:0);return f.tq*Math.sqrt(Math.max(0,v));};
+    const yr=sbRange([...ys,f.b[0]+f.b[1]*xr[0]-band(xr[0],1),f.b[0]+f.b[1]*xr[0]+band(xr[0],1),f.b[0]+f.b[1]*xr[1]-band(xr[1],1),f.b[0]+f.b[1]*xr[1]+band(xr[1],1)],0.04);
+    const ax=axes(g,W,H,m,xr,yr,sbTicks(xr[0],xr[1],4),sbTicks(yr[0],yr[1],4),xl||"x",yl||"y");sbClip(g,W,H,m);
+    const N=80,xsP=Array.from({length:N+1},(_,i)=>xr[0]+(xr[1]-xr[0])*i/N),yh=x=>f.b[0]+f.b[1]*x;
+    g.fillStyle=cssVar("--accent-soft");g.globalAlpha=0.8;g.beginPath();xsP.forEach((x,i)=>{const px=ax.X(x),py=ax.Y(yh(x)+band(x,0));i?g.lineTo(px,py):g.moveTo(px,py);});[...xsP].reverse().forEach(x=>g.lineTo(ax.X(x),ax.Y(yh(x)-band(x,0))));g.closePath();g.fill();g.globalAlpha=1;
+    g.strokeStyle=cssVar("--muted");g.setLineDash([5,4]);[1,-1].forEach(sg=>{g.beginPath();xsP.forEach((x,i)=>{const px=ax.X(x),py=ax.Y(yh(x)+sg*band(x,1));i?g.lineTo(px,py):g.moveTo(px,py);});g.stroke();});g.setLineDash([]);
+    g.fillStyle=cssVar("--accent");g.globalAlpha=0.6;xs.forEach((x,i)=>{g.beginPath();g.arc(ax.X(x),ax.Y(ys[i]),3,0,7);g.fill();});g.globalAlpha=1;
+    g.strokeStyle=cssVar("--gold");g.lineWidth=2.5;g.beginPath();g.moveTo(ax.X(xr[0]),ax.Y(yh(xr[0])));g.lineTo(ax.X(xr[1]),ax.Y(yh(xr[1])));g.stroke();g.lineWidth=1;
+    g.strokeStyle=cssVar("--fraud");g.lineWidth=2;g.beginPath();g.moveTo(ax.X(x0),ax.Y(f.pi[0]));g.lineTo(ax.X(x0),ax.Y(f.pi[1]));g.stroke();g.lineWidth=1;g.restore();
+    g.fillStyle=cssVar("--muted");g.font=FONT;g.textAlign="right";g.fillText("band: CI for mean · dashed: PI · red: PI at x₀",W-m.r,12);g.textAlign="left";}
+  x0I.addEventListener("input",render);cI.addEventListener("change",render);
+  return {run(xs,ys,o){last=Object.assign({xs,ys},o||{});render();},conf:()=>+cI.value};
+}
+function sbInference(root){
+  SB.panel(root,"inference lab",{
+    controls:p=>{const row=el("div",{class:"sb-params"});p.appendChild(row);
+      const nI=sbField(row,"Trips to draw (N)",{min:"3",max:"300",step:"1",value:"30"}),sI=sbField(row,"Seed",{min:"1",max:"999999",step:"1",value:"1"});
+      const br=el("div",{class:"btnrow"});p.appendChild(br);const go=sbBtn(br,"Draw trips");
+      sbSay(p,"Fare on distance for N of the 300 sample trips. Full file (4,197 trips): slope 14.470, SE 0.104, 95% CI 14.27 to 14.67. Watch the SE shrink roughly like 1/√N.");
+      const v=sbInferView(p);
+      function run(){const N=Math.round(sbV(nI,30,3,300)),seed=Math.round(sbV(sI,1,1,999999));const rows=sbDraw(N,seed);v.run(rows.map(r=>r[0]),rows.map(r=>r[1]),{xl:"distance (km)",yl:"fare (₹)"});}
+      go.addEventListener("click",run);run();},
+    generate:p=>{const row=el("div",{class:"sb-params"});p.appendChild(row);
+      const b1I=sbField(row,"True slope β₁",{value:"15"}),b0I=sbField(row,"True intercept β₀",{value:"40"}),sdI=sbField(row,"Noise SD σ",{value:"40",min:"0"}),
+        nI=sbField(row,"Points n",{value:"25",min:"3",max:"2000",step:"1"}),sI=sbField(row,"Seed",{value:"1",min:"1",step:"1"});
+      const br=el("div",{class:"btnrow"});p.appendChild(br);const go=sbBtn(br,"Generate"),rep=sbBtn(br,"Repeat 200 times: coverage",true);
+      const cov=SB.text("p","","note");cov.setAttribute("role","status");p.appendChild(cov);const v=sbInferView(p);
+      const par=()=>({b1:sbV(b1I,15,-1e6,1e6),b0:sbV(b0I,40,-1e6,1e6),sd:sbV(sdI,40,0,1e6),n:Math.round(sbV(nI,25,3,2000)),seed:Math.round(sbV(sI,1,1,999999))});
+      const make=(q,r)=>{const xs=[],ys=[];for(let i=0;i<q.n;i++){const x=1+19*r();xs.push(x);ys.push(q.b0+q.b1*x+q.sd*sbNorm(r));}return {xs,ys};};
+      function run(){const q=par(),d=make(q,rng(q.seed));cov.textContent="";v.run(d.xs,d.ys,{truth:q});}
+      go.addEventListener("click",run);
+      rep.addEventListener("click",()=>{const q=par(),r=rng(q.seed+7919),conf=v.conf();let hit=0,ok=0;
+        for(let k=0;k<200;k++){const d=make(q,r);const f=sbSimpleInf(d.xs,d.ys,0,conf);if(f.err)continue;ok++;if(q.b1>=f.ci[1][0]&&q.b1<=f.ci[1][1])hit++;}
+        cov.textContent=ok?`${hit} of ${ok} simulated ${Math.round(conf*100)}% intervals covered the true slope ${sbF(q.b1,3)} (${(100*hit/ok).toFixed(1)}%). With Normal errors of constant variance the long-run rate is the confidence level.`:"No usable data sets (noise SD 0 gives a perfect fit).";});
+      run();},
+    own:p=>{let v=null;
+      SB.dataForm(p,[{key:"x",label:"x",type:"num"},{key:"y",label:"y",type:"num"}],d=>{v.run(d.x,d.y,{});},
+        {example:EX_XY,minRows:3,placeholder:"x,y\n3.0,82\n15.4,236\n…",help:"Paste two numeric columns (x, y), with or without a header row, or choose a CSV file; set x₀ to get a prediction. The example is illustrative (made-up distances and fares). Your data stays in this browser: it is not uploaded, saved or shared."});
+      v=sbInferView(p);}
+  },"Standard errors, t tests, confidence intervals and prediction intervals for a straight line, on any data you choose.");
+}
+
+/* ---------- File 4 sandbox: multiple regression by the normal equations ---------- */
+function sbMultiView(host){const out=el("div",{class:"sb-pane"});host.appendChild(out);
+  return {say(s){out.textContent="";sbSay(out,s);},run(y,preds,cat,extra){out.textContent="";const notes=[];
+    // drop exact duplicate predictor columns
+    const keep=[];preds.forEach(pr=>{if(keep.some(q=>q.v.every((x,i)=>x===pr.v[i])))notes.push(`${pr.name} is identical to another predictor and was dropped.`);else keep.push(pr);});
+    const cols=keep.map(q=>q.v),names=keep.map(q=>q.name);let refNote="";
+    if(cat){const lv=[...new Set(cat.v)].sort();if(lv.length<2)notes.push("The categorical column has a single category, so it was left out.");
+      else if(lv.length>12){sbSay(out,`The categorical column has ${lv.length} categories; the sandbox takes at most 12.`);return;}
+      else{lv.slice(1).forEach(l=>{cols.push(cat.v.map(v=>v===l?1:0));names.push("group = "+l);});refNote="Reference category (absorbed in the intercept): "+lv[0]+". Each group coefficient is that group's difference from the reference, holding the numeric predictors fixed.";}}
+    if(!cols.length){sbSay(out,"Choose at least one predictor.");return;}
+    const f=sbOLS(y,cols);if(f.err){sbSay(out,f.err);return;}
+    const vif=sbVIF(cols);
+    out.appendChild(SB.table(["Term","Coefficient","SE","t","p","VIF"],[["Intercept",sbF(f.b[0],4),sbF(f.se[0],4),sbF(f.t[0],2),sbP(f.pv[0]),"—"],
+      ...names.map((nm,j)=>[nm,sbF(f.b[j+1],4),sbF(f.se[j+1],4),sbF(f.t[j+1],2),sbP(f.pv[j+1]),cols.length>1?sbF(vif[j],2):"—"])]));
+    sbReadout(out,[["Rows n",String(f.n)],["Coefficients p + 1",String(f.p)],["R²",sbF(f.r2,4)],["Adjusted R̄²",sbF(f.adj,4)],["Residual SE",sbF(f.rse,4)],["F (p-value)",sbF(f.F,2)+" ("+sbP(f.Fp)+")"]]);
+    if(refNote)out.appendChild(SB.text("p",refNote,"note"));
+    if(!(f.s2>0))notes.push("The fit is perfect (every residual is zero), so standard errors and t statistics are not defined.");
+    if(vif.some(v=>v>10))notes.push("A VIF above 10 means that predictor is almost a linear combination of the others: its coefficient is unstable and its SE is inflated (File 5).");
+    (extra||[]).concat(notes).forEach(s=>sbSay(out,s));}};
+}
+function sbMultiple(root){
+  SB.panel(root,"multiple regression",{
+    controls:p=>{sbSay(p,"Outcome: fare (₹), on the 300 sample trips. Tick up to four numeric predictors and, if you like, the vehicle type (dummy-coded, auto as reference).");
+      const row=el("div",{class:"btnrow"});p.appendChild(row);const C={0:sbCheck(row,"distance",true),3:sbCheck(row,"duration",true),4:sbCheck(row,"wait",false),6:sbCheck(row,"hour",false),5:sbCheck(row,"rating",false)};
+      const vc=sbCheck(row,"vehicle (categorical)",true);
+      const r2=el("div",{class:"sb-params"});p.appendChild(r2);const nI=sbField(r2,"Trips to use (N)",{min:"10",max:"300",step:"1",value:"300"}),sI=sbField(r2,"Seed",{min:"1",max:"999999",step:"1",value:"1"});
+      const br=el("div",{class:"btnrow"});p.appendChild(br);const go=sbBtn(br,"Fit");const v=sbMultiView(p);
+      function run(){const on=Object.keys(C).filter(k=>C[k].checked);
+        const N=Math.round(sbV(nI,300,10,300)),seed=Math.round(sbV(sI,1,1,999999));const rows=sbDraw(N,seed);
+        if(on.length>4){v.say("Up to four numeric predictors at a time: untick one.");return;}
+        v.run(rows.map(r=>r[1]),on.map(k=>({name:SBTERM[k],v:rows.map(r=>r[+k])})),vc.checked?{v:rows.map(r=>VNAME[r[2]])}:null,
+          ["Full file, fare ~ distance + duration + vehicle: distance 10.247, duration 1.793, mini 39.78, sedan 94.45 (R² 0.934). Drop duration and the distance slope jumps to about 14.5: each coefficient is an effect holding the others fixed."]);}
+      Object.values(C).concat([vc]).forEach(c=>c.addEventListener("change",run));go.addEventListener("click",run);run();},
+    generate:p=>{const row=el("div",{class:"sb-params"});p.appendChild(row);
+      const b1I=sbField(row,"True β₁ (x₁)",{value:"10"}),b2I=sbField(row,"True β₂ (x₂)",{value:"2"}),rI=sbField(row,"corr(x₁, x₂) ρ",{value:"0.9",min:"-1",max:"1",step:"0.05"}),
+        sdI=sbField(row,"Noise SD σ",{value:"25",min:"0"}),nI=sbField(row,"Rows n",{value:"100",min:"5",max:"5000",step:"1"}),sI=sbField(row,"Seed",{value:"1",min:"1",step:"1"});
+      const br=el("div",{class:"btnrow"});p.appendChild(br);const go=sbBtn(br,"Generate and fit");const v=sbMultiView(p);
+      function run(){const b1=sbV(b1I,10,-1e6,1e6),b2=sbV(b2I,2,-1e6,1e6),rho=sbV(rI,0.9,-1,1),sd=sbV(sdI,25,0,1e6),n=Math.round(sbV(nI,100,5,5000)),r=rng(Math.round(sbV(sI,1,1,999999)));
+        const x1=[],x2=[],y=[];for(let i=0;i<n;i++){const z1=sbNorm(r),z2=sbNorm(r);const a=8+5*z1,b=20+12*(rho*z1+Math.sqrt(Math.max(0,1-rho*rho))*z2);x1.push(a);x2.push(b);y.push(20+b1*a+b2*b+sd*sbNorm(r));}
+        const s1=sbOLS(y,[x1]);const ex=[`Truth: y = 20 + ${sbF(b1,3)}·x₁ + ${sbF(b2,3)}·x₂ + noise (SD ${sbF(sd,2)}); x₁ has SD 5 and x₂ has SD 12.`];
+        if(!s1.err)ex.push(`Leave x₂ out and the slope on x₁ becomes ${sbF(s1.b[1],3)} instead of ${sbF(b1,3)}: omitted-variable bias β₂·δ₁, where δ₁ is the slope of x₂ on x₁ (about ρ·12/5). Raise ρ towards 1 and watch the VIFs and standard errors grow.`);
+        v.run(y,[{name:"x₁",v:x1},{name:"x₂",v:x2}],null,ex);}
+      go.addEventListener("click",run);run();},
+    own:p=>{let v=null;
+      SB.dataForm(p,[{key:"y",label:"Outcome y",type:"num"},{key:"x1",label:"Predictor 1",type:"num"},{key:"x2",label:"Predictor 2",type:"num",optional:true},{key:"x3",label:"Predictor 3",type:"num",optional:true},{key:"x4",label:"Predictor 4",type:"num",optional:true},{key:"g",label:"Categorical predictor",type:"cat",optional:true}],
+        d=>{const pr=["x1","x2","x3","x4"].filter(k=>d[k]).map((k,i)=>({name:"predictor "+k.slice(1),v:d[k]}));v.run(d.y,pr,d.g?{v:d.g}:null);},
+        {example:EX_MULTI,minRows:3,placeholder:"y,x1,x2,group\n316,13.8,44,mini\n…",help:"Paste a table with a header row: a numeric outcome, one to four numeric predictors and, optionally, one categorical column (dummy-coded; the first category alphabetically is the reference). Pick the columns below; set unused predictors to none. The example is illustrative (made-up trips). Your data stays in this browser: it is not uploaded, saved or shared."});
+      v=sbMultiView(p);}
+  },"Least squares with several predictors, solved by the normal equations β̂ = (X′X)⁻¹X′y, with standard errors, R², adjusted R² and variance inflation factors (VIF).");
+}
+
+/* ---------- File 7 sandbox: logistic regression by IRLS, with a threshold and a confusion matrix ---------- */
+function sbLogitView(host){
+  const out=el("div",{class:"sb-pane"});host.appendChild(out);
+  const thrBox=el("div",{class:"ctrl"});const lab=el("label");lab.appendChild(SB.text("span","Threshold c: predict 1 when p̂ ≥ "));const o=SB.text("output","0.50");lab.appendChild(o);thrBox.appendChild(lab);
+  const th=el("input",{type:"range",min:"0.05",max:"0.95",step:"0.01",value:"0.5","aria-label":"Decision threshold"});thrBox.appendChild(th);host.appendChild(thrBox);
+  const cm=el("div",{class:"sb-pane"});host.appendChild(cm);thrBox.hidden=true;let fit=null,ys=null,one=null;
+  function conf(){cm.textContent="";if(!fit)return;const c=+th.value;o.textContent=c.toFixed(2);let tp=0,fp=0,fn=0,tn=0;
+    fit.pr.forEach((q,i)=>{if(q>=c){ys[i]?tp++:fp++;}else{ys[i]?fn++:tn++;}});
+    cm.appendChild(SB.table(["","Actually 1","Actually 0"],[["Predicted 1",String(tp),String(fp)],["Predicted 0",String(fn),String(tn)]]));
+    sbReadout(cm,[["Accuracy",((tp+tn)/fit.n).toFixed(3)],["Precision TP/(TP+FP)",tp+fp?(tp/(tp+fp)).toFixed(3):"—"],["Recall TP/(TP+FN)",(tp/(tp+fn)).toFixed(3)],["False positive rate",(fp/(fp+tn)).toFixed(3)]]);
+    const W=360,H=200,m={l:44,r:12,t:20,b:30},cv=el("canvas",{"aria-label":"Histograms of fitted probabilities for outcome 1 and outcome 0, with the threshold"}),bx=sbBoxEl();bx.appendChild(cv);cm.appendChild(bx);
+    const g=canvasSetup(cv,W,H);g.fillStyle=cssVar("--sunk");g.fillRect(0,0,W,H);const nb=20,h1=new Array(nb).fill(0),h0=new Array(nb).fill(0);
+    fit.pr.forEach((q,i)=>{const k=Math.min(nb-1,Math.floor(q*nb));(ys[i]?h1:h0)[k]++;});const ym=Math.max(1,...h1,...h0);
+    const ax=axes(g,W,H,m,[0,1],[0,ym*1.1],[0,0.25,0.5,0.75,1],sbTicks(0,ym*1.1,3).filter(v=>Number.isInteger(v)),"fitted p̂","count");
+    [[h0,cssVar("--muted")],[h1,cssVar("--accent")]].forEach(([h,col],s)=>{g.fillStyle=col;g.globalAlpha=0.6;h.forEach((v,k)=>{if(v){const x0=ax.X(k/nb),x1=ax.X((k+1)/nb);g.fillRect(x0+1,ax.Y(v),x1-x0-2,ax.Y(0)-ax.Y(v));}});g.globalAlpha=1;});
+    g.strokeStyle=cssVar("--gold");g.lineWidth=2;g.setLineDash([4,3]);g.beginPath();g.moveTo(ax.X(c),m.t);g.lineTo(ax.X(c),ax.Y(0));g.stroke();g.setLineDash([]);g.lineWidth=1;
+    g.font=FONT;g.textAlign="right";g.fillStyle=cssVar("--accent");g.fillText("y = 1",W-m.r-50,m.t-6);g.fillStyle=cssVar("--muted");g.fillText("y = 0",W-m.r,m.t-6);g.textAlign="left";
+    if(one){const W2=360,H2=200,cv2=el("canvas",{"aria-label":"Fitted logistic curve with the 0/1 outcomes"}),b2=sbBoxEl();b2.appendChild(cv2);cm.appendChild(b2);const g2=canvasSetup(cv2,W2,H2);g2.fillStyle=cssVar("--sunk");g2.fillRect(0,0,W2,H2);
+      const xr=sbRange(one.x);const a2=axes(g2,W2,H2,m,xr,[-0.05,1.05],sbTicks(xr[0],xr[1],4),[0,0.5,1],one.name,"P(y = 1)");const jr=rng(5);
+      g2.fillStyle=cssVar("--accent");g2.globalAlpha=0.45;one.x.forEach((x,i)=>{g2.beginPath();g2.arc(a2.X(x),a2.Y(ys[i]?1-0.03*jr():0.03*jr()),3,0,7);g2.fill();});g2.globalAlpha=1;
+      g2.strokeStyle=cssVar("--gold");g2.lineWidth=2.5;g2.beginPath();for(let i=0;i<=100;i++){const x=xr[0]+(xr[1]-xr[0])*i/100,px=a2.X(x),py=a2.Y(logistic(fit.b[0]+fit.b[1]*x));i?g2.lineTo(px,py):g2.moveTo(px,py);}g2.stroke();g2.lineWidth=1;
+      g2.strokeStyle=cssVar("--line");g2.setLineDash([3,3]);g2.beginPath();g2.moveTo(m.l,a2.Y(c));g2.lineTo(W2-m.r,a2.Y(c));g2.stroke();g2.setLineDash([]);}}
+  th.addEventListener("input",conf);
+  return {run(y,preds,extra){out.textContent="";fit=null;one=null;thrBox.hidden=true;cm.textContent="";
+    if(y.some(v=>v!==0&&v!==1)){sbSay(out,"The outcome column must contain only 0 and 1 (for example 1 = cancelled, 0 = completed). Recode it and paste again.");return;}
+    const f=sbLogit(y,preds.map(q=>q.v),50);
+    if(f.err){sbSay(out,f.sep?`Separation: some combination of the predictors splits the 0s from the 1s (almost) perfectly, so the likelihood keeps rising as the coefficients run off to infinity and no maximum-likelihood estimate exists (stopped after ${f.it} iteration(s)). Use fewer or different predictors, more data, or a penalised fit.`:f.err);return;}
+    fit=f;ys=y;if(preds.length===1)one={x:preds[0].v,name:preds[0].name};
+    out.appendChild(SB.table(["Term","Coefficient","SE","z","p","Odds ratio e^β","OR 95% CI"],[["Intercept",sbF(f.b[0],4),sbF(f.se[0],4),sbF(f.z[0],2),sbP(f.pv[0]),sbF(f.or[0],4),sbF(f.orci[0][0],3)+" to "+sbF(f.orci[0][1],3)],
+      ...preds.map((q,j)=>[q.name,sbF(f.b[j+1],4),sbF(f.se[j+1],4),sbF(f.z[j+1],2),sbP(f.pv[j+1]),sbF(f.or[j+1],4),sbF(f.orci[j+1][0],3)+" to "+sbF(f.orci[j+1][1],3)])]));
+    sbReadout(out,[["Rows n (with y = 1)",f.n+" ("+f.n1+")"],["IRLS iterations",String(f.it)],["Log-likelihood",sbF(f.ll,3)],["McFadden pseudo-R²",sbF(f.mcf,4)]]);
+    (extra||[]).forEach(s=>sbSay(out,s));
+    sbSay(out,"Each odds ratio multiplies the odds of y = 1 for a one-unit rise in that predictor, holding the other fixed. The z tests and the interval use the Normal approximation to the maximum-likelihood estimate.");
+    thrBox.hidden=false;conf();}};
+}
+function sbLogisticBox(root){
+  const PRED=[[1,"fare (₹)"],[0,"distance (km)"],[4,"wait (min)"],[3,"duration (min)"],[6,"hour of day"]];
+  SB.panel(root,"logistic lab",{
+    controls:p=>{sbSay(p,"Cancellations are not in the 300-trip sample (all completed), so this pane models two other yes/no facts about those trips.");
+      const row=el("div",{class:"sb-params"});p.appendChild(row);
+      const yS=sbSelect(row,"Outcome (1 = yes)",[["sedan","vehicle is a sedan"],["rate","rating is 4.5 or more"]],"sedan"),x1S=sbSelect(row,"Predictor 1",PRED,1),x2S=sbSelect(row,"Predictor 2",[["-1","none"],...PRED],0);
+      const nI=sbField(row,"Trips to use (N)",{min:"10",max:"300",step:"1",value:"300"}),sI=sbField(row,"Seed",{min:"1",max:"999999",step:"1",value:"1"});
+      const br=el("div",{class:"btnrow"});p.appendChild(br);const go=sbBtn(br,"Fit");const v=sbLogitView(p);
+      function run(){const rows=sbDraw(Math.round(sbV(nI,300,10,300)),Math.round(sbV(sI,1,1,999999)));const y=rows.map(r=>yS.value==="sedan"?(r[2]===2?1:0):(r[5]>=4.5?1:0));
+        const ks=[+x1S.value];if(+x2S.value>=0&&+x2S.value!==ks[0])ks.push(+x2S.value);
+        v.run(y,ks.map(k=>({name:SBVARS[k],v:rows.map(r=>r[k])})),yS.value==="sedan"&&ks.length===2&&ks.includes(0)&&ks.includes(1)?["With fare and distance together, a high fare for the distance is what marks a sedan: the fare coefficient is positive and the distance coefficient negative."]:[]);}
+      [yS,x1S,x2S].forEach(s=>s.addEventListener("change",run));go.addEventListener("click",run);run();},
+    generate:p=>{const row=el("div",{class:"sb-params"});p.appendChild(row);
+      const b0I=sbField(row,"True β₀",{value:"-1"}),b1I=sbField(row,"True β₁ (x₁)",{value:"1.2"}),b2I=sbField(row,"True β₂ (x₂)",{value:"-0.6"}),nI=sbField(row,"Rows n",{value:"300",min:"10",max:"5000",step:"1"}),sI=sbField(row,"Seed",{value:"1",min:"1",step:"1"});
+      const br=el("div",{class:"btnrow"});const use2=sbCheck(br,"use x₂",true);p.appendChild(br);const go=sbBtn(br,"Generate and fit");const v=sbLogitView(p);
+      function run(){const b0=sbV(b0I,-1,-50,50),b1=sbV(b1I,1.2,-50,50),b2=sbV(b2I,-0.6,-50,50),n=Math.round(sbV(nI,300,10,5000)),r=rng(Math.round(sbV(sI,1,1,999999)));
+        const x1=[],x2=[],y=[];for(let i=0;i<n;i++){const a=sbNorm(r),b=sbNorm(r);x1.push(a);x2.push(b);y.push(r()<logistic(b0+b1*a+(use2.checked?b2*b:0))?1:0);}
+        v.run(y,use2.checked?[{name:"x₁",v:x1},{name:"x₂",v:x2}]:[{name:"x₁",v:x1}],[`Truth: ln odds = ${sbF(b0,2)} + ${sbF(b1,2)}·x₁`+(use2.checked?` + ${sbF(b2,2)}·x₂`:"")+`, with x₁, x₂ independent standard Normals. Try β₁ = 15: the classes barely overlap and the estimate becomes unstable, then fails (separation).`]);}
+      go.addEventListener("click",run);use2.addEventListener("change",run);run();},
+    own:p=>{let v=null;
+      SB.dataForm(p,[{key:"y",label:"Outcome (0/1)",type:"num"},{key:"x1",label:"Predictor 1",type:"num"},{key:"x2",label:"Predictor 2",type:"num",optional:true}],
+        d=>{v.run(d.y,[{name:"predictor 1",v:d.x1}].concat(d.x2?[{name:"predictor 2",v:d.x2}]:[]));},
+        {example:EX_LOGIT,minRows:5,placeholder:"y,x1,x2\n0,5.3,0\n1,7.9,0\n…",help:"Paste a table with a header row: a 0/1 outcome and one or two numeric predictors (a 0/1 dummy counts as numeric). The example is illustrative (made-up requests: cancelled, wait in minutes, surge on or off). Your data stays in this browser: it is not uploaded, saved or shared."});
+      v=sbLogitView(p);}
+  },"Fit a logistic regression by iteratively reweighted least squares (IRLS), read the odds ratios, then move the threshold and watch the confusion matrix.");
+}
+
 const COURSE={
   key:"regression",
   title:"NimbusRide Pricing Lab",
@@ -895,6 +1276,173 @@ const COURSE={
    ["Experiments","effect = p̂_T − p̂_C\nSE = √(p̂_T q̂_T/n_T + p̂_C q̂_C/n_C)\nn/arm ≈ (1.96+0.84)²[p₀q₀+p₁q₁]/(p₀−p₁)²\nDiD = Δtreated − Δcontrol"]],
   L, BOARD
 };
+
+/* ---------- sandbox toolkit (shared by every module) ----------
+   Three levels of free play next to a lab:
+     1. controls on the real data   2. generate your own data   3. bring your own data
+   SAFETY: everything runs in the visitor's browser. Uploaded or pasted text is never sent anywhere,
+   never stored, never put in the URL, and never inserted as HTML: it is only parsed into numbers and
+   short labels, which are always displayed with textContent (SB.text / SB.table). Size caps keep phones responsive. */
+const SB=(function(){
+  const MAX_BYTES=2*1024*1024, MAX_ROWS=5000, MAX_COLS=50, MAX_LABEL=40;
+  const used=()=>{try{award("explorer");}catch(e){}};
+  /* safe text node helpers */
+  function text(tag,str,cls){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=String(str);return e;}
+  /* control characters, bidirectional embedding/override/isolate controls (U+202A–202E, U+2066–2069, which could
+     reorder the surrounding sentence on screen) and invisible U+200B, U+2060, U+FEFF are removed; ZWJ/ZWNJ stay (Indic scripts) */
+  function cleanLabel(s){s=String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u200b\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g,"").trim();return s.length>MAX_LABEL?s.slice(0,MAX_LABEL)+"…":s;}
+  /* parse delimited text into {header:[...], rows:[[...]], note} — all values stay plain strings */
+  function parse(str){
+    str=String(str||"");if(str.length>MAX_BYTES)str=str.slice(0,MAX_BYTES);
+    let lines=str.replace(/\r\n?/g,"\n").split("\n").map(l=>l.trim()).filter(l=>l.length);
+    let truncated=false;if(lines.length>MAX_ROWS+1){lines=lines.slice(0,MAX_ROWS+1);truncated=true;}
+    const note=()=>truncated?`Only the first ${ind(MAX_ROWS)} rows were read.`:"";
+    if(!lines.length)return{header:[],rows:[],note:"Nothing to read."};
+    // pick a delimiter that splits the first lines into the same number (>1) of fields
+    let delim=null,best=1;
+    for(const d of [",","\t",";","|"]){const c=lines.slice(0,20).map(l=>splitLine(l,d).length);if(c.every(x=>x===c[0])&&c[0]>best){best=c[0];delim=d;}}
+    if(!delim){const c=lines.slice(0,20).map(l=>l.split(/\s+/).length);if(c.every(x=>x===c[0])&&c[0]>1&&lines.length>1)delim="ws";}
+    // one line of values, or one value per line: a single column
+    if(!delim||lines.length===1){
+      const flat=(lines.length>1?lines:lines[0].split(/[\s,;\t|]+/)).map(cleanLabel).filter(x=>x.length);
+      const hasHead=flat.length>1&&isNaN(num(flat[0]))&&!isNaN(num(flat[1]));
+      const vals=(hasHead?flat.slice(1):flat).slice(0,MAX_ROWS);
+      return{header:[hasHead?flat[0]:"value"],rows:vals.map(v=>[v]),note:(flat.length>MAX_ROWS?`Only the first ${ind(MAX_ROWS)} values were read.`:note())};
+    }
+    const rows=lines.map(l=>(delim==="ws"?l.split(/\s+/):splitLine(l,delim)).slice(0,MAX_COLS).map(cleanLabel));
+    const first=rows[0];
+    const hasHead=first.some(v=>v!==""&&isNaN(num(v)))&&rows.slice(1,6).some(r=>r.some(v=>!isNaN(num(v))));
+    const width=first.length;
+    const header=hasHead?first.map((h,i)=>h||("column "+(i+1))):first.map((_,i)=>"column "+(i+1));
+    const body=(hasHead?rows.slice(1):rows).map(r=>{r=r.slice(0,width);while(r.length<width)r.push("");return r;});
+    return{header,rows:body,note:note()};
+  }
+  function splitLine(l,d){const out=[];let cur="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur="";}else cur+=ch;}out.push(cur);return out;}
+  function num(v){if(typeof v==="number")return v;const s=String(v).replace(/[₹$€£,\s]/g,"");if(s===""||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?%?$/.test(s))return NaN;let x=parseFloat(s);if(s.endsWith("%"))x/=100;return isFinite(x)?x:NaN;}
+  function column(t,i){return t.rows.map(r=>r[i]);}
+  function numeric(vals){const out=[];let dropped=0;vals.forEach(v=>{const x=num(v);if(Number.isFinite(x))out.push(x);else dropped++;});return{values:out,dropped};}
+  function isNumericCol(t,i){const c=column(t,i).filter(v=>v!=="");return c.length>0&&c.filter(v=>!isNaN(num(v))).length/c.length>=0.8;}
+  function readFile(file,cb){if(!file)return;if(file.size>MAX_BYTES){cb(null,`That file is ${(file.size/1048576).toFixed(1)} MB; the limit is 2 MB. Use a smaller extract.`);return;}
+    const fr=new FileReader();fr.onload=()=>cb(String(fr.result||""),null);fr.onerror=()=>cb(null,"The file could not be read.");fr.readAsText(file);}
+  /* random generators (seeded) */
+  function normal(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  const GEN={
+    normal:{label:"Normal",params:[["mean",50],["sd",10]],draw:(r,p)=>p.mean+p.sd*normal(r)},
+    lognormal:{label:"Lognormal (right-skewed)",params:[["median",500],["spread σ",0.6]],draw:(r,p)=>p.median*Math.exp(p["spread σ"]*normal(r))},
+    exponential:{label:"Exponential",params:[["mean",10]],draw:(r,p)=>-p.mean*Math.log(1-r())},
+    uniform:{label:"Uniform",params:[["min",0],["max",100]],draw:(r,p)=>p.min+(p.max-p.min)*r()},
+    bimodal:{label:"Two humps (mixture)",params:[["mean 1",30],["mean 2",70],["sd",8],["share of hump 1",0.5]],draw:(r,p)=>(r()<p["share of hump 1"]?p["mean 1"]:p["mean 2"])+p.sd*normal(r)},
+    poisson:{label:"Poisson (counts)",params:[["mean λ",4]],draw:(r,p)=>{const L=Math.exp(-p["mean λ"]);let k=0,q=1;do{k++;q*=r();}while(q>L&&k<1000);return k-1;}},
+    binomial:{label:"Binomial (successes in n)",params:[["n trials",20],["p",0.3]],draw:(r,p)=>{let k=0;const n=Math.min(1000,Math.max(1,Math.round(p["n trials"])));for(let i=0;i<n;i++)if(r()<p.p)k++;return k;}}
+  };
+  function generate(kind,params,n,seed){const g=GEN[kind];const r=rng(seed||1);const out=[];n=Math.max(1,Math.min(MAX_ROWS,Math.round(n)));for(let i=0;i<n;i++)out.push(g.draw(r,params));return out;}
+  /* UI: a tabbed sandbox panel. levels = {controls:fn(el), generate:fn(el), own:fn(el)} — each optional */
+  function panel(root,title,levels,intro){
+    const box=el("div",{class:"sandbox"});
+    const head=el("div",{class:"sb-head"});head.appendChild(text("span","Sandbox · "+title,"eyebrow"));
+    const tabs=el("div",{class:"seg sb-tabs",role:"tablist","aria-label":"Sandbox mode"});
+    head.appendChild(tabs);box.appendChild(head);
+    if(intro)box.appendChild(text("p",intro,"note"));
+    const body=el("div",{class:"sb-body"});box.appendChild(body);
+    const defs=[["controls","Real data"],["generate","Generate"],["own","Your data"]].filter(([k])=>levels[k]);
+    const panes={};
+    defs.forEach(([k,lab],i)=>{const b=el("button",{type:"button",role:"tab","aria-pressed":i===0?"true":"false"});b.textContent=lab;tabs.appendChild(b);
+      const p=el("div",{class:"sb-pane"});p.hidden=i!==0;body.appendChild(p);panes[k]={b,p,built:false};
+      b.addEventListener("click",()=>{defs.forEach(([kk])=>{panes[kk].p.hidden=kk!==k;panes[kk].b.setAttribute("aria-pressed",kk===k);});if(!panes[k].built){panes[k].built=true;levels[k](p);}used();});});
+    if(defs.length){const k=defs[0][0];panes[k].built=true;levels[k](panes[k].p);}
+    root.appendChild(box);return box;
+  }
+  /* generator form: returns {el, get()} */
+  function genForm(kinds,defaults){
+    kinds=kinds||Object.keys(GEN);defaults=defaults||{};
+    const wrap=el("div",{class:"ctrl"});
+    const sel=el("select",{"aria-label":"Shape"});kinds.forEach(k=>{const o=el("option",{value:k});o.textContent=GEN[k].label;sel.appendChild(o);});
+    if(defaults.kind)sel.value=defaults.kind;
+    const params=el("div",{class:"sb-params"});
+    const nIn=el("input",{type:"number",min:"1",max:String(MAX_ROWS),step:"1",value:String(defaults.n||200),"aria-label":"How many values"});
+    const seedIn=el("input",{type:"number",min:"1",max:"999999",step:"1",value:String(defaults.seed||1),"aria-label":"Random seed"});
+    function drawParams(){params.innerHTML="";GEN[sel.value].params.forEach(([name,def])=>{const lab=el("label");lab.appendChild(text("span",name));const i=el("input",{type:"number",step:"any",value:String((defaults.params&&defaults.params[name]!=null)?defaults.params[name]:def)});i.dataset.p=name;lab.appendChild(i);params.appendChild(lab);});}
+    sel.addEventListener("change",drawParams);drawParams();
+    const row=el("div",{class:"sb-params"});
+    const l1=el("label");l1.appendChild(text("span","Shape"));l1.appendChild(sel);
+    const l2=el("label");l2.appendChild(text("span","How many values (n)"));l2.appendChild(nIn);
+    const l3=el("label");l3.appendChild(text("span","Seed"));l3.appendChild(seedIn);
+    row.append(l1,l2,l3);wrap.append(row,params);
+    return{el:wrap,get(){const p={};params.querySelectorAll("input").forEach(i=>{const v=parseFloat(i.value);p[i.dataset.p]=Number.isFinite(v)?v:0;});return{kind:sel.value,params:p,n:Math.max(1,Math.min(MAX_ROWS,parseInt(nIn.value)||1)),seed:Math.max(1,parseInt(seedIn.value)||1)};},
+      values(){const g=this.get();return generate(g.kind,g.params,g.n,g.seed);}};
+  }
+  /* your-data form: textarea + file input + column pickers by role.
+     roles: [{key, label, type:"num"|"cat"|"any", optional}]  onData(dataObj, info) where dataObj[key] = array */
+  function dataForm(root,roles,onData,opts){
+    opts=opts||{};
+    const wrap=el("div",{class:"ctrl"});
+    wrap.appendChild(text("p",opts.help||"Paste numbers (one per line, or separated by commas or spaces), or a small table with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared.","note"));
+    const ta=el("textarea",{rows:"6","aria-label":"Paste your data",spellcheck:"false",placeholder:opts.placeholder||"e.g.\n12\n15\n9\n31\n14"});
+    const file=el("input",{type:"file",accept:".csv,.tsv,.txt,text/csv,text/plain","aria-label":"Choose a CSV file"});
+    const row=el("div",{class:"btnrow"});const go=el("button",{class:"btn small",type:"button"});go.textContent="Use this data";
+    const ex=el("button",{class:"btn ghost small",type:"button"});ex.textContent="Load an example";
+    row.append(go,ex,file);
+    const picks=el("div",{class:"sb-params"});const msg=el("p",{class:"note",role:"status"});
+    wrap.append(ta,row,picks,msg);root.appendChild(wrap);
+    let table=null;
+    function say(s){msg.textContent=s;}
+    function build(){
+      picks.innerHTML="";const sels={};
+      if(!table||!table.rows.length){say("No rows found.");return;}
+      if(roles.length>1||table.header.length>1){
+        roles.forEach((ro,ri)=>{const lab=el("label");lab.appendChild(text("span",ro.label+(ro.optional?" (optional)":"")));const s=el("select");
+          if(ro.optional){const o=el("option",{value:"-1"});o.textContent="none";s.appendChild(o);}
+          table.header.forEach((h,i)=>{const o=el("option",{value:String(i)});o.textContent=h;s.appendChild(o);});
+          let guess=ri<table.header.length?ri:0;if(ro.type==="num"){const ni=table.header.findIndex((h,i)=>isNumericCol(table,i)&&!Object.values(sels).some(x=>+x.value===i));if(ni>=0)guess=ni;}
+          if(ro.type==="cat"){const ci=table.header.findIndex((h,i)=>!isNumericCol(table,i));if(ci>=0)guess=ci;}
+          s.value=ro.optional&&table.header.length<=ri?"-1":String(guess);s.addEventListener("change",emit);lab.appendChild(s);picks.appendChild(lab);sels[ro.key]=s;});
+      } else roles.forEach(ro=>{sels[ro.key]={value:"0"};});
+      table._sels=sels;emit();
+    }
+    function emit(){
+      if(!table)return;const sels=table._sels;const out={};let n=table.rows.length,dropped=0;
+      const keep=table.rows.map(()=>true);
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0){out[ro.key]=null;return;}const col=column(table,v);
+        if(ro.type==="num")col.forEach((x,i)=>{if(!Number.isFinite(num(x)))keep[i]=false;});
+        else col.forEach((x,i)=>{if(x==="")keep[i]=false;});});
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0)return;const col=column(table,v).filter((_,i)=>keep[i]);out[ro.key]=ro.type==="num"?col.map(num):col.map(cleanLabel);});
+      dropped=keep.filter(k=>!k).length;
+      const used_n=n-dropped;
+      if(used_n<(opts.minRows||2)){say(`Only ${used_n} usable row(s); at least ${opts.minRows||2} are needed.`);return;}
+      say(`Read ${ind(n)} row(s); using ${ind(used_n)}`+(dropped?`, skipped ${ind(dropped)} blank or non-numeric.`:".")+(table.note?" "+table.note:""));
+      used();onData(out,{n:used_n,dropped});
+    }
+    go.addEventListener("click",()=>{table=parse(ta.value);build();});
+    ex.addEventListener("click",()=>{ta.value=opts.example||"12\n15\n9\n31\n14\n18\n11\n16\n90\n13";table=parse(ta.value);build();});
+    file.addEventListener("change",()=>{readFile(file.files[0],(txt,err)=>{if(err){say(err);return;}ta.value=txt.length>20000?txt.slice(0,20000)+"\n…":txt;table=parse(txt);build();});});
+    return{set(str){ta.value=str;table=parse(str);build();}};
+  }
+  /* safe table renderer for user data (textContent only) */
+  function table(headers,rows){const w=el("div",{class:"tbl"});const t=document.createElement("table");const th=document.createElement("thead");const tr=document.createElement("tr");headers.forEach(h=>tr.appendChild(text("th",h)));th.appendChild(tr);t.appendChild(th);const tb=document.createElement("tbody");rows.forEach(r=>{const rr=document.createElement("tr");r.forEach((c,i)=>rr.appendChild(text("td",c,i?"num":"")));tb.appendChild(rr);});t.appendChild(tb);w.appendChild(t);return w;}
+  /* common statistics used by many sandboxes */
+  const st={
+    sorted:a=>[...a].sort((x,y)=>x-y),
+    mean:a=>a.reduce((s,x)=>s+x,0)/a.length,
+    q:(a,p)=>{const s=[...a].sort((x,y)=>x-y);const h=(s.length-1)*p;const lo=Math.floor(h);return s[lo]+(s[Math.min(lo+1,s.length-1)]-s[lo])*(h-lo);},
+    sd:a=>{const m=a.reduce((s,x)=>s+x,0)/a.length;return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));},
+    corr:(x,y)=>{const n=x.length,mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}return sxy/Math.sqrt(sxx*syy);}
+  };
+  /* a reusable histogram drawer (SVG) for any numeric array */
+  function histogram(container,values,o){
+    o=o||{};container.innerHTML="";if(!values.length)return;
+    const W=o.w||360,H=o.h||200,m={l:36,r:10,t:14,b:30};const s=st.sorted(values);let lo=o.lo!=null?o.lo:s[0],hi=o.hi!=null?o.hi:s[s.length-1];if(hi===lo){hi=lo+1;}
+    const k=o.bins||Math.max(5,Math.min(60,Math.ceil(Math.log2(values.length)+1)));const bw=(hi-lo)/k;const c=new Array(k).fill(0);
+    values.forEach(v=>{let i=Math.floor((v-lo)/bw);if(i>=k)i=k-1;if(i<0)i=0;c[i]++;});const mx=Math.max(...c);
+    const X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r),Y=v=>H-m.b-v/mx*(H-m.t-m.b);
+    const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label||"Histogram"});
+    svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(0),y2:Y(0),style:"stroke:var(--line)"}));
+    c.forEach((v,i)=>svg.appendChild(sv("rect",{x:X(lo+i*bw)+0.5,y:Y(v),width:Math.max(0.5,X(lo+(i+1)*bw)-X(lo+i*bw)-1),height:Y(0)-Y(v),style:"fill:var(--accent)"})));
+    [lo,(lo+hi)/2,hi].forEach((v,i)=>{const t=sv("text",{x:X(v),y:H-10,"font-size":10,"text-anchor":i===0?"start":i===2?"end":"middle"});t.textContent=Math.abs(v)>=1000?ind(Math.round(v)):(+v.toFixed(2)).toString();svg.appendChild(t);});
+    (o.marks||[]).forEach(([v,lab,col],i)=>{if(v<lo||v>hi)return;svg.appendChild(sv("line",{x1:X(v),x2:X(v),y1:m.t,y2:Y(0),style:`stroke:${col||"var(--gold)"};stroke-width:2;stroke-dasharray:4 3`}));const t=sv("text",{x:X(v)+3,y:m.t+10+12*i,"font-size":10});t.textContent=lab;svg.appendChild(t);});
+    container.appendChild(svg);
+  }
+  return{parse,num,numeric,column,isNumericCol,readFile,GEN,generate,panel,genForm,dataForm,table,text,histogram,st,used,MAX_ROWS};
+})();
 
 /* ---------- helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
@@ -927,7 +1475,7 @@ try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.pars
 const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
 
 const RANKS=COURSE.ranks;
-const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["explorer","Sandbox Explorer","Opened a sandbox and played with your own settings or data"],["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
 
 function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
 function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}

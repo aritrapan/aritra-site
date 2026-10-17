@@ -197,6 +197,17 @@ td.num{font-family:var(--mono)}
 .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .sheet .formula{font-size:.84rem}
 .sheet h3{font-size:1rem;margin-bottom:6px}
+.sandbox{border:1px dashed var(--accent);border-radius:var(--r);padding:14px clamp(12px,2vw,18px);display:grid;gap:10px;background:var(--sunk);min-width:0;margin-top:14px}
+.sb-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.sb-head .eyebrow{color:var(--accent)}
+.sb-tabs button{border:0;background:transparent;padding:5px 12px;font:600 .8rem/1.2 var(--mono)}
+.sb-tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.sb-pane{display:grid;gap:10px;min-width:0}
+.sb-params{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.sb-params label{display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.sb-params input,.sb-params select{width:9.5em;max-width:100%}
+.sandbox textarea{width:100%;max-width:100%;font:400 .88rem/1.4 var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical}
+.sandbox input[type=file]{font-size:.82rem;max-width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -608,6 +619,7 @@ function labSampling(root){
     <tr><td><b>All</b></td><td class="num">1,200</td><td class="num">120</td><td class="num"><b>51.78</b></td><td class="num">11.79</td></tr></tbody></table></div>
     <p class="note">Within-ward variance 129.35 of a total 139.08: wards explain 7.0%. Theory: SE(SRS, with FPC) = 1.022; SE(stratified, proportional) = 0.987. Over 5,000 simulated surveys the machine gave 1.021 and 0.976.</p>
     <p class="note">The council's sample (seed 112) drew 36 Purvi, 28 Pashchimi, 28 Uttari and 28 Dakshini households: x̄ = 50.33, s = 12.15.</p>`;
+  sbSampling(root);
 }
 
 function labCLT(root){
@@ -657,6 +669,7 @@ function labCLT(root){
   $("#in",right).addEventListener("change",e=>{n2=+e.target.value;resetI();});
   right.querySelectorAll("#iz button").forEach(b=>b.addEventListener("click",()=>{useT=b.dataset.z==="t";right.querySelectorAll("#iz button").forEach(x=>x.setAttribute("aria-pressed",x===b));resetI();}));
   speedSeg($("#isp",right),v=>{speed2=v;},[1,4,16]);resetI();
+  sbCoverage(root);
 }
 
 function labPower(root){
@@ -701,6 +714,7 @@ function labPower(root){
   $("#preset",left).addEventListener("click",reset);
   $("#pmu",right).addEventListener("input",e=>{mu=+e.target.value;reset();});$("#pn",right).addEventListener("change",e=>{n=+e.target.value;reset();});
   speedSeg($("#psp",left),v=>{speed=v;},[1,4,16]);reset();
+  sbPower(root);
 }
 
 function labTwo(root){
@@ -731,6 +745,7 @@ function labTwo(root){
   TANK_B.forEach((b,i)=>{const a=TANK_A[i];const y1=m.t+10+i*2.6,y2=y1;s.appendChild(sv("line",{x1:X(b),x2:X(a),y1:y1,y2:y2,style:`stroke:${a>b?"var(--ok)":"var(--fraud)"};stroke-width:1.2;opacity:.8`}));s.appendChild(sv("circle",{cx:X(b),cy:y1,r:1.6,style:"fill:var(--muted)"}));s.appendChild(sv("circle",{cx:X(a),cy:y2,r:1.6,style:"fill:var(--accent)"}));});
   const t1=sv("text",{x:m.l,y:10,"font-size":10});t1.textContent="each line: one household, before (grey) → after (blue); 31 of 40 rose";s.appendChild(t1);
   const t2=sv("text",{x:Wp-m.r,y:Hp-1,"font-size":10,"text-anchor":"end"});t2.textContent="LPCD";s.appendChild(t2);$("#pairs",right).appendChild(s);
+  sbTests(root);
 }
 
 function labANOVA(root){
@@ -880,6 +895,273 @@ function labBayes(root){
   if(S.unsealed)showUnseal();
 }
 
+/* ---------- sandboxes: free play next to four labs (no XP; pasted text is only parsed, and shown via textContent) ---------- */
+/* sb-math begin */
+function gammaPQ(a,x){ // regularized incomplete gamma [P, Q] (Numerical Recipes gser / gcf)
+  if(x<=0)return [0,1];const lg=-x+a*Math.log(x)-lgamma(a);
+  if(x<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<1000;n++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-16)break;}const P=sum*Math.exp(lg);return [P,1-P];}
+  let b=x+1-a,c=1e300,d=1/b,h=d;for(let i=1;i<1000;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-16)break;}
+  const Q=Math.exp(lg)*h;return [1-Q,Q];}
+const PhiU=x=>x>=0?0.5*gammaPQ(0.5,x*x/2)[1]:1-0.5*gammaPQ(0.5,x*x/2)[1];          // upper tail P(Z > x)
+const Phi=x=>1-PhiU(x);
+const tU=(t,df)=>{const tail=0.5*betaCDF(df/(df+t*t),df/2,0.5);return t>=0?tail:1-tail;};  // P(T > t)
+const fU=(f,d1,d2)=>f<=0?1:betaCDF(d2/(d2+d1*f),d2/2,d1/2);                             // P(F > f)
+const chiU=(x,df)=>gammaPQ(df/2,x/2)[1];                                                  // P(χ² > x)
+function bisect(fn,p,lo,hi){for(let i=0;i<200;i++){const m=(lo+hi)/2;if(fn(m)<p)lo=m;else hi=m;}return (lo+hi)/2;}
+const zQ=p=>bisect(Phi,p,-40,40);
+const tQ=(p,df)=>bisect(t=>1-tU(t,df),p,-1e4,1e4);
+const fmtP=p=>!Number.isFinite(p)?"—":p<0.0001?"< 0.0001":Math.min(1,p).toFixed(4);
+function moments(a){const n=a.length,m=mean(a);let s2=0,s3=0;a.forEach(x=>{s2+=(x-m)**2;s3+=(x-m)**3;});const sp=Math.sqrt(s2/n);return {n,m,sdPop:sp,sd:n>1?Math.sqrt(s2/(n-1)):0,skew:sp>0?s3/n/sp**3:0};}
+function oneT(x,mu0){const n=x.length,m=mean(x),s=sdev(x,m),se=s/Math.sqrt(n);if(!(se>0))return null;const t=(m-mu0)/se,df=n-1;return {n,m,s,se,t,df,p:2*tU(Math.abs(t),df)};}
+function welchT(a,b){const n1=a.length,n2=b.length,m1=mean(a),m2=mean(b),v1=sdev(a,m1)**2,v2=sdev(b,m2)**2,q1=v1/n1,q2=v2/n2,se=Math.sqrt(q1+q2);if(!(se>0))return null;
+  const t=(m1-m2)/se,df=(q1+q2)**2/(q1*q1/(n1-1)+q2*q2/(n2-1));return {t,df,se,d:m1-m2,p:2*tU(Math.abs(t),df)};}
+function anovaF(gs){const all=[].concat(...gs),N=all.length,k=gs.length,gm=mean(all);let ssb=0,ssw=0;gs.forEach(g=>{const m=mean(g);ssb+=g.length*(m-gm)**2;g.forEach(x=>ssw+=(x-m)**2);});
+  const d1=k-1,d2=N-k;if(!(ssw>0)||d2<1)return null;const F=(ssb/d1)/(ssw/d2);return {F,d1,d2,ssb,ssw,eta:ssb/(ssb+ssw),p:fU(F,d1,d2)};}
+function rankAll(vals){const o=vals.map((v,i)=>[v,i]).sort((x,y)=>x[0]-y[0]),r=new Array(vals.length);let ties=0;
+  for(let i=0;i<o.length;){let j=i;while(j+1<o.length&&o[j+1][0]===o[i][0])j++;const rk=(i+j)/2+1,t=j-i+1;ties+=t*t*t-t;for(let q=i;q<=j;q++)r[o[q][1]]=rk;i=j+1;}return {r,ties};}
+function mannWhitney(a,b){const n1=a.length,n2=b.length,n=n1+n2,{r,ties}=rankAll(a.concat(b));let R1=0;for(let i=0;i<n1;i++)R1+=r[i];
+  const U=R1-n1*(n1+1)/2,mu=n1*n2/2,sg=Math.sqrt(n1*n2/12*((n+1)-ties/(n*(n-1))));if(!(sg>0))return null;const z=Math.max(0,Math.abs(U-mu)-0.5)/sg;return {U,z,p:Math.min(1,2*PhiU(z))};}
+function kruskal(gs){const all=[].concat(...gs),n=all.length,{r,ties}=rankAll(all);let H=0,off=0;gs.forEach(g=>{let R=0;for(let i=0;i<g.length;i++)R+=r[off+i];off+=g.length;H+=R*R/g.length;});
+  H=12/(n*(n+1))*H-3*(n+1);const c=1-ties/(n*n*n-n);if(!(c>0))return null;H/=c;const df=gs.length-1;return {H,df,p:chiU(H,df)};}
+function bootCI(x,level,B,seed){const r=rng(seed),n=x.length,ms=new Array(B);for(let b=0;b<B;b++){let s=0;for(let i=0;i<n;i++)s+=x[Math.floor(r()*n)];ms[b]=s/n;}const a=(1-level)/2;return [SB.st.q(ms,a),SB.st.q(ms,1-a)];}
+function intervals(x,level,useT){const n=x.length,m=mean(x),s=sdev(x,m),se=s/Math.sqrt(n),zc=zQ(1-(1-level)/2),tc=tQ(1-(1-level)/2,n-1);
+  return {n,m,s,se,zc,tc,z:[m-zc*se,m+zc*se],t:[m-tc*se,m+tc*se]};}
+function powerT(d,n,alpha,sides,design){ // exact power of the one-sample or equal-n pooled two-sample t test (non-central t, by quadrature)
+  const nu=design==="two"?2*n-2:n-1,del=design==="two"?d*Math.sqrt(n/2):d*Math.sqrt(n);if(nu<1)return NaN;
+  const c=tQ(1-alpha/sides,nu);const lo=Math.max(0,1-9/Math.sqrt(nu)),hi=1+9/Math.sqrt(nu)+(nu<4?4:0),M=4000,h=(hi-lo)/M;
+  const lc=(nu/2)*Math.log(nu)-(nu/2-1)*Math.log(2)-lgamma(nu/2);let tot=0;
+  for(let i=0;i<=M;i++){const s=lo+i*h;if(s<=0&&nu>1)continue;const dens=Math.exp(lc+(nu-1)*Math.log(Math.max(s,1e-300))-nu*s*s/2);
+    let pr=PhiU(c*s-del);if(sides===2)pr+=Phi(-c*s-del);tot+=(i===0||i===M?1:i%2?4:2)*dens*pr;}
+  return Math.min(1,tot*h/3);}
+function powerZ(d,n,alpha,sides,design){const del=design==="two"?d*Math.sqrt(n/2):d*Math.sqrt(n),z=zQ(1-alpha/sides);return PhiU(z-del)+(sides===2?Phi(-z-del):0);}
+function needN(d,alpha,sides,design,target){if(!(d>0))return null;const f=n=>powerT(d,n,alpha,sides,design);let lo=2,hi=2;if(f(2)>=target)return 2;
+  while(f(hi)<target){lo=hi;hi*=2;if(hi>20000)return Infinity;}while(hi-lo>1){const m=(lo+hi)>>1;if(f(m)>=target)hi=m;else lo=m;}return hi;}
+/* sb-math end */
+
+/* small UI helpers (labels are our own strings; values typed by the visitor are read with parseFloat only) */
+function sbNum(parent,label,val,o){o=o||{};const lab=el("label");lab.appendChild(SB.text("span",label));const i=el("input",{type:"number",step:String(o.step||"any"),value:String(val)});
+  if(o.min!=null)i.min=String(o.min);if(o.max!=null)i.max=String(o.max);lab.appendChild(i);parent.appendChild(lab);
+  return ()=>{let v=parseFloat(i.value);if(!Number.isFinite(v))v=val;if(o.min!=null)v=Math.max(o.min,v);if(o.max!=null)v=Math.min(o.max,v);if(o.int)v=Math.round(v);return v;};}
+function sbSel(parent,label,opts,val){const lab=el("label");lab.appendChild(SB.text("span",label));const s=el("select");opts.forEach(([v,t])=>{const o=el("option",{value:v});o.textContent=t;s.appendChild(o);});s.value=val;lab.appendChild(s);parent.appendChild(lab);return s;}
+function sbSeg(parent,label,opts,val,onchange){const lab=el("label");lab.appendChild(SB.text("span",label));const s=el("div",{class:"seg",role:"group","aria-label":label});let cur=val;
+  opts.forEach(([v,t])=>{const b=el("button",{type:"button","aria-pressed":String(v===val)});b.textContent=t;b.addEventListener("click",()=>{cur=v;s.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));if(onchange)onchange(v);});s.appendChild(b);});
+  lab.appendChild(s);parent.appendChild(lab);return ()=>cur;}
+function sbBtn(parent,txt,ghost){const b=el("button",{class:"btn small"+(ghost?" ghost":""),type:"button"});b.textContent=txt;parent.appendChild(b);return b;}
+function sbRead(parent,items){const r=el("div",{class:"readout"}),o={};items.forEach(([k,t])=>{const d=el("div");d.appendChild(SB.text("span",t));const b=SB.text("b","—");d.appendChild(b);r.appendChild(d);o[k]=b;});parent.appendChild(r);return o;}
+function sbMsg(parent){const p=el("p",{class:"note",role:"status"});parent.appendChild(p);return p;}
+const f2=(x,d)=>Number.isFinite(x)?(Math.abs(x)>=1e4?ind(Math.round(x)):x.toFixed(d==null?2:d)):"—";
+
+/* 1. the sampling machine, free: sample means pile up from any population */
+function sbMeansRunner(pane,getPop,o){
+  o=o||{};const ps=el("div",{class:"sb-params"});pane.appendChild(ps);
+  const gn=sbNum(ps,"Survey sample size n",o.n||30,{min:1,max:1000,int:true}),gk=sbNum(ps,"Number of surveys",2000,{min:10,max:5000,int:true});
+  const row=el("div",{class:"btnrow"});pane.appendChild(row);const run=sbBtn(row,"Run the surveys");const sp=el("span");row.appendChild(sp);
+  const grid=el("div",{class:"labgrid"});pane.appendChild(grid);const L1=el("div",{class:"ctrl"}),R1=el("div",{class:"ctrl"});grid.append(L1,R1);
+  const box=el("div",{class:"svgbox"});const cv=el("canvas",{"aria-label":"Histogram of sample means filling under a Normal curve"});box.appendChild(cv);L1.appendChild(box);
+  const rd=sbRead(L1,[["k","Surveys"],["mm","Mean of the x̄s"],["sd","SD of the x̄s"],["th",o.wor?"σ/√n · FPC":"σ/√n"],["sk","Skewness of the x̄s"],["skt","Theory γ/√n"]]);
+  R1.appendChild(SB.text("span","The population being surveyed","eyebrow"));const popBox=el("div",{class:"svgbox"});R1.appendChild(popBox);const pinfo=sbMsg(R1);const msg=sbMsg(pane);
+  const W=360,H=210,g=canvasSetup(cv,W,H);let speed=1,anim=null,ms=[],P=null,n=30,T=0,r=null,se=1;
+  speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;if(!P)return;
+    const lo=P.m-4*se,hi=P.m+4*se,bins=40,bw=(W-40)/bins,cnt=new Array(bins).fill(0);ms.forEach(m=>{const b=Math.floor((m-lo)/(hi-lo)*bins);if(b>=0&&b<bins)cnt[b]++;});
+    const k=ms.length,peak=Math.max(1,k*normPDF(P.m,P.m,se)*(hi-lo)/bins*1.3,Math.max(...cnt)*1.05);
+    cnt.forEach((v,b)=>{const h=v/peak*(H-50);g.fillStyle=C.acc;g.fillRect(20+b*bw+1,H-30-h,bw-2,h);});
+    if(k>0){g.strokeStyle=C.gold;g.lineWidth=2;g.beginPath();for(let i=0;i<=120;i++){const x=lo+(hi-lo)*i/120,y=H-30-k*normPDF(x,P.m,se)*(hi-lo)/bins/peak*(H-50);i?g.lineTo(20+i/120*(W-40),y):g.moveTo(20+i/120*(W-40),y);}g.stroke();g.lineWidth=1;}
+    g.strokeStyle=C.red;g.setLineDash([4,3]);g.beginPath();g.moveTo(W/2,24);g.lineTo(W/2,H-30);g.stroke();g.setLineDash([]);
+    g.fillStyle=C.muted;[0,0.5,1].forEach(f=>{const t=f2(lo+f*(hi-lo),2);g.fillText(t,20+f*(W-40)-g.measureText(t).width*f,H-12);});
+    g.fillStyle=C.ink;g.fillText(`means of ${n} · ${ind(k)} surveys · gold: Normal(μ, SE²)`,20,14);}
+  function stats(){const k=ms.length;rd.k.textContent=ind(k);rd.th.textContent=f2(se,3);rd.skt.textContent=P?f2(P.skew/Math.sqrt(n),3):"—";
+    if(k>2){const mm=moments(ms);rd.mm.textContent=f2(mm.m,3);rd.sd.textContent=f2(mm.sd,3);rd.sk.textContent=f2(mm.skew,3);}else{rd.mm.textContent=rd.sd.textContent=rd.sk.textContent="—";}}
+  function one(){let s=0;if(o.wor){const idx=pick(r,P.v.length,n);for(const i of idx)s+=P.v[i];}else for(let i=0;i<n;i++)s+=P.v[Math.floor(r()*P.v.length)];ms.push(s/n);}
+  run.addEventListener("click",()=>{if(anim)anim.stop();const v=getPop();msg.textContent="";
+    if(!v||v.length<2){msg.textContent="The population needs at least two values.";return;}
+    P=Object.assign({v},moments(v));if(!(P.sdPop>0)){msg.textContent="Every value in the population is the same, so every sample mean is too: nothing to pile up.";P=null;draw();return;}
+    n=gn();if(o.wor&&n>v.length){n=v.length;msg.textContent=`Without replacement n cannot exceed the population size; n set to ${n}.`;}
+    T=Math.min(gk(),Math.floor(2e6/n));if(T<gk())msg.textContent=`Capped at ${ind(T)} surveys to keep the page responsive.`;
+    se=P.sdPop/Math.sqrt(n)*(o.wor?Math.sqrt((v.length-n)/Math.max(1,v.length-1)):1);if(!(se>0))se=P.sdPop/Math.sqrt(n)*1e-6;
+    SB.histogram(popBox,v,{h:150,label:"Histogram of the population",marks:[[P.m,"μ = "+f2(P.m,2),"var(--fraud)"]]});
+    pinfo.textContent=`${ind(v.length)} values · μ = ${f2(P.m,3)} · σ = ${f2(P.sdPop,3)} · skewness γ = ${f2(P.skew,3)}`+(o.wor?" · surveys draw without replacement":" · surveys draw with replacement");
+    r=rng(o.seed||7);ms=[];if(REDUCED){while(ms.length<T)one();draw();stats();return;}
+    const per=Math.max(1,Math.round(T/200));anim=loop(()=>{for(let i=0;i<per*speed&&ms.length<T;i++)one();draw();stats();if(ms.length>=T)anim.stop();});});
+  draw();stats();
+}
+function sbSampling(root){
+  SB.panel(root,"the sampling machine",{
+    controls:pn=>{pn.appendChild(SB.text("p","Survey the 1,200-household census again, at any n and for either variable. Expenditure is right-skewed (skewness 1.49): watch how large n must be before its means look Normal.","note"));
+      const ps=pn.appendChild(document.createElement("div"));ps.className="sb-params";const vs=sbSel(ps,"Variable",[["lpcd","Water use (LPCD)"],["exp","Monthly expenditure (₹)"]],"exp");
+      sbMeansRunner(pn,()=>vs.value==="lpcd"?LPCD:EXP,{wor:true,n:5,seed:11});},
+    generate:pn=>{pn.appendChild(SB.text("p","Choose a population shape. The generated values are the population; each survey draws n of them with replacement and records the mean.","note"));
+      const gf=SB.genForm(["exponential","lognormal","uniform","bimodal","poisson","binomial","normal"],{kind:"exponential",n:2000,seed:3});pn.appendChild(gf.el);
+      sbMeansRunner(pn,()=>gf.values(),{n:5,seed:13});},
+    own:pn=>{pn.appendChild(SB.text("p","Paste any list of numbers. They are treated as the population; surveys draw n of them with replacement (the bootstrap idea, used here to show the Central Limit Theorem, CLT, on your own data).","note"));
+      let vals=null;SB.dataForm(pn,[{key:"x",label:"Values",type:"num"}],d=>{vals=d.x;},{example:"0\n0\n1\n0\n2\n0\n0\n5\n1\n0\n0\n12\n0\n3\n0\n1\n0\n0\n0\n28\n2\n0\n1\n0\n7",minRows:2,help:"Paste numbers, one per line or separated by commas or spaces, or a CSV file with a header row, then press Use this data. Your data stays in this browser: it is not uploaded, saved or shared. Example: days of absence of 25 employees (illustrative)."});
+      sbMeansRunner(pn,()=>vals,{n:10,seed:17});}
+  },"Sample size, number of surveys and the population's shape are yours to set.");
+}
+
+/* 2. the coverage lab, free */
+function sbLevel(ps,val){const lab=el("label");lab.appendChild(SB.text("span","Confidence level"));const w=el("div",{class:"btnrow"});const i=el("input",{type:"range",min:"80",max:"99",step:"1",value:String(val||95),"aria-label":"Confidence level, percent"});const out=SB.text("b",(val||95)+"%");
+  i.addEventListener("input",()=>{out.textContent=i.value+"%";});w.append(i,out);lab.appendChild(w);ps.appendChild(lab);return {get:()=>(+i.value)/100,input:i};}
+function sbCovRunner(pane,getPop,o){
+  o=o||{};const ps=el("div",{class:"sb-params"});pane.appendChild(ps);
+  const gn=sbNum(ps,"Survey sample size n",o.n||10,{min:2,max:1000,int:true}),lv=sbLevel(ps,95),gm=sbSeg(ps,"Critical value",[["t","t (df n − 1)"],["z","z"]],"t"),gk=sbNum(ps,"Number of surveys",2000,{min:10,max:5000,int:true});
+  const row=el("div",{class:"btnrow"});pane.appendChild(row);const run=sbBtn(row,"Run the surveys");const sp=el("span");row.appendChild(sp);
+  const grid=el("div",{class:"labgrid"});pane.appendChild(grid);const L1=el("div",{class:"ctrl"}),R1=el("div",{class:"ctrl"});grid.append(L1,R1);
+  const box=el("div",{class:"svgbox"});const cv=el("canvas",{"aria-label":"Confidence intervals stacking up; those missing the population mean are red"});box.appendChild(cv);L1.appendChild(box);
+  const rd=sbRead(R1,[["k","Intervals"],["hit","Contain μ"],["cov","Coverage"],["nom","Nominal level"],["crit","Critical value"],["mu","Population mean μ"]]);const msg=sbMsg(pane);
+  const W=360,H=260,g=canvasSetup(cv,W,H);let speed=1,anim=null,P=null,ivs=[],k=0,hit=0,n=10,c=1.96,r=null,T=0,useT=true,lvl=0.95;speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  function one(){const x=new Array(n);if(o.wor){const idx=pick(r,P.v.length,n);idx.forEach((j,q)=>x[q]=P.v[j]);}else for(let i=0;i<n;i++)x[i]=P.v[Math.floor(r()*P.v.length)];
+    const m=mean(x),h=c*sdev(x,m)/Math.sqrt(n),ok=Math.abs(m-P.m)<=h;k++;if(ok)hit++;ivs.push({m,h,ok});if(ivs.length>44)ivs.shift();}
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;if(!P)return;
+    const sp2=4*P.sdPop/Math.sqrt(n),lo=P.m-sp2,hi=P.m+sp2,X=v=>20+(Math.min(hi,Math.max(lo,v))-lo)/(hi-lo)*(W-40);
+    g.strokeStyle=C.red;g.setLineDash([4,3]);g.beginPath();g.moveTo(X(P.m),20);g.lineTo(X(P.m),H-22);g.stroke();g.setLineDash([]);g.fillStyle=C.red;g.fillText("μ = "+f2(P.m,2),X(P.m)+4,16);
+    ivs.forEach((iv,i)=>{const y=H-26-i*5;g.strokeStyle=iv.ok?C.acc:C.red;g.lineWidth=iv.ok?1.5:2.5;g.beginPath();g.moveTo(X(iv.m-iv.h),y);g.lineTo(X(iv.m+iv.h),y);g.stroke();g.fillStyle=g.strokeStyle;g.fillRect(X(iv.m)-1.5,y-2,3,4);});g.lineWidth=1;
+    g.fillStyle=C.muted;[lo,P.m,hi].forEach((v,i)=>{const t=f2(v,1);g.fillText(t,X(v)-g.measureText(t).width*(i/2),H-6);});
+    g.fillStyle=C.ink;g.fillText(`n = ${n} · ${useT?"t":"z"} · ${Math.round(lvl*100)}%`,20,ivs.length>40?H-246:16);}
+  function stats(){rd.k.textContent=ind(k);rd.hit.textContent=ind(hit);rd.cov.textContent=k?pct(hit/k,1):"—";rd.nom.textContent=pct(lvl,0);rd.crit.textContent=f2(c,3);rd.mu.textContent=P?f2(P.m,3):"—";}
+  run.addEventListener("click",()=>{if(anim)anim.stop();msg.textContent="";const v=getPop();if(!v||v.length<2){msg.textContent="The population needs at least two values.";return;}
+    P=Object.assign({v},moments(v));if(!(P.sdPop>0)){msg.textContent="Every value is the same: every interval has zero width. Try a population with some spread.";P=null;draw();return;}
+    n=gn();if(o.wor&&n>v.length){n=v.length;msg.textContent=`n set to the population size, ${n}.`;}
+    lvl=lv.get();useT=gm()==="t";c=useT?tQ(1-(1-lvl)/2,n-1):zQ(1-(1-lvl)/2);T=Math.min(gk(),Math.floor(2e6/n));
+    r=rng(o.seed||53);ivs=[];k=0;hit=0;if(REDUCED){while(k<T)one();draw();stats();return;}
+    anim=loop(()=>{for(let i=0;i<speed&&k<T;i++)one();draw();stats();if(k>=T)anim.stop();});});
+  draw();stats();
+}
+function sbIntervalsReport(out,x,level){
+  out.innerHTML="";if(x.length<2){out.appendChild(SB.text("p","At least two values are needed.","note"));return;}
+  const I=intervals(x,level);if(!(I.s>0)){out.appendChild(SB.text("p","All values are equal: the standard deviation is zero and every interval collapses to a point.","note"));return;}
+  const B=2000,bo=bootCI(x,level,B,1),L=Math.round(level*100)+"%";
+  out.appendChild(SB.table(["Statistic","Value"],[["n",ind(I.n)],["mean x̄",f2(I.m,4)],["SD s (n − 1)",f2(I.s,4)],["SE = s/√n",f2(I.se,4)],["t critical (df "+(I.n-1)+")",I.tc.toFixed(4)],["z critical",I.zc.toFixed(4)]]));
+  out.appendChild(SB.table([L+" interval","Lower","Upper"],[["t: x̄ ± t·SE",f2(I.t[0],4),f2(I.t[1],4)],["z: x̄ ± z·SE",f2(I.z[0],4),f2(I.z[1],4)],["Bootstrap percentile, B = 2,000",f2(bo[0],4),f2(bo[1],4)]]));
+  const h=el("div",{class:"svgbox"});out.appendChild(h);SB.histogram(h,x,{h:170,label:"Histogram of your sample with the t interval",marks:[[I.m,"x̄","var(--fraud)"],[I.t[0],"t lower","var(--gold)"],[I.t[1],"t upper","var(--gold)"]]});
+  out.appendChild(SB.text("p",I.n<30?"With n below 30 the t and z intervals differ visibly: z ignores the extra uncertainty in s. The bootstrap interval follows the sample's own shape; with small n it tends to be too narrow.":"With n this large, t and z nearly agree. The bootstrap interval is asymmetric when the sample is skewed.","note"));
+}
+function sbCoverage(root){
+  SB.panel(root,"the coverage lab",{
+    controls:pn=>{pn.appendChild(SB.text("p","Surveys of the census (LPCD, without replacement). Set n, the level and z or t; a well-calibrated recipe covers μ = 51.78 at the nominal rate. Try n = 3 with z.","note"));
+      sbCovRunner(pn,()=>LPCD,{wor:true,n:5,seed:53});},
+    generate:pn=>{pn.appendChild(SB.text("p","Generate a population and survey it with replacement. Skewed shapes with small n break the t interval's promise; the miss is on one side.","note"));
+      const gf=SB.genForm(["lognormal","exponential","normal","uniform","bimodal","poisson"],{kind:"lognormal",n:2000,seed:5,params:{"spread σ":1}});pn.appendChild(gf.el);
+      sbCovRunner(pn,()=>gf.values(),{n:10,seed:59});},
+    own:pn=>{pn.appendChild(SB.text("p","Paste one sample: you get its mean, SD and three intervals at the level you choose.","note"));
+      const ps=pn.appendChild(document.createElement("div"));ps.className="sb-params";const lv=sbLevel(ps,95);let x=null;const out=pn.appendChild(document.createElement("div"));out.className="sb-pane";
+      lv.input.addEventListener("change",()=>{if(x)sbIntervalsReport(out,x,lv.get());});
+      SB.dataForm(pn,[{key:"x",label:"Values",type:"num"}],d=>{x=d.x;sbIntervalsReport(out,x,lv.get());},{example:"212\n198\n240\n225\n187\n260\n231\n205\n219\n248\n193\n236\n228\n210\n275\n201",minRows:2,help:"Paste numbers, one per line or separated by commas or spaces, or a CSV with a header row. Your data stays in this browser: it is not uploaded, saved or shared. Example: 16 delivery times in minutes (illustrative)."});
+      pn.appendChild(out);}
+  },"Confidence level from 80% to 99%, z or t, any n, any population.");
+}
+
+/* 3. the test calculator */
+function stripSVG(gs,names,title){const all=[].concat(...gs);let lo=Math.min(...all),hi=Math.max(...all);if(hi===lo){lo-=1;hi+=1;}const pad=(hi-lo)*0.06;lo-=pad;hi+=pad;
+  const k=gs.length,Ws=360,Hs=200,m={l:44,r:10,t:16,b:30},Y=v=>Hs-m.b-(v-lo)/(hi-lo)*(Hs-m.t-m.b);const s=sv("svg",{viewBox:`0 0 ${Ws} ${Hs}`,role:"img","aria-label":"Strip plot by group with group means"});
+  [lo+pad,(lo+hi)/2,hi-pad].forEach(v=>{s.appendChild(sv("line",{x1:m.l,x2:Ws-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--line)"}));const t=sv("text",{x:m.l-5,y:Y(v)+4,"font-size":10,"text-anchor":"end"});t.textContent=f2(v,1);s.appendChild(t);});
+  const rr=rng(3),cw=(Ws-m.l-m.r)/k;gs.forEach((g,j)=>{const cx=m.l+(j+0.5)*cw,mu=mean(g);g.slice(0,600).forEach(x=>s.appendChild(sv("circle",{cx:cx+(rr()-0.5)*Math.min(56,cw*0.7),cy:Y(x),r:2.4,style:"fill:var(--accent);opacity:.6"})));
+    s.appendChild(sv("line",{x1:cx-Math.min(36,cw*0.45),x2:cx+Math.min(36,cw*0.45),y1:Y(mu),y2:Y(mu),style:"stroke:var(--fraud);stroke-width:2.5"}));
+    const t=sv("text",{x:cx,y:Hs-14,"font-size":k>6?8:10,"text-anchor":"middle"});const nm=String(names[j]);t.textContent=k>4&&nm.length>8?nm.slice(0,7)+"…":nm;s.appendChild(t);
+    const t2=sv("text",{x:cx,y:Hs-3,"font-size":9,"text-anchor":"middle"});t2.textContent=k>5?"n="+g.length:`${f2(mu,2)} · n=${g.length}`;s.appendChild(t2);});
+  const tt=sv("text",{x:m.l,y:10,"font-size":10});tt.textContent=title||"each dot one value · red: group means";s.appendChild(tt);return s;}
+function sbTestReport(out,y,g,mu0){
+  out.innerHTML="";const say=s=>out.appendChild(SB.text("p",s,"note"));
+  if(!y||y.length<2){say("At least two values are needed.");return;}
+  let names=[],gs=[];if(g){const idx=new Map();g.forEach((lab,i)=>{if(!idx.has(lab)){if(idx.size>=12)return;idx.set(lab,names.length);names.push(lab);gs.push([]);}gs[idx.get(lab)].push(y[i]);});}
+  let dropped=0;if(g){const keep=[];gs.forEach((a,j)=>{if(a.length>=2)keep.push(j);else dropped++;});names=keep.map(j=>names[j]);gs=keep.map(j=>gs[j]);if(new Set(g).size>12)say("Only the first 12 groups are used.");if(dropped)say(`${dropped} group(s) with fewer than two values were left out.`);}
+  if(!g||gs.length<2){if(g)say("Fewer than two usable groups: running the one-sample t test on all values instead.");
+    const r=oneT(y,mu0);if(!r){say("The values have zero spread, so the t statistic is undefined.");return;}
+    const h=el("div",{class:"svgbox"});out.appendChild(h);SB.histogram(h,y,{h:170,label:"Histogram of the values",marks:[[r.m,"x̄","var(--fraud)"],[mu0,"μ₀","var(--gold)"]]});
+    out.appendChild(SB.table(["One-sample t test, H₀: μ = "+f2(mu0,3),"Value"],[["n",ind(r.n)],["mean x̄",f2(r.m,4)],["SD s",f2(r.s,4)],["SE",f2(r.se,4)],["t = (x̄ − μ₀)/SE",r.t.toFixed(4)],["df",String(r.df)],["p (two-sided)",fmtP(r.p)],["p (one-sided, in the direction observed)",fmtP(r.p/2)]]));
+    say(r.p<0.05?"At α = 0.05 the data are hard to square with μ₀. A small p is not a large effect: look at x̄ − μ₀ = "+f2(r.m-mu0,3)+" in the data's own units.":"At α = 0.05 the data are compatible with μ₀. That is not proof that μ = μ₀: a larger n might detect a small difference.");return;}
+  const box=el("div",{class:"svgbox"});out.appendChild(box);box.appendChild(stripSVG(gs,names));
+  out.appendChild(SB.table(["Group","n","mean","SD"],gs.map((a,j)=>[names[j],ind(a.length),f2(mean(a),4),f2(sdev(a),4)])));
+  const rows=[],notes=[];
+  if(gs.length===2){const w=welchT(gs[0],gs[1]),u=mannWhitney(gs[0],gs[1]);
+    if(w){rows.push(["Welch t","t = "+w.t.toFixed(4),w.df.toFixed(2),fmtP(w.p)]);notes.push("Welch: difference in means (first − second) = "+f2(w.d,4)+", SE = "+f2(w.se,4)+".");}else rows.push(["Welch t","—","—","—"]);
+    if(u){rows.push(["Mann–Whitney U","U = "+f2(u.U,1),"—",fmtP(u.p)]);notes.push("Mann–Whitney: Normal approximation with tie and continuity corrections, z = "+u.z.toFixed(4)+".");}}
+  const a=anovaF(gs),kw=kruskal(gs);
+  if(a){rows.push(["One-way ANOVA F","F = "+a.F.toFixed(4),a.d1+", "+a.d2,fmtP(a.p)]);if(gs.length===2)notes.push("With two groups, F equals the square of the pooled-variance t.");}
+  if(kw){rows.push(["Kruskal–Wallis H","H = "+kw.H.toFixed(4),String(kw.df),fmtP(kw.p)]);notes.push("Kruskal–Wallis: tie-corrected, compared with χ² on k − 1 df.");}
+  if(!rows.length){say("All values are equal within every group; no test statistic is defined.");return;}
+  out.appendChild(SB.table(["Test","Statistic","df","p"],rows));
+  if(notes.length)say(notes.join(" ")+" All p-values are two-sided.");
+  if(a)say(`η² = SSB/SST = ${a.eta.toFixed(3)}: the share of the variation that lies between groups. The rank tests use only the order of the values, so a single wild value moves them far less than it moves the t and F tests.`);
+}
+function sbTests(root){
+  SB.panel(root,"the test calculator",{
+    controls:pn=>{pn.appendChild(SB.text("p","Run the tests on the council's 120-household sample: pick an outcome, a grouping (or none, for a one-sample t test against μ₀) and how many households to use, in draw order.","note"));
+      const ps=pn.appendChild(document.createElement("div"));ps.className="sb-params";
+      const ys=sbSel(ps,"Outcome",[["lpcd","Water use (LPCD)"],["lamp","Lamp burn hours"],["exp","Monthly expenditure (₹)"]],"lpcd");
+      const gsel=sbSel(ps,"Grouping",[["none","none (one-sample)"],["ward","ward"],["purvi","Purvi vs other wards"],["vendor","lamp vendor"],["toilet","toilet at home"]],"purvi");
+      const gN=sbNum(ps,"Households used (first N)",120,{min:4,max:120,int:true}),gmu=sbNum(ps,"μ₀ for one-sample",55,{step:"any"});
+      const row=pn.appendChild(document.createElement("div"));row.className="btnrow";const b=sbBtn(row,"Run the tests");const out=pn.appendChild(document.createElement("div"));out.className="sb-pane";
+      const go=()=>{const n=gN(),Y={lpcd:S_LPCD,lamp:S_LAMP,exp:S_EXP}[ys.value].slice(0,n);const G={none:null,ward:S_WARD.map(w=>WNAME[w]),purvi:S_WARD.map(w=>w===0?"Purvi":"other wards"),vendor:S_VENDOR.map(v=>VNAME[v]),toilet:S_TOILET.map(t=>t?"toilet":"no toilet")}[gsel.value];
+        sbTestReport(out,Y,G?G.slice(0,n):null,gmu());};b.addEventListener("click",go);go();},
+    generate:pn=>{pn.appendChild(SB.text("p","Two Normal groups with means, SDs and sizes you choose. Unequal SDs with unequal n is where Welch's correction earns its keep.","note"));
+      const ps=pn.appendChild(document.createElement("div"));ps.className="sb-params";
+      const m1=sbNum(ps,"Group A mean",50),s1=sbNum(ps,"Group A SD",10,{min:0}),n1=sbNum(ps,"Group A n",20,{min:2,max:2500,int:true}),m2=sbNum(ps,"Group B mean",56),s2=sbNum(ps,"Group B SD",20,{min:0}),n2=sbNum(ps,"Group B n",40,{min:2,max:2500,int:true}),sd=sbNum(ps,"Seed",1,{min:1,max:999999,int:true});
+      const row=pn.appendChild(document.createElement("div"));row.className="btnrow";const b=sbBtn(row,"Generate and test");const out=pn.appendChild(document.createElement("div"));out.className="sb-pane";
+      const go=()=>{const r=rng(sd()),y=[],g=[];const A=n1(),B=n2();for(let i=0;i<A;i++){y.push(m1()+s1()*gauss(r));g.push("A");}for(let i=0;i<B;i++){y.push(m2()+s2()*gauss(r));g.push("B");}sbTestReport(out,y,g,0);};b.addEventListener("click",go);go();},
+    own:pn=>{pn.appendChild(SB.text("p","One column: a one-sample t test against μ₀. A value column and a group column: Welch t and Mann–Whitney for two groups, one-way ANOVA (analysis of variance) F and Kruskal–Wallis for two or more.","note"));
+      const ps=pn.appendChild(document.createElement("div"));ps.className="sb-params";const gmu=sbNum(ps,"μ₀ for one-sample",0,{step:"any"});let last=null;const out=document.createElement("div");out.className="sb-pane";
+      SB.dataForm(pn,[{key:"y",label:"Values",type:"num"},{key:"g",label:"Group",type:"cat",optional:true}],d=>{last=d;sbTestReport(out,d.y,d.g,gmu());},{minRows:2,
+        example:"minutes,branch\n14.2,North\n11.8,North\n16.5,North\n13.1,North\n12.7,North\n15.9,North\n10.4,North\n13.8,North\n17.6,South\n19.2,South\n15.1,South\n21.4,South\n18.3,South\n16.9,South\n20.5,South\n14.8,East\n13.9,East\n16.2,East\n12.5,East\n15.6,East\n17.1,East\n14.4,East",
+        help:"Paste a table with a header row (a value column and, optionally, a group column) or a single column of numbers, or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared. Example: queue times at three branches (illustrative)."});
+      pn.appendChild(out);pn.querySelector("input[type=number]").addEventListener("change",()=>{if(last)sbTestReport(out,last.y,last.g,gmu());});}
+  },"t, Welch, ANOVA and their rank-based cousins, with p-values computed in your browser.");
+}
+
+/* 4. the power lab, free */
+function sbPowerRunner(pane,getPop,o){
+  o=o||{};const ps=el("div",{class:"sb-params"});pane.appendChild(ps);
+  const gd=sbNum(ps,"Effect size d (in SDs)",0.3,{min:0,max:3}),gn=sbNum(ps,"n (per group)",40,{min:2,max:1000,int:true}),ga=sbNum(ps,"α",0.05,{min:0.001,max:0.5}),gk=sbNum(ps,"Number of surveys",1000,{min:10,max:5000,int:true});
+  const ps2=el("div",{class:"sb-params"});pane.appendChild(ps2);const gs=sbSeg(ps2,"Alternative",[["2","two-sided"],["1","one-sided"]],"2"),gdz=sbSeg(ps2,"Design",[["one","one sample vs μ₀"],["two","two groups, pooled t"]],"one");
+  const row=el("div",{class:"btnrow"});pane.appendChild(row);const run=sbBtn(row,"Run the surveys");const sp=el("span");row.appendChild(sp);
+  const grid=el("div",{class:"labgrid"});pane.appendChild(grid);const L1=el("div",{class:"ctrl"}),R1=el("div",{class:"ctrl"});grid.append(L1,R1);
+  const box=el("div",{class:"svgbox"});const cv=el("canvas",{"aria-label":"Simulated t statistics dropping onto an axis with rejection regions shaded"});box.appendChild(cv);L1.appendChild(box);
+  const rd=sbRead(R1,[["k","Surveys"],["rej","Rejected H₀"],["sim","Simulated power"],["th","Exact power (non-central t)"],["nz","Normal approximation"],["crit","Critical t"]]);const msg=sbMsg(pane);
+  const W=360,H=200,g=canvasSetup(cv,W,H);let speed=1,anim=null,P=null,ts=[],k=0,rej=0,n=40,c=2,sides=2,des="one",T=0,r=null,shift=0,last=null;speedSeg(sp,v=>{speed=v;},[1,4,16]);
+  const draw1=i=>P.v[Math.floor(r()*P.v.length)];
+  function one(){let t;if(des==="one"){let s=0,s2=0;for(let i=0;i<n;i++){const x=draw1()+shift;s+=x;s2+=x*x;}const m=s/n,sd=Math.sqrt(Math.max(0,(s2-s*s/n)/(n-1)));t=(m-P.m)/(sd/Math.sqrt(n));}
+    else{let a=0,a2=0,b=0,b2=0;for(let i=0;i<n;i++){const x=draw1();a+=x;a2+=x*x;const y=draw1()+shift;b+=y;b2+=y*y;}const sp2=((a2-a*a/n)+(b2-b*b/n))/(2*n-2);t=(b/n-a/n)/Math.sqrt(Math.max(1e-300,sp2)*2/n);}
+    if(!Number.isFinite(t))t=0;k++;if(sides===2?Math.abs(t)>c:t>c)rej++;ts.push(t);if(ts.length>400)ts.shift();last=t;}
+  function draw(){const C=COL();g.clearRect(0,0,W,H);g.fillStyle=C.sunk;g.fillRect(0,0,W,H);g.font="11px "+MONO;if(!P)return;
+    const cen=des==="two"?gd()*Math.sqrt(n/2):gd()*Math.sqrt(n),lo=Math.min(-4,cen-4),hi=Math.max(4,cen+4),X=v=>20+(Math.min(hi,Math.max(lo,v))-lo)/(hi-lo)*(W-40);
+    g.fillStyle=C.accs;if(sides===2)g.fillRect(20,30,Math.max(0,X(-c)-20),H-70);g.fillRect(X(c),30,W-20-X(c),H-70);
+    const bins=48,cnt=new Array(bins).fill(0);ts.forEach(t=>{const b=Math.floor((Math.min(hi,Math.max(lo,t))-lo)/(hi-lo)*bins);cnt[Math.min(bins-1,b)]++;});const pk=Math.max(1,...cnt),bw=(W-40)/bins;
+    cnt.forEach((v,b)=>{const h=v/pk*(H-80);const mid=lo+(b+0.5)*(hi-lo)/bins;g.fillStyle=(sides===2?Math.abs(mid)>c:mid>c)?C.red:C.acc;g.fillRect(20+b*bw+1,H-40-h,bw-2,h);});
+    g.strokeStyle=C.line;g.beginPath();g.moveTo(20,H-40);g.lineTo(W-20,H-40);g.stroke();
+    g.fillStyle=C.muted;const step=Math.max(2,Math.ceil((hi-lo)/7));for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step)g.fillText(v,X(v)-4,H-26);g.fillText("t statistic · shaded: reject H₀",20,H-8);
+    g.fillStyle=C.ink;g.fillText(`d = ${f2(gd(),2)} · n = ${n} · last ${ts.length} of ${ind(k)}`,20,16);if(last!=null){g.fillStyle=C.gold;g.beginPath();g.arc(X(last),26,4,0,7);g.fill();}}
+  function stats(th,nz){rd.k.textContent=ind(k);rd.rej.textContent=ind(rej);rd.sim.textContent=k?(rej/k).toFixed(3):"—";if(th!=null){rd.th.textContent=th.toFixed(4);rd.nz.textContent=nz.toFixed(4);rd.crit.textContent=c.toFixed(4);}}
+  run.addEventListener("click",()=>{if(anim)anim.stop();msg.textContent="";const v=getPop();if(!v||v.length<2){msg.textContent="The population needs at least two values.";return;}
+    P=Object.assign({v},moments(v));if(!(P.sdPop>0)){msg.textContent="Zero spread in the population: the t statistic is undefined.";P=null;draw();return;}
+    n=gn();sides=+gs();des=gdz();const d=gd(),al=ga();shift=d*P.sdPop;const nu=des==="two"?2*n-2:n-1;c=tQ(1-al/sides,nu);
+    const th=powerT(d,n,al,sides,des),nz=powerZ(d,n,al,sides,des);T=Math.min(gk(),Math.floor(2e6/(n*(des==="two"?2:1))));
+    msg.textContent=`Shift = d × σ = ${f2(shift,3)}. The exact power assumes Normal data; the simulation uses this population's real shape.`;
+    r=rng(o.seed||61);ts=[];k=0;rej=0;last=null;if(REDUCED){while(k<T)one();draw();stats(th,nz);return;}
+    anim=loop(()=>{for(let i=0;i<2*speed&&k<T;i++)one();draw();stats(th,nz);if(k>=T)anim.stop();});stats(th,nz);});
+  draw();stats();
+}
+function sbPowerReport(out,x,delta,alpha,target,sides){
+  out.innerHTML="";if(x.length<2){out.appendChild(SB.text("p","At least two pilot values are needed.","note"));return;}
+  const s=sdev(x);if(!(s>0)){out.appendChild(SB.text("p","The pilot values have zero spread, so the effect size cannot be computed.","note"));return;}
+  const d=Math.abs(delta)/s;if(!(d>0)){out.appendChild(SB.text("p","Enter a non-zero difference to detect.","note"));return;}
+  const n1=needN(d,alpha,sides,"one",target),n2=needN(d,alpha,sides,"two",target);const show=(nn,des)=>nn===Infinity?["more than 20,000","—"]:[ind(nn),powerT(d,nn,alpha,sides,des).toFixed(4)];
+  out.appendChild(SB.table(["From your pilot","Value"],[["pilot n",ind(x.length)],["pilot SD s",f2(s,4)],["difference to detect Δ",f2(Math.abs(delta),4)],["effect size d = Δ/s",d.toFixed(4)]]));
+  out.appendChild(SB.table(["Design (α = "+alpha+", "+(sides===2?"two":"one")+"-sided, target power "+target+")","n needed","power at that n"],[["one sample vs μ₀",...show(n1,"one")],["two groups, n per group",...show(n2,"two")]]));
+  out.appendChild(SB.text("p","The pilot SD is itself an estimate; a small pilot can understate σ, so treat n as a floor, not a promise. Halving Δ roughly quadruples n.","note"));
+}
+function sbPower(root){
+  SB.panel(root,"the power lab",{
+    controls:pn=>{pn.appendChild(SB.text("p","Surveys drawn (with replacement) from the census LPCD, shifted by d census SDs. H₀ is the census mean, so d = 0 shows the Type I error rate.","note"));sbPowerRunner(pn,()=>LPCD,{seed:61});},
+    generate:pn=>{pn.appendChild(SB.text("p","The same experiment on a population shape you choose. Skewed shapes with small n move the simulated rate away from the Normal-theory value.","note"));
+      const gf=SB.genForm(["normal","exponential","lognormal","uniform","bimodal","poisson"],{kind:"exponential",n:2000,seed:9});pn.appendChild(gf.el);sbPowerRunner(pn,()=>gf.values(),{seed:67});},
+    own:pn=>{pn.appendChild(SB.text("p","Paste pilot data. Its SD turns the difference you care about into an effect size d, and the exact t-test power gives the n you need.","note"));
+      const ps=pn.appendChild(document.createElement("div"));ps.className="sb-params";const gD=sbNum(ps,"Difference to detect Δ",5),gA=sbNum(ps,"α",0.05,{min:0.001,max:0.5}),gT=sbNum(ps,"Target power",0.8,{min:0.5,max:0.99}),gS=sbSel(ps,"Alternative",[["2","two-sided"],["1","one-sided"]],"2");
+      let x=null;const out=document.createElement("div");out.className="sb-pane";const go=()=>{if(x)sbPowerReport(out,x,gD(),gA(),gT(),+gS.value);};ps.querySelectorAll("input,select").forEach(i=>i.addEventListener("change",go));
+      SB.dataForm(pn,[{key:"x",label:"Pilot values",type:"num"}],d=>{x=d.x;go();},{minRows:2,example:"48\n61\n55\n42\n70\n52\n58\n45\n63\n50\n57\n66",help:"Paste pilot measurements, one per line or comma-separated, or a CSV with a header row. Your data stays in this browser: it is not uploaded, saved or shared. Example: 12 pilot readings (illustrative)."});
+      pn.appendChild(out);}
+  },"Effect size, n and α in; simulated and exact power out.");
+}
+
 const COURSE={
   key:"inference",
   title:"Kanchanpur Register",
@@ -906,6 +1188,173 @@ const COURSE={
    ["Bayes for a proportion","Beta(a,b) + k of n\n  → Beta(a+k, b+n−k)\nposterior mean (a+k)/(a+b+n)\nBayes factor BF₁₀ = P(data|H₁)/P(data|H₀)"]],
   L, BOARD
 };
+
+/* ---------- sandbox toolkit (shared by every module) ----------
+   Three levels of free play next to a lab:
+     1. controls on the real data   2. generate your own data   3. bring your own data
+   SAFETY: everything runs in the visitor's browser. Uploaded or pasted text is never sent anywhere,
+   never stored, never put in the URL, and never inserted as HTML: it is only parsed into numbers and
+   short labels, which are always displayed with textContent (SB.text / SB.table). Size caps keep phones responsive. */
+const SB=(function(){
+  const MAX_BYTES=2*1024*1024, MAX_ROWS=5000, MAX_COLS=50, MAX_LABEL=40;
+  const used=()=>{try{award("explorer");}catch(e){}};
+  /* safe text node helpers */
+  function text(tag,str,cls){const e=document.createElement(tag);if(cls)e.className=cls;e.textContent=String(str);return e;}
+  /* control characters, bidirectional embedding/override/isolate controls (U+202A–202E, U+2066–2069, which could
+     reorder the surrounding sentence on screen) and invisible U+200B, U+2060, U+FEFF are removed; ZWJ/ZWNJ stay (Indic scripts) */
+  function cleanLabel(s){s=String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u200b\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g,"").trim();return s.length>MAX_LABEL?s.slice(0,MAX_LABEL)+"…":s;}
+  /* parse delimited text into {header:[...], rows:[[...]], note} — all values stay plain strings */
+  function parse(str){
+    str=String(str||"");if(str.length>MAX_BYTES)str=str.slice(0,MAX_BYTES);
+    let lines=str.replace(/\r\n?/g,"\n").split("\n").map(l=>l.trim()).filter(l=>l.length);
+    let truncated=false;if(lines.length>MAX_ROWS+1){lines=lines.slice(0,MAX_ROWS+1);truncated=true;}
+    const note=()=>truncated?`Only the first ${ind(MAX_ROWS)} rows were read.`:"";
+    if(!lines.length)return{header:[],rows:[],note:"Nothing to read."};
+    // pick a delimiter that splits the first lines into the same number (>1) of fields
+    let delim=null,best=1;
+    for(const d of [",","\t",";","|"]){const c=lines.slice(0,20).map(l=>splitLine(l,d).length);if(c.every(x=>x===c[0])&&c[0]>best){best=c[0];delim=d;}}
+    if(!delim){const c=lines.slice(0,20).map(l=>l.split(/\s+/).length);if(c.every(x=>x===c[0])&&c[0]>1&&lines.length>1)delim="ws";}
+    // one line of values, or one value per line: a single column
+    if(!delim||lines.length===1){
+      const flat=(lines.length>1?lines:lines[0].split(/[\s,;\t|]+/)).map(cleanLabel).filter(x=>x.length);
+      const hasHead=flat.length>1&&isNaN(num(flat[0]))&&!isNaN(num(flat[1]));
+      const vals=(hasHead?flat.slice(1):flat).slice(0,MAX_ROWS);
+      return{header:[hasHead?flat[0]:"value"],rows:vals.map(v=>[v]),note:(flat.length>MAX_ROWS?`Only the first ${ind(MAX_ROWS)} values were read.`:note())};
+    }
+    const rows=lines.map(l=>(delim==="ws"?l.split(/\s+/):splitLine(l,delim)).slice(0,MAX_COLS).map(cleanLabel));
+    const first=rows[0];
+    const hasHead=first.some(v=>v!==""&&isNaN(num(v)))&&rows.slice(1,6).some(r=>r.some(v=>!isNaN(num(v))));
+    const width=first.length;
+    const header=hasHead?first.map((h,i)=>h||("column "+(i+1))):first.map((_,i)=>"column "+(i+1));
+    const body=(hasHead?rows.slice(1):rows).map(r=>{r=r.slice(0,width);while(r.length<width)r.push("");return r;});
+    return{header,rows:body,note:note()};
+  }
+  function splitLine(l,d){const out=[];let cur="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur="";}else cur+=ch;}out.push(cur);return out;}
+  function num(v){if(typeof v==="number")return v;const s=String(v).replace(/[₹$€£,\s]/g,"");if(s===""||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?%?$/.test(s))return NaN;let x=parseFloat(s);if(s.endsWith("%"))x/=100;return isFinite(x)?x:NaN;}
+  function column(t,i){return t.rows.map(r=>r[i]);}
+  function numeric(vals){const out=[];let dropped=0;vals.forEach(v=>{const x=num(v);if(Number.isFinite(x))out.push(x);else dropped++;});return{values:out,dropped};}
+  function isNumericCol(t,i){const c=column(t,i).filter(v=>v!=="");return c.length>0&&c.filter(v=>!isNaN(num(v))).length/c.length>=0.8;}
+  function readFile(file,cb){if(!file)return;if(file.size>MAX_BYTES){cb(null,`That file is ${(file.size/1048576).toFixed(1)} MB; the limit is 2 MB. Use a smaller extract.`);return;}
+    const fr=new FileReader();fr.onload=()=>cb(String(fr.result||""),null);fr.onerror=()=>cb(null,"The file could not be read.");fr.readAsText(file);}
+  /* random generators (seeded) */
+  function normal(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  const GEN={
+    normal:{label:"Normal",params:[["mean",50],["sd",10]],draw:(r,p)=>p.mean+p.sd*normal(r)},
+    lognormal:{label:"Lognormal (right-skewed)",params:[["median",500],["spread σ",0.6]],draw:(r,p)=>p.median*Math.exp(p["spread σ"]*normal(r))},
+    exponential:{label:"Exponential",params:[["mean",10]],draw:(r,p)=>-p.mean*Math.log(1-r())},
+    uniform:{label:"Uniform",params:[["min",0],["max",100]],draw:(r,p)=>p.min+(p.max-p.min)*r()},
+    bimodal:{label:"Two humps (mixture)",params:[["mean 1",30],["mean 2",70],["sd",8],["share of hump 1",0.5]],draw:(r,p)=>(r()<p["share of hump 1"]?p["mean 1"]:p["mean 2"])+p.sd*normal(r)},
+    poisson:{label:"Poisson (counts)",params:[["mean λ",4]],draw:(r,p)=>{const L=Math.exp(-p["mean λ"]);let k=0,q=1;do{k++;q*=r();}while(q>L&&k<1000);return k-1;}},
+    binomial:{label:"Binomial (successes in n)",params:[["n trials",20],["p",0.3]],draw:(r,p)=>{let k=0;const n=Math.min(1000,Math.max(1,Math.round(p["n trials"])));for(let i=0;i<n;i++)if(r()<p.p)k++;return k;}}
+  };
+  function generate(kind,params,n,seed){const g=GEN[kind];const r=rng(seed||1);const out=[];n=Math.max(1,Math.min(MAX_ROWS,Math.round(n)));for(let i=0;i<n;i++)out.push(g.draw(r,params));return out;}
+  /* UI: a tabbed sandbox panel. levels = {controls:fn(el), generate:fn(el), own:fn(el)} — each optional */
+  function panel(root,title,levels,intro){
+    const box=el("div",{class:"sandbox"});
+    const head=el("div",{class:"sb-head"});head.appendChild(text("span","Sandbox · "+title,"eyebrow"));
+    const tabs=el("div",{class:"seg sb-tabs",role:"tablist","aria-label":"Sandbox mode"});
+    head.appendChild(tabs);box.appendChild(head);
+    if(intro)box.appendChild(text("p",intro,"note"));
+    const body=el("div",{class:"sb-body"});box.appendChild(body);
+    const defs=[["controls","Real data"],["generate","Generate"],["own","Your data"]].filter(([k])=>levels[k]);
+    const panes={};
+    defs.forEach(([k,lab],i)=>{const b=el("button",{type:"button",role:"tab","aria-pressed":i===0?"true":"false"});b.textContent=lab;tabs.appendChild(b);
+      const p=el("div",{class:"sb-pane"});p.hidden=i!==0;body.appendChild(p);panes[k]={b,p,built:false};
+      b.addEventListener("click",()=>{defs.forEach(([kk])=>{panes[kk].p.hidden=kk!==k;panes[kk].b.setAttribute("aria-pressed",kk===k);});if(!panes[k].built){panes[k].built=true;levels[k](p);}used();});});
+    if(defs.length){const k=defs[0][0];panes[k].built=true;levels[k](panes[k].p);}
+    root.appendChild(box);return box;
+  }
+  /* generator form: returns {el, get()} */
+  function genForm(kinds,defaults){
+    kinds=kinds||Object.keys(GEN);defaults=defaults||{};
+    const wrap=el("div",{class:"ctrl"});
+    const sel=el("select",{"aria-label":"Shape"});kinds.forEach(k=>{const o=el("option",{value:k});o.textContent=GEN[k].label;sel.appendChild(o);});
+    if(defaults.kind)sel.value=defaults.kind;
+    const params=el("div",{class:"sb-params"});
+    const nIn=el("input",{type:"number",min:"1",max:String(MAX_ROWS),step:"1",value:String(defaults.n||200),"aria-label":"How many values"});
+    const seedIn=el("input",{type:"number",min:"1",max:"999999",step:"1",value:String(defaults.seed||1),"aria-label":"Random seed"});
+    function drawParams(){params.innerHTML="";GEN[sel.value].params.forEach(([name,def])=>{const lab=el("label");lab.appendChild(text("span",name));const i=el("input",{type:"number",step:"any",value:String((defaults.params&&defaults.params[name]!=null)?defaults.params[name]:def)});i.dataset.p=name;lab.appendChild(i);params.appendChild(lab);});}
+    sel.addEventListener("change",drawParams);drawParams();
+    const row=el("div",{class:"sb-params"});
+    const l1=el("label");l1.appendChild(text("span","Shape"));l1.appendChild(sel);
+    const l2=el("label");l2.appendChild(text("span","How many values (n)"));l2.appendChild(nIn);
+    const l3=el("label");l3.appendChild(text("span","Seed"));l3.appendChild(seedIn);
+    row.append(l1,l2,l3);wrap.append(row,params);
+    return{el:wrap,get(){const p={};params.querySelectorAll("input").forEach(i=>{const v=parseFloat(i.value);p[i.dataset.p]=Number.isFinite(v)?v:0;});return{kind:sel.value,params:p,n:Math.max(1,Math.min(MAX_ROWS,parseInt(nIn.value)||1)),seed:Math.max(1,parseInt(seedIn.value)||1)};},
+      values(){const g=this.get();return generate(g.kind,g.params,g.n,g.seed);}};
+  }
+  /* your-data form: textarea + file input + column pickers by role.
+     roles: [{key, label, type:"num"|"cat"|"any", optional}]  onData(dataObj, info) where dataObj[key] = array */
+  function dataForm(root,roles,onData,opts){
+    opts=opts||{};
+    const wrap=el("div",{class:"ctrl"});
+    wrap.appendChild(text("p",opts.help||"Paste numbers (one per line, or separated by commas or spaces), or a small table with a header row; or choose a CSV file. Your data stays in this browser: it is not uploaded, saved or shared.","note"));
+    const ta=el("textarea",{rows:"6","aria-label":"Paste your data",spellcheck:"false",placeholder:opts.placeholder||"e.g.\n12\n15\n9\n31\n14"});
+    const file=el("input",{type:"file",accept:".csv,.tsv,.txt,text/csv,text/plain","aria-label":"Choose a CSV file"});
+    const row=el("div",{class:"btnrow"});const go=el("button",{class:"btn small",type:"button"});go.textContent="Use this data";
+    const ex=el("button",{class:"btn ghost small",type:"button"});ex.textContent="Load an example";
+    row.append(go,ex,file);
+    const picks=el("div",{class:"sb-params"});const msg=el("p",{class:"note",role:"status"});
+    wrap.append(ta,row,picks,msg);root.appendChild(wrap);
+    let table=null;
+    function say(s){msg.textContent=s;}
+    function build(){
+      picks.innerHTML="";const sels={};
+      if(!table||!table.rows.length){say("No rows found.");return;}
+      if(roles.length>1||table.header.length>1){
+        roles.forEach((ro,ri)=>{const lab=el("label");lab.appendChild(text("span",ro.label+(ro.optional?" (optional)":"")));const s=el("select");
+          if(ro.optional){const o=el("option",{value:"-1"});o.textContent="none";s.appendChild(o);}
+          table.header.forEach((h,i)=>{const o=el("option",{value:String(i)});o.textContent=h;s.appendChild(o);});
+          let guess=ri<table.header.length?ri:0;if(ro.type==="num"){const ni=table.header.findIndex((h,i)=>isNumericCol(table,i)&&!Object.values(sels).some(x=>+x.value===i));if(ni>=0)guess=ni;}
+          if(ro.type==="cat"){const ci=table.header.findIndex((h,i)=>!isNumericCol(table,i));if(ci>=0)guess=ci;}
+          s.value=ro.optional&&table.header.length<=ri?"-1":String(guess);s.addEventListener("change",emit);lab.appendChild(s);picks.appendChild(lab);sels[ro.key]=s;});
+      } else roles.forEach(ro=>{sels[ro.key]={value:"0"};});
+      table._sels=sels;emit();
+    }
+    function emit(){
+      if(!table)return;const sels=table._sels;const out={};let n=table.rows.length,dropped=0;
+      const keep=table.rows.map(()=>true);
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0){out[ro.key]=null;return;}const col=column(table,v);
+        if(ro.type==="num")col.forEach((x,i)=>{if(!Number.isFinite(num(x)))keep[i]=false;});
+        else col.forEach((x,i)=>{if(x==="")keep[i]=false;});});
+      roles.forEach(ro=>{const v=+sels[ro.key].value;if(v<0)return;const col=column(table,v).filter((_,i)=>keep[i]);out[ro.key]=ro.type==="num"?col.map(num):col.map(cleanLabel);});
+      dropped=keep.filter(k=>!k).length;
+      const used_n=n-dropped;
+      if(used_n<(opts.minRows||2)){say(`Only ${used_n} usable row(s); at least ${opts.minRows||2} are needed.`);return;}
+      say(`Read ${ind(n)} row(s); using ${ind(used_n)}`+(dropped?`, skipped ${ind(dropped)} blank or non-numeric.`:".")+(table.note?" "+table.note:""));
+      used();onData(out,{n:used_n,dropped});
+    }
+    go.addEventListener("click",()=>{table=parse(ta.value);build();});
+    ex.addEventListener("click",()=>{ta.value=opts.example||"12\n15\n9\n31\n14\n18\n11\n16\n90\n13";table=parse(ta.value);build();});
+    file.addEventListener("change",()=>{readFile(file.files[0],(txt,err)=>{if(err){say(err);return;}ta.value=txt.length>20000?txt.slice(0,20000)+"\n…":txt;table=parse(txt);build();});});
+    return{set(str){ta.value=str;table=parse(str);build();}};
+  }
+  /* safe table renderer for user data (textContent only) */
+  function table(headers,rows){const w=el("div",{class:"tbl"});const t=document.createElement("table");const th=document.createElement("thead");const tr=document.createElement("tr");headers.forEach(h=>tr.appendChild(text("th",h)));th.appendChild(tr);t.appendChild(th);const tb=document.createElement("tbody");rows.forEach(r=>{const rr=document.createElement("tr");r.forEach((c,i)=>rr.appendChild(text("td",c,i?"num":"")));tb.appendChild(rr);});t.appendChild(tb);w.appendChild(t);return w;}
+  /* common statistics used by many sandboxes */
+  const st={
+    sorted:a=>[...a].sort((x,y)=>x-y),
+    mean:a=>a.reduce((s,x)=>s+x,0)/a.length,
+    q:(a,p)=>{const s=[...a].sort((x,y)=>x-y);const h=(s.length-1)*p;const lo=Math.floor(h);return s[lo]+(s[Math.min(lo+1,s.length-1)]-s[lo])*(h-lo);},
+    sd:a=>{const m=a.reduce((s,x)=>s+x,0)/a.length;return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));},
+    corr:(x,y)=>{const n=x.length,mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}return sxy/Math.sqrt(sxx*syy);}
+  };
+  /* a reusable histogram drawer (SVG) for any numeric array */
+  function histogram(container,values,o){
+    o=o||{};container.innerHTML="";if(!values.length)return;
+    const W=o.w||360,H=o.h||200,m={l:36,r:10,t:14,b:30};const s=st.sorted(values);let lo=o.lo!=null?o.lo:s[0],hi=o.hi!=null?o.hi:s[s.length-1];if(hi===lo){hi=lo+1;}
+    const k=o.bins||Math.max(5,Math.min(60,Math.ceil(Math.log2(values.length)+1)));const bw=(hi-lo)/k;const c=new Array(k).fill(0);
+    values.forEach(v=>{let i=Math.floor((v-lo)/bw);if(i>=k)i=k-1;if(i<0)i=0;c[i]++;});const mx=Math.max(...c);
+    const X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r),Y=v=>H-m.b-v/mx*(H-m.t-m.b);
+    const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label||"Histogram"});
+    svg.appendChild(sv("line",{x1:m.l,x2:W-m.r,y1:Y(0),y2:Y(0),style:"stroke:var(--line)"}));
+    c.forEach((v,i)=>svg.appendChild(sv("rect",{x:X(lo+i*bw)+0.5,y:Y(v),width:Math.max(0.5,X(lo+(i+1)*bw)-X(lo+i*bw)-1),height:Y(0)-Y(v),style:"fill:var(--accent)"})));
+    [lo,(lo+hi)/2,hi].forEach((v,i)=>{const t=sv("text",{x:X(v),y:H-10,"font-size":10,"text-anchor":i===0?"start":i===2?"end":"middle"});t.textContent=Math.abs(v)>=1000?ind(Math.round(v)):(+v.toFixed(2)).toString();svg.appendChild(t);});
+    (o.marks||[]).forEach(([v,lab,col],i)=>{if(v<lo||v>hi)return;svg.appendChild(sv("line",{x1:X(v),x2:X(v),y1:m.t,y2:Y(0),style:`stroke:${col||"var(--gold)"};stroke-width:2;stroke-dasharray:4 3`}));const t=sv("text",{x:X(v)+3,y:m.t+10+12*i,"font-size":10});t.textContent=lab;svg.appendChild(t);});
+    container.appendChild(svg);
+  }
+  return{parse,num,numeric,column,isNumericCol,readFile,GEN,generate,panel,genForm,dataForm,table,text,histogram,st,used,MAX_ROWS};
+})();
 
 /* ---------- helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
@@ -938,7 +1387,7 @@ try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.pars
 const save=()=>{try{S.summary={title:COURSE.title,xp:S.xp,cleared:L.filter(levelDone).length,total:L.length,badges:S.badges.length,board:S.board?S.board.score:null,boardTotal:BOARD.length};localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
 
 const RANKS=COURSE.ranks;
-const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
+const BADGES=[...L.map((lv,i)=>[lv.id,lv.badge,"Cleared file "+(i+1)]),["streak5","Hot Hand","Five first-try answers in a row"],["clean","Clean Sheet","A whole file, first try, no hints"],...(COURSE.badges||[]),["explorer","Sandbox Explorer","Opened a sandbox and played with your own settings or data"],["board",COURSE.topRank,"Passed the board meeting ("+COURSE.boardPass+" of "+BOARD.length+")"]];
 
 function toast(html){const t=el("div",{class:"toast"},html);$("#toasts").appendChild(t);setTimeout(()=>t.remove(),3200);}
 function addXP(n,why){if(n<=0)return;S.xp+=n;save();toast(`<b>+${n} XP</b> · ${why}`);renderStrip();}
