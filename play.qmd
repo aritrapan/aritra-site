@@ -1,7 +1,7 @@
 ---
 title: "Learn by playing"
 subtitle: "Free courses you play: a story, the theory, a lab that moves, and challenges that earn XP."
-description: "Free gamified courses in statistics and data science by Aritra Pan. Every module is a fictional company with a real problem, live simulations, challenges, XP and badges."
+description: "Free gamified courses in statistics, data science and SQL by Aritra Pan. Every module is a fictional company with a real problem, live simulations, challenges, XP and badges."
 image: play/thumbs/statistics.svg
 page-layout: full
 toc: false
@@ -35,6 +35,15 @@ toc: false
       <span class="pc-go">Start playing →</span>
     </div>
   </a>
+  <a class="play-card" href="play/sql/">
+    <img src="play/thumbs/sql.svg" alt="Two tables whose matching rows are joined, with a SQL query above them">
+    <div class="pc-body">
+      <h3>SQL, played</h3>
+      <p>From your first SELECT to joins, subqueries, window functions, database design, indexes, transactions and data warehouses, with a real SQL engine running in your browser.</p>
+      <div class="pc-meta"><span>9 modules</span><span>72 case files</span><span>beginner to interview level</span><span>MySQL notes</span></div>
+      <span class="pc-go">Start playing →</span>
+    </div>
+  </a>
   <div class="play-card soon" aria-disabled="true">
     <img src="play/thumbs/ai.svg" alt="A search tree expanding toward a goal">
     <div class="pc-body">
@@ -46,7 +55,7 @@ toc: false
 </div>
 
 <div class="play-how">
-  <div><b>One story per module</b>A company or village with a problem; the statistics is what solves it.</div>
+  <div><b>One story per module</b>A company, library or village with a problem; the method is what solves it.</div>
   <div><b>Theory, briefly</b>Short explanations with the equations and pointers to standard textbooks.</div>
   <div><b>Labs that move</b>Simulations that run unit by unit, with play, speed and reset.</div>
   <div><b>XP and badges</b>First-try answers earn full XP; five cleared files unlock the board meeting.</div>

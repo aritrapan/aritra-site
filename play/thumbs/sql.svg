@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="SQL, played: two tables whose matching rows are joined, with a query above them">
+<rect width="800" height="450" fill="#13233A"/>
+<g font-family="IBM Plex Mono, Menlo, monospace" font-size="17">
+<text x="60" y="62" fill="#73AAE9">SELECT</text><text x="138" y="62" fill="#E3E9F1">c.name, SUM(o.amount)</text>
+<text x="60" y="88" fill="#73AAE9">FROM</text><text x="118" y="88" fill="#E3E9F1">customers c</text><text x="250" y="88" fill="#73AAE9">JOIN</text><text x="306" y="88" fill="#E3E9F1">orders o</text><text x="404" y="88" fill="#73AAE9">ON</text><text x="436" y="88" fill="#E3E9F1">o.cust_id = c.cust_id</text>
+<text x="60" y="114" fill="#73AAE9">GROUP BY</text><text x="158" y="114" fill="#E3E9F1">c.name;</text>
+</g>
+<g>
+<rect x="70" y="150" width="230" height="34" rx="4" fill="#1F5FA8"/>
+<rect x="70" y="190" width="230" height="30" rx="4" fill="#1C3150"/><rect x="70" y="226" width="230" height="30" rx="4" fill="#E3AA3E"/>
+<rect x="70" y="262" width="230" height="30" rx="4" fill="#1C3150"/><rect x="70" y="298" width="230" height="30" rx="4" fill="#E3AA3E"/>
+<rect x="500" y="150" width="230" height="34" rx="4" fill="#1F5FA8"/>
+<rect x="500" y="190" width="230" height="30" rx="4" fill="#E3AA3E"/><rect x="500" y="226" width="230" height="30" rx="4" fill="#1C3150"/>
+<rect x="500" y="262" width="230" height="30" rx="4" fill="#E3AA3E"/><rect x="500" y="298" width="230" height="30" rx="4" fill="#E3AA3E"/>
+<path d="M300 241 C400 241 400 205 500 205" stroke="#52C78E" stroke-width="4" fill="none"/>
+<path d="M300 313 C400 313 400 277 500 277" stroke="#52C78E" stroke-width="4" fill="none"/>
+<path d="M300 313 C400 313 400 313 500 313" stroke="#52C78E" stroke-width="4" fill="none"/>
+<g font-family="IBM Plex Mono, Menlo, monospace" font-size="15" fill="#E3E9F1"><text x="84" y="173">customers</text><text x="514" y="173">orders</text></g>
+</g>
+<text x="70" y="408" font-family="IBM Plex Sans Condensed, Arial Narrow, Arial, sans-serif" font-weight="700" font-size="40" fill="#E3E9F1">SQL, played</text>
+<text x="730" y="408" text-anchor="end" font-family="IBM Plex Mono, Menlo, monospace" font-size="18" fill="#97A7BB">9 modules · a real SQL engine</text>
+</svg>
