@@ -1557,6 +1557,9 @@ function level(lv){
 function updProg(lv){const n=lv.qs.filter((q,i)=>S.ans[lv.id]&&S.ans[lv.id][i]&&S.ans[lv.id][i].done).length;const e=$("#qprog");if(e)e.textContent=`${n} of ${lv.qs.length} solved`;}
 
 function parseNum(s){if(s==null)return NaN;s=String(s).trim().replace(/[₹,\s]/g,"");let isPct=false;if(s.endsWith("%")){isPct=true;s=s.slice(0,-1);}let v=parseFloat(s);if(isPct)v/=100;return v;}
+function needDec(q){return Math.max(0,Math.ceil(Math.log10(0.5/q.tol)-1e-9));}
+function tooRounded(raw,v,q){if(Number.isNaN(v)||!(q.tol>0))return false;let t=String(raw).trim().replace(/[₹,\s]/g,"");const pct=t.endsWith("%");if(pct)t=t.slice(0,-1);const m=t.match(/\.(\d+)$/);const d=m?m[1].length:0;let a=q.a,w=v;if(pct||(q.a<1&&v>1&&!pct)){a=q.a*100;w=pct?v*100:v;}const unit=Math.pow(10,-d),tolS=(a===q.a)?q.tol:q.tol*100;if(unit<=tolS*2)return false;return Math.abs(w-a)<=unit/2+1e-9;}
+function roundMsg(q){const n=needDec(q);return `Your number is the right value rounded too far. Give it to ${n} decimal place${n===1?"":"s"}${q.a<1&&n>2?` (or as a percentage to ${n-2} decimal place${n-2===1?"":"s"})`:""}.`;}
 function numOK(v,q){if(Number.isNaN(v))return false;if(Math.abs(v-q.a)<=q.tol)return true;if(q.a<1&&v>1&&Math.abs(v/100-q.a)<=q.tol)return true;return false;}
 
 function question(lv,q,i){
@@ -1594,7 +1597,7 @@ function question(lv,q,i){
     const inp=el("input",{type:"text",inputmode:"decimal",id:`in-${lv.id}-${i}`,"aria-label":"Your answer",placeholder:q.ph||"e.g. 0.123"});
     const go=el("button",{class:"btn small",type:"button"},"Check");
     if(st.done){inp.disabled=true;go.disabled=true;inp.value=String(+q.a.toFixed(4));}
-    const check=()=>{if(st.done)return;const v=parseNum(inp.value);if(Number.isNaN(v)){fb.innerHTML=`<div class="fb no"><b>Enter a number.</b><span>Decimals (0.25) and percentages (25%) both work.</span></div>`;return;}const c=numOK(v,q);if(c){inp.disabled=true;go.disabled=true;}solve(c);};
+    const check=()=>{if(st.done)return;const v=parseNum(inp.value);if(Number.isNaN(v)){fb.innerHTML=`<div class="fb no"><b>Enter a number.</b><span>Decimals (0.25) and percentages (25%) both work.</span></div>`;return;}const c=numOK(v,q);if(!c&&tooRounded(inp.value,v,q)){fb.innerHTML=`<div class="fb no"><b>Close.</b><span>${roundMsg(q)} This try is not counted.</span></div>`;return;}if(c){inp.disabled=true;go.disabled=true;}solve(c);};
     go.addEventListener("click",check);inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
     row.append(inp,go);box.appendChild(row);
   }
@@ -1634,7 +1637,7 @@ function board(){
     if(q.t==="mcq"){const o=el("div",{class:"opts"});const order=shuffled(q.opts.length,run.i*7+3);
       order.forEach(k=>{const b=el("button",{class:"opt",type:"button"},q.opts[k]);b.addEventListener("click",()=>{o.querySelectorAll("button").forEach((x,ix)=>{x.disabled=true;if(order[ix]===q.a)x.classList.add("right");});if(k!==q.a)b.classList.add("wrong");done(k===q.a);});o.appendChild(b);});p.appendChild(o);}
     else{const r=el("div",{class:"numrow"});const inp=el("input",{type:"text",inputmode:"decimal",id:"board-in-"+run.i,"aria-label":"Your answer",placeholder:"e.g. 0.5"});const g=el("button",{class:"btn small",type:"button"},"Submit");
-      const sub=()=>{const v=parseNum(inp.value);if(Number.isNaN(v))return;inp.disabled=true;g.disabled=true;done(numOK(v,q));};g.addEventListener("click",sub);inp.addEventListener("keydown",e=>{if(e.key==="Enter")sub();});r.append(inp,g);p.appendChild(r);}
+      const sub=()=>{const v=parseNum(inp.value);if(Number.isNaN(v))return;if(!numOK(v,q)&&tooRounded(inp.value,v,q)){fb.innerHTML=`<div class="fb no"><b>Close.</b><span>${roundMsg(q)} Not submitted yet.</span></div>`;return;}inp.disabled=true;g.disabled=true;done(numOK(v,q));};g.addEventListener("click",sub);inp.addEventListener("keydown",e=>{if(e.key==="Enter")sub();});r.append(inp,g);p.appendChild(r);}
     p.appendChild(fb);p.appendChild(next);
   };
   show();window.scrollTo(0,0);
