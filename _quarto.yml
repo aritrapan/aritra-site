@@ -59,6 +59,7 @@ format:
     theme: [flatly, styles.scss]
     toc: false
     include-in-header: schema.html
+    include-after-body: counter.html
     link-external-newwindow: true
     smooth-scroll: true
     lang: en
