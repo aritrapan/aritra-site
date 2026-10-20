@@ -48,8 +48,8 @@ website:
         href: mailto:aritra.pan@mse.ac.in
         aria-label: Email
   page-footer:
-    # left: "© 2022–2026 Aritra Pan"
-    left: '© 2022–2026 Aritra Pan <span id="visit-count"></span>'
+    left: "© 2022–2026 Aritra Pan"
+    # left: '© 2022–2026 Aritra Pan <span id="visit-count"></span>'
     center: "[ORCID 0000-0001-5740-0804](https://orcid.org/0000-0001-5740-0804) · [Scopus 57214111533](https://www.scopus.com/authid/detail.uri?authorId=57214111533)"
     right: "Built with [Quarto](https://quarto.org)"
   page-navigation: false
