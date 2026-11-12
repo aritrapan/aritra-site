@@ -1,23 +1,52 @@
 ---
 title: "Work with me"
 pagetitle: "Research internships and collaboration"
-description: "Research internship positions, desired skills, and collaboration opportunities with Aritra Pan at the Madras School of Economics."
+description: "Remote research internships for Post-Graduate students with Aritra Pan on ethical AI and AI governance: requirements, terms and how to apply."
 ---
 
 ## Research internships
 
-I take a small number of research interns each year, usually undergraduate or postgraduate students in computer science, data science, economics or management, working remotely or at MSE, Chennai.
+I take a small number of postgraduate research interns each year. Internships are remote, unpaid and run for at least three months. Please read this page before writing to me.
 
-**Applied machine learning in business and social sciences**
+### Research area
 
-- Large language models and transformer-based text analysis in business and social sciences domains: working knowledge of Python and text mining.
-- Network modelling in finance and the social sciences: working knowledge of R or Python and the theory of network models.
+My current work is on ethical AI and AI governance: the regulatory, organisational and behavioural side of AI systems, studied with empirical and computational methods. I am not recruiting for statistical machine learning or predictive modelling at present: the work involves no model training, feature engineering or architecture tuning.
 
-**Applied tools**
+### What you need to bring
 
-- Interactive research and teaching applications in R Shiny or Python: experience building and deploying small web applications.
+I can guide the research but you should already be comfortable with:
 
-To apply, email [aritra.pan@mse.ac.in](mailto:aritra.pan@mse.ac.in) with your CV and a short note on which of the above you want to work on and why.
+- web scraping and API-based data collection at scale, and structuring messy data;
+- Python, including running open-weight large language models locally (Ollama, Hugging Face, vLLM or similar);
+- turning computational output into business, policy or ethical insight.
+
+Students of MBA (technology or analytics), M.Tech. (data science or AI) and M.Sc. (data science) programmes usually fit best.
+
+### The work
+
+Research is broader than coding. Expect literature review, data cleaning, validation of results and some academic writing.
+
+### Terms
+
+- Remote, with a minimum commitment of three months.
+- Work runs on weekly milestones.
+- Code and data pipelines must be documented and reproducible. Fabricated data, unverified AI-generated output or plagiarism are not allowed.
+- Data, code and drafts from the project are confidential and stay with the project. You may list the project title and a short summary on your CV.
+- Unpaid: I have no grant funding for stipends at present. If that changes, I will tell you before the internship starts.
+
+### What you get
+
+Regular reviews and feedback on your work, experience on a live research project aimed at journal publication, and a letter from me describing your contribution on completion. A substantial contribution to a manuscript earns co-authorship; smaller contributions are acknowledged.
+
+### How to apply
+
+Email [aritra.pan@mse.ac.in](mailto:aritra.pan@mse.ac.in) with:
+
+- your CV;
+- a link to code you have written (GitHub or a sample showing scraping or LLM work);
+- the hours per week you can commit and your earliest start date.
+
+Applications without a code sample are not considered.
 
 ## Collaboration
 
