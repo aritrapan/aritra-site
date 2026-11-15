@@ -795,7 +795,7 @@ window.addEventListener("hashchange",()=>{ const id=location.hash.slice(1); if(N
 
 /* ---------- start ---------- */
 const startId = N.has(location.hash.slice(1)) ? location.hash.slice(1) : "me";
-if(startId!=="me"){ ancestors(N.get(startId)).forEach(expand); S.selected=startId; }
+if(startId!=="me"){ S.history.push(snap()); ancestors(N.get(startId)).forEach(expand); expand(N.get(startId)); S.selected=startId; }
 if(window.innerWidth<520 && startId==="me"){ /* phones open on the network; the list is one tap away */ }
 update(true);
 </script>
