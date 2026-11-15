@@ -656,13 +656,37 @@ function update(refit){
     lines.forEach((ln,i)=> t.append("tspan").attr("x",0).attr("y", r+14+i*12.5).text(ln));
   });
   linkSel.classed("dim", d => { const s=N.get(d.source.id||d.source), t=N.get(d.target.id||d.target); return dimmed(s)||dimmed(t); });
+  const t0 = performance.now(); let swinging = false;
+  if(!REDUCE && SWING.amp) tv.forEach(n => { if(n.depth>=2 && !prevTv.has(n.id)){ n.sw = t0 + SWING.stagger*N.get(n.p).children.indexOf(n); swinging = true; } });
+  prevTv = tvSet; drawOrder = nodes; ghostNow = ghostSet;
+  nodes.forEach(n => { if(n._dx===undefined){ n._dx=n.x; n._dy=n.y; n._ang=0; } });
   sim.nodes(nodes); sim.force("link").links(links); sim.alpha(0.9).restart();
+  if(swinging){ if(swingTimer) swingTimer.stop(); swingTimer = d3.timer(el => { ticked(); if(el > SWING.life + 800){ swingTimer.stop(); swingTimer=null; } }); }
   renderPanel(); renderCrumbs();
   if(refit){ fitTimers.forEach(clearTimeout); fitTimers=[setTimeout(()=>fit(500),450), setTimeout(()=>fit(600),1400)]; }
 }
+/* One-time pendulum settle: when a section opens, its items swing about it and come to rest.
+   SWING.amp = first swing in radians, period and decay in milliseconds. Set amp to 0 to switch it off. */
+const SWING = { amp:0.42, period:750, decay:500, life:2400, stagger:30 };
+const REDUCE = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+let prevTv = new Set(), drawOrder = [], ghostNow = new Set(), swingTimer = null;
+function swingAngle(n, now){
+  if(!n.sw) return 0;
+  const t = now - n.sw;
+  if(t > SWING.life){ n.sw = 0; return 0; }
+  if(t <= 0) return SWING.amp;
+  return SWING.amp * Math.exp(-t/SWING.decay) * Math.cos(2*Math.PI*t/SWING.period);
+}
 function ticked(){
-  linkSel.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y).attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
-  nodeSel.attr("transform",d=>`translate(${d.x},${d.y})`);
+  const now = performance.now();
+  drawOrder.forEach(n => {
+    const par = n.p && !ghostNow.has(n.id) ? N.get(n.p) : null;
+    if(!par || par._dx===undefined){ n._dx=n.x; n._dy=n.y; n._ang=0; return; }
+    const a = par._ang + swingAngle(n, now), c=Math.cos(a), si=Math.sin(a), ox=n.x-par.x, oy=n.y-par.y;
+    n._dx = par._dx + ox*c - oy*si; n._dy = par._dy + ox*si + oy*c; n._ang = a;
+  });
+  linkSel.attr("x1",d=>d.source._dx).attr("y1",d=>d.source._dy).attr("x2",d=>d.target._dx).attr("y2",d=>d.target._dy);
+  nodeSel.attr("transform",d=>`translate(${d._dx},${d._dy})`);
 }
 function fit(dur){
   if(!HAS_D3) return;
