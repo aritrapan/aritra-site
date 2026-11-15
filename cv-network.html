@@ -37,6 +37,7 @@ h1{font:600 21px/1.2 Georgia,"Times New Roman",serif;margin:0}
 .btn{border:1px solid var(--line);background:none;color:var(--ink);padding:6px 10px;border-radius:8px;font:inherit;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
 .btn[aria-pressed="true"]{background:var(--chip);border-color:var(--accent)}
 .btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default;border-color:var(--line)}
 .lbl{font-size:12px;color:var(--muted)}
 main{flex:1;display:flex;min-height:0}
 #graphwrap{flex:1;position:relative;min-width:0;min-height:0}
@@ -552,23 +553,29 @@ function expand(n){
 function treeVisible(){
   const out=[]; (function walk(n){ out.push(n); if(S.expanded.has(n.id)) n.children.forEach(walk); })(N.get("me")); return out;
 }
-function select(id, push=true){
-  if(push && S.selected && S.selected!==id){ S.history.push(S.selected); if(S.history.length>60) S.history.shift(); }
+function snap(){ return { sel:S.selected, exp:[...S.expanded].sort().join("|") }; }
+function remember(before){
+  const now=snap();
+  if(before.sel!==now.sel || before.exp!==now.exp){ S.history.push(before); if(S.history.length>60) S.history.shift(); }
+}
+function select(id){
   S.selected=id;
   try{ history.replaceState(null,"","#"+id); }catch(e){}
 }
 function navigate(id, push=true){
   const n=N.get(id); if(!n) return;
+  const before=snap();
   ancestors(n).forEach(expand); expand(n);
-  select(id,push); update(true);
+  select(id); if(push) remember(before); update(true);
 }
 function clickNode(n){
   const vis = new Set(treeVisible().map(x=>x.id));
   if(!vis.has(n.id)){ navigate(n.id); return; }
+  const before=snap();
   if(n.children.length){
     if(S.expanded.has(n.id) && S.selected===n.id && n.id!=="me") collapse(n); else expand(n);
   }
-  select(n.id); update(true);
+  select(n.id); remember(before); update(true);
 }
 
 /* ---------- graph ---------- */
@@ -663,6 +670,7 @@ function update(refit){
   sim.nodes(nodes); sim.force("link").links(links); sim.alpha(0.9).restart();
   if(swinging){ if(swingTimer) swingTimer.stop(); swingTimer = d3.timer(el => { ticked(); if(el > SWING.life + 800){ swingTimer.stop(); swingTimer=null; } }); }
   renderPanel(); renderCrumbs();
+  document.getElementById("bBack").disabled = !S.history.length;
   if(refit){ fitTimers.forEach(clearTimeout); fitTimers=[setTimeout(()=>fit(500),450), setTimeout(()=>fit(600),1400)]; }
 }
 /* One-time pendulum settle: when a section opens, its items swing about it and come to rest.
@@ -755,8 +763,8 @@ const tConn=document.getElementById("tConn"), tMulti=document.getElementById("tM
 tConn.onclick=()=>{ S.conn=!S.conn; tConn.setAttribute("aria-pressed",S.conn); update(true); };
 tMulti.onclick=()=>{ S.multi=!S.multi; tMulti.setAttribute("aria-pressed",S.multi); };
 document.getElementById("bFit").onclick=()=>fit(500);
-document.getElementById("bBack").onclick=()=>{ const id=S.history.pop(); if(id) navigate(id,false); };
-document.getElementById("bReset").onclick=()=>{ S.expanded=new Set(["me"]); S.history=[]; S.query=""; document.getElementById("search").value=""; select("me",false); update(true); };
+document.getElementById("bBack").onclick=()=>{ const v=S.history.pop(); if(!v) return; S.expanded=new Set(v.exp.split("|")); select(v.sel); update(true); };
+document.getElementById("bReset").onclick=()=>{ S.expanded=new Set(["me"]); S.history=[]; S.query=""; document.getElementById("search").value=""; select("me"); update(true); };
 if(CONFIG.pdfUrl){ const a=document.getElementById("bPdf"); a.href=CONFIG.pdfUrl; a.hidden=false; a.setAttribute("download",""); }
 
 const sInput=document.getElementById("search"), sRes=document.getElementById("results");
