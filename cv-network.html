@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dr. Aritra Pan | CV Network</title>
+<meta name="description" content="An interactive network view of the curriculum vitae of Dr. Aritra Pan, Associate Professor of Data Science, Madras School of Economics.">
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#fffdf9; --ink:#1d2430; --muted:#5d6675; --line:#d9d4c8;
+  --accent:#1f4e79; --chip:#efebe2; --shadow:0 2px 14px rgba(20,30,50,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#12161d; --panel:#1a2029; --ink:#e8e6e0; --muted:#9aa3b2; --line:#2e3644;
+    --accent:#8fb8de; --chip:#252d39; --shadow:0 2px 14px rgba(0,0,0,.45); }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column}
+header{padding:10px 16px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+.titlerow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+h1{font:600 21px/1.2 Georgia,"Times New Roman",serif;margin:0}
+.sub{color:var(--accent);font-size:13.5px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.searchwrap{position:relative;flex:1 1 190px;max-width:320px}
+#search{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+#results{position:absolute;left:0;right:0;top:100%;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);margin-top:4px;max-height:320px;overflow:auto;display:none}
+#results button{display:block;width:100%;text-align:left;padding:7px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;cursor:pointer}
+#results button:last-child{border-bottom:0}
+#results button:hover,#results button:focus{background:var(--chip)}
+#results small{color:var(--muted);display:block}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:none;color:var(--ink);padding:6px 10px;font:inherit;font-size:13px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.btn{border:1px solid var(--line);background:none;color:var(--ink);padding:6px 10px;border-radius:8px;font:inherit;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn[aria-pressed="true"]{background:var(--chip);border-color:var(--accent)}
+.btn:hover{border-color:var(--accent)}
+.lbl{font-size:12px;color:var(--muted)}
+main{flex:1;display:flex;min-height:0}
+#graphwrap{flex:1;position:relative;min-width:0;min-height:0}
+svg#graph{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#crumbs{position:absolute;left:12px;top:10px;right:12px;font-size:12.5px;color:var(--muted);pointer-events:none}
+#crumbs button{pointer-events:auto;border:0;background:none;color:var(--accent);font:inherit;cursor:pointer;padding:0}
+#hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 9px}
+#panel{width:370px;max-width:42vw;border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:16px 18px 24px}
+#panel .tag{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#panel h2{font:600 19px/1.25 Georgia,"Times New Roman",serif;margin:4px 0 4px}
+#panel .meta{color:var(--accent);font-size:13.5px;margin-bottom:8px}
+#panel p{margin:8px 0}
+#panel ul{margin:8px 0;padding-left:18px}
+#panel li{margin:4px 0}
+#panel h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:4px 10px 4px 8px;font:inherit;font-size:12.5px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--accent)}
+.chip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.node{cursor:pointer}
+.node text{fill:var(--ink);font-size:11px;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}
+.node.hub text.lab,.node.root text.lab{font-size:12.5px;font-weight:600}
+.node text.in{fill:#fff;stroke:none;font-weight:700;font-size:10.5px}
+.node.root text.in{font-size:15px}
+.node .sel{fill:none;stroke:var(--ink);stroke-width:2;opacity:0}
+.node.selected .sel{opacity:.9}
+.node.match circle.body{stroke:#e0a800;stroke-width:4}
+.node.dim{opacity:.3}
+.node.ghost circle.body{stroke-dasharray:3 3}
+.node:focus{outline:none}
+.node:focus-visible .sel{opacity:.9;stroke:var(--accent)}
+.link{stroke-opacity:.45;stroke-width:1.4}
+.link.cross{stroke:var(--muted);stroke-dasharray:4 4;stroke-opacity:.6;stroke-width:1.1}
+.link.co{stroke-opacity:.9}
+.link.dim{stroke-opacity:.12}
+#listview{display:none;flex:1;overflow:auto;padding:16px 20px 40px;max-width:900px;margin:0 auto;width:100%}
+#listview details{border-left:3px solid var(--line);padding-left:12px;margin:6px 0}
+#listview summary{cursor:pointer;font-weight:600;padding:3px 0}
+#listview .leaf{margin:8px 0 10px;padding-left:12px;border-left:3px solid var(--line)}
+#listview .leaf b{font-weight:600}
+#listview .meta{color:var(--accent);font-size:13.5px}
+#listview p,#listview ul{margin:4px 0}
+#listview ul{padding-left:18px}
+#listview a,#panel a{color:var(--accent)}
+body.list main #graphwrap,body.list main #panel{display:none}
+body.list #listview{display:block}
+body.list .graphonly{display:none}
+body.nograph #vGraph{display:none}
+@media (max-width:760px){
+  main{flex-direction:column}
+  #panel{width:auto;max-width:none;border-left:0;border-top:1px solid var(--line);padding:12px 14px 18px}
+  h1{font-size:18px}
+  .sub{font-size:12.5px}
+  #hint{display:none}
+  .controls{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .controls>*{flex:0 0 auto}
+  .searchwrap{flex:0 0 170px}
+  .seg button,.btn{white-space:nowrap}
+  #graphwrap{min-height:46vh}
+  #panel{max-height:36vh}
+  #results{position:fixed;left:8px;right:8px;top:auto}
+}
+@media print{
+  header .controls,#graphwrap,#panel{display:none!important}
+  #listview{display:block!important;overflow:visible}
+  body{display:block}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<header>
+  <div class="titlerow">
+    <h1>Dr. Aritra Pan</h1>
+    <span class="sub">Associate Professor of Data Science, Madras School of Economics · CV as a network</span>
+  </div>
+  <div class="controls">
+    <div class="searchwrap">
+      <input id="search" type="search" placeholder="Search the CV (e.g. SQL, IMT, survival)" aria-label="Search the CV" autocomplete="off">
+      <div id="results" role="listbox"></div>
+    </div>
+    <div class="seg" role="group" aria-label="View">
+      <button id="vGraph" aria-pressed="true">Network</button>
+      <button id="vList" aria-pressed="false">List</button>
+    </div>
+    <span class="lbl graphonly">Reading as:</span>
+    <div class="seg graphonly" role="group" aria-label="Audience lens" id="lens">
+      <button data-lens="all" aria-pressed="true">Everyone</button>
+      <button data-lens="hire" aria-pressed="false">Hiring committee</button>
+      <button data-lens="collab" aria-pressed="false">Collaborator</button>
+      <button data-lens="student" aria-pressed="false">Student</button>
+    </div>
+    <button class="btn graphonly" id="tConn" aria-pressed="true" title="Show how the selected item connects to other parts of the CV">Connections</button>
+    <button class="btn graphonly" id="tMulti" aria-pressed="false" title="Keep several sections open at once">Keep sections open</button>
+    <button class="btn graphonly" id="bBack" title="Go back to the previous item">Back</button>
+    <button class="btn graphonly" id="bFit" title="Fit the network to the screen">Fit</button>
+    <button class="btn graphonly" id="bReset" title="Close everything and start again">Reset</button>
+    <a class="btn" id="bPdf" hidden>Download PDF</a>
+  </div>
+</header>
+<main>
+  <div id="graphwrap">
+    <svg id="graph" role="application" aria-label="CV network"><g id="vp"><g id="links"></g><g id="nodes"></g></g></svg>
+    <div id="crumbs"></div>
+    <div id="hint">Click a circle to open it. The number inside shows how many items it holds. Drag to move, scroll to zoom.</div>
+  </div>
+  <aside id="panel" aria-live="polite"></aside>
+  <div id="listview"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+/* =====================================================================
+   SETTINGS
+   pdfUrl: path or link to the PDF version of the CV. Leave "" to hide
+   the Download PDF button.
+   ===================================================================== */
+const CONFIG = { pdfUrl: "" };
+
+/* =====================================================================
+   CV CONTENT. Edit here to update the page.
+   Each entry:  id  unique short name
+                p   id of the parent entry (the section it sits inside)
+                l   short label shown on the network
+                f   full title shown in the detail panel (optional)
+                tag small heading above the title (optional)
+                m   one-line summary: role, dates, place (optional)
+                d   paragraphs (optional list)
+                b   bullet points (optional list)
+                u   link, ul link text (optional)
+                r   ids of related entries elsewhere in the CV (optional)
+   Co-author lines are worked out automatically: any two people (ids
+   starting ca_) linked to the same paper (p_) or talk (cf_) get a line.
+   ===================================================================== */
+const CV = [
+/* ---------- centre ---------- */
+{id:"me", l:"Dr. Aritra Pan", tag:"Curriculum vitae",
+ m:"Associate Professor of Data Science, Madras School of Economics",
+ d:[`Applied researcher first. My focus is on leveraging research to solve real-world problems for society, government, and industry, and on teaching that engages minds rather than ticking boxes.`,
+    `Applied researcher and educator with 13+ years across industry, research, and academia (excluding doctoral years), spanning the payment industry, financial markets, corporate strategy, and management consulting. Research interests: computational NLP applied to corporate disclosure and "washing" phenomena (greenwashing, AI-washing), large language models in marketing, predictive modelling in high-frequency trading, and AI in management education.`,
+    `Executive trainer for RBI, GMR and PwC. Certified Microsoft Innovative Educator.`],
+ b:[`Chennai / Kolkata, India`,`aritra.pan360@gmail.com`,`aritra.ai`,`linkedin.com/in/aritrapan`]},
+
+/* ---------- hubs ---------- */
+{id:"appt", p:"me", l:"Academic appointments", d:[`Eight academic appointments since 2008, across Madras School of Economics, IMI Bhubaneswar, IIM Bodh Gaya, IFMR GSB (Krea University), IMT Ghaziabad, IIT Kharagpur and two engineering institutes in Kolkata.`]},
+{id:"ind",  p:"me", l:"Industry experience", d:[`Four years in industry before and between academic roles: management consulting at PwC and payment-industry data engineering for VISA at RS Software.`]},
+{id:"edu",  p:"me", l:"Education", d:[`Ph.D. from IIT Kharagpur; M.Tech. and B.E. from IIEST Shibpur.`]},
+{id:"pubs", p:"me", l:"Publications", d:[`Nine refereed journal articles and one teaching case. Eight articles indexed in Web of Science (SCIE/SSCI/ESCI); four in Scopus Q1 journals.`]},
+{id:"pipe", p:"me", l:"Research pipeline", d:[`Papers under review and work in progress.`]},
+{id:"teach",p:"me", l:"Teaching", d:[`Teaching philosophy and innovations, courses taught across six institutions, and research supervision.`]},
+{id:"meth", p:"me", l:"Methods and tools", d:[`Technical skills, grouped by area. Open a method to see the papers, projects and courses where it is used.`]},
+{id:"lead", p:"me", l:"Leadership and service", d:[`Area chairmanships, institutional committees, editorial and reviewing work, and student initiatives.`]},
+{id:"talks",p:"me", l:"Talks and conferences", d:[`Invited talks and workshops, and conference presentations.`]},
+{id:"hon",  p:"me", l:"Honours and credentials", d:[`Awards, certifications, professional memberships, languages and references.`]},
+
+/* ---------- academic appointments ---------- */
+{id:"mse", p:"appt", l:"Madras School of Economics", tag:"Academic appointment",
+ m:"Associate Professor (Data Science and MBA) · June 2026 – present · Chennai",
+ b:[`Teaches in the full-time MBA (2 yrs) and full-time M.Sc. Data Science (2 yrs) programmes; specialised electives for Data Science and Business Analytics specialisations.`,
+    `Role: teaching, research, executive training, and administration.`], r:["c_mse"]},
+{id:"imi", p:"appt", l:"IMI Bhubaneswar", f:"International Management Institute (IMI) Bhubaneswar", tag:"Academic appointment",
+ m:"Assistant Professor (Information Management and Analytics) · June 2022 – June 2026",
+ b:[`Chairperson, Information Management and Analytics Area (July 2022 – Nov 2024) and Chairperson, IT Services, Infrastructure and Cybersecurity (July 2022 – Dec 2025); drafted IMI Bhubaneswar's first IT policy document.`,
+    `Average teaching feedback 4.4/5.`,
+    `Associate Editor, IMI Journal of Innovation and Management (SAGE), 2022–2026.`,
+    `Faculty Coordinator, Vishleshan (Students' Analytics Club); initiated its first student-driven magazine, Dataverse.`,
+    `Faculty Coordinator, Bharat Blockchain Network (BBN) Chapter under AICTE/IDS (2 yrs); led the MoU with IDS and conducted the Bharat Blockchain Yatra 2023, leading to the Bharat Blockchain Academic Excellence Award 2024 (Gold, Odisha).`,
+    `Committees: Program Restructure, FPM, Research, Faculty Recruitment, Staff Recruitment, Strategic Initiative and Infrastructure Office.`],
+ r:["l_imi_ima","l_imi_it","l_editor","l_vish","l_bbn","cm_imi","c_others","a_bbn"]},
+{id:"iimbg", p:"appt", l:"IIM Bodh Gaya", f:"Indian Institute of Management (IIM) Bodh Gaya", tag:"Academic appointment",
+ m:"Assistant Professor (Contract), IT Systems and Analytics · Dec 2021 – June 2022",
+ b:[`Taught MBA (both years) and IPM programmes; Data Science track electives.`,
+    `Committees: Entrepreneurship Cell, IT Infrastructure, Research and Publication, Ph.D. Program.`], r:["cm_iimbg","c_others"]},
+{id:"ifmr", p:"appt", l:"IFMR GSB, Krea University", f:"IFMR Graduate School of Business, Krea University", tag:"Academic appointment",
+ m:"Assistant Professor, Data Science and Information Systems · July 2021 – Nov 2021",
+ b:[`Taught MBA (both years), Data Science track electives, and courses in a joint programme with a leading US university.`,
+    `Committees: Conference and Symposium, MBA Program, Student Life at Campus.`], r:["cm_ifmr","c_others"]},
+{id:"imt", p:"appt", l:"IMT Ghaziabad", f:"Institute of Management Technology (IMT) Ghaziabad", tag:"Academic appointment",
+ m:"Chairperson and Assistant Professor, Business Analytics Area · Jan 2019 – June 2021",
+ b:[`Area Chairperson, IT & Analytics (May–Oct 2020) and of the newly formed Business Analytics Area (Oct 2020 – June 2021); built the Business Analytics specialisation track launched in 2020 (course architecture, external collaborations, expert committee).`,
+    `Average teaching feedback 8.2/10; highest 9.53/10 (Business Analytics).`,
+    `Coordinator, Emerging Technology Laboratory (AWS, R, Python). Program Director and primary instructor of a 3-day FDP on "Advanced Statistical Modelling and Data Science" (20 participants); MDP for GMR.`,
+    `Committees: AACSB AoL Institute Accreditation, NIRF Ranking, Program Review (IMT Group, 2019; Joint Head 2020), External Relations, Curriculum Development (IMT CDL), Academic Review (IMT CDL), Emerging Technology Lab.`],
+ r:["l_imt_ba","l_imt_it","l_imt_design","l_imt_prc","l_etlab","l_fdp","cm_imt","c_imt"]},
+{id:"iit_ta", p:"appt", l:"IIT Kharagpur", f:"Indian Institute of Technology Kharagpur", tag:"Academic appointment",
+ m:"Graduate Teaching Assistant · July 2014 – Nov 2017",
+ b:[`Taught Banking and Financial Market Analytics (MBA) and Market Microstructure (B.Tech/M.Tech/M.Sc./MBA); TA for Banking Analytics, Commercial Banking, Consumer Behavior Analysis, Sales & Distribution Management.`], r:["c_iit","e_phd"]},
+{id:"sitm", p:"appt", l:"Syamaprasad Institute, Kolkata", f:"Syamaprasad Institute of Technology and Management, Kolkata (WBUT/MAKAUT)", tag:"Academic appointment",
+ m:"Assistant Professor, Computer Science · Feb 2010 – Jan 2011",
+ b:[`Taught data structures, OOP (C++), C, advanced operating systems, artificial intelligence, advanced networking; supervised bachelor's projects.`], r:["t_superv"]},
+{id:"iem", p:"appt", l:"IEM Kolkata", f:"Institute of Engineering and Management, Kolkata (WBUT/MAKAUT)", tag:"Academic appointment",
+ m:"Assistant Professor, Computer Science and Engineering · Oct 2008 – Aug 2009",
+ b:[`Taught AI, UNIX and system administration, advanced networking, PROLOG, RDBMS, data structures, OOP (C++), advanced operating systems; supervised bachelor's projects.`], r:["t_superv"]},
+
+/* ---------- industry ---------- */
+{id:"pwc", p:"ind", l:"PricewaterhouseCoopers", f:"PricewaterhouseCoopers Service Delivery Center (AIC), Kolkata", tag:"Industry",
+ m:"Manager (Analytics) and Lead Data Scientist, Management Consulting (Advisory) · Nov 2017 – Dec 2018",
+ b:[`Domains: management consulting, finance, financial markets, corporate strategy, human resources, fixed-price securities.`], r:["cm_ind"]},
+{id:"pwc_practice", p:"pwc", l:"Built the data science practice", tag:"PwC",
+ b:[`Built the data science and advanced analytics practice at PwC SDC Kolkata from scratch; led a team of data scientists, data engineers, ML engineers, and automation engineers.`,
+    `Member of the Consulting Leadership and Client Engagement team. Promoted to the Leader group; trained and certified as Corporate Trainer.`]},
+{id:"pwc_churn", p:"pwc", l:"Client retention and churn", tag:"PwC project",
+ b:[`Client retention and churn projects using supervised ML and non-parametric survival models; early-warning systems.`], r:["m_surv","m_trees"]},
+{id:"pwc_strategy", p:"pwc", l:"Forecasting, growth and credit modelling", tag:"PwC projects",
+ b:[`Client forecasting, growth-factor identification and corporate growth strategy, credit modelling, AutoML and ML deployment, and fixed-price-security co-movement analysis.`]},
+{id:"pwc_nlp", p:"pwc", l:"NLP, NLU and NLG", tag:"PwC projects",
+ b:[`NLP-NLU for report structuring and information extraction; NLG for automated client reports; natural language processing for complex business document reading.`], r:["mg_nlp"]},
+{id:"pwc_train", p:"pwc", l:"IIT Kharagpur training at PwC", tag:"PwC",
+ b:[`Single-handedly organised IIT Kharagpur–delivered training on data science and statistical techniques at PwC Kolkata for engineers through managers.`]},
+{id:"rs", p:"ind", l:"RS Software (client: VISA)", f:"RS Software, Kolkata (client: VISA Inc., US and Singapore)", tag:"Industry",
+ m:"Software Engineer / Team Lead · Sept 2011 – July 2014",
+ b:[`Skills: UNIX shell, Ab-initio, HP ALM, Mainframe, Perl, Hadoop, Ruby on Rails.`,
+    `Promoted early; offered a permanent position with the client; member of the technical recruitment team (IIEST Shibpur, IEM Kolkata).`], r:["cm_ind","m_unix"]},
+{id:"rs_etl", p:"rs", l:"ETL and data team lead", tag:"RS Software",
+ b:[`ETL engineer, SME (Fraud Reporting), and data analyst; led a team of 10 across ETL, data modelling, data warehousing, and ETL automation projects in the payment industry, with no failed projects.`]},
+{id:"rs_fraud", p:"rs", l:"Fraud Reporting re-engineering", tag:"RS Software project",
+ b:[`Re-engineered the real-time Fraud Reporting Application with end-to-end intelligent automation; worked on operational data management, global data marts, and merchant billing cycle systems.`]},
+{id:"rs_migr", p:"rs", l:"Mainframe to Hadoop migration", tag:"RS Software project",
+ b:[`Single-handedly wrote the automation script that migrated 500+ tables from mainframe to UNIX/Hadoop, with regression testing and automated HTML reporting to leadership.`], r:["m_unix"]},
+
+/* ---------- education ---------- */
+{id:"e_phd", p:"edu", l:"Ph.D., IIT Kharagpur", f:"Ph.D. in Management (Business Analytics: Predictive Modelling in High-Frequency Trading)", tag:"Education",
+ m:"Vinod Gupta School of Management, IIT Kharagpur · 2014 – 2018 · First Class",
+ b:[`Full time, MHRD scholarship. Admitted July 2014; submitted Nov 2017; awarded Oct 2018.`,
+    `Thesis: Determinants of Bid-Ask Spread and its Implications on Execution Probability in High Frequency Trading.`,
+    `Keywords: market microstructure, limit order book, order processing cost, asymmetric information cost, execution probability, hazard rates, survival analysis.`],
+ r:["m_micro","m_surv","p_abr","p_cogent","p_gbr","a_mhrd","cf_hft","cf_spread"]},
+{id:"e_mtech", p:"edu", l:"M.Tech., IIEST Shibpur", f:"M.Tech. in Soft Computing (Information Technology)", tag:"Education",
+ m:"Indian Institute of Engineering Science and Technology (IIEST), Shibpur · 2009 – 2012",
+ b:[`AICTE approved, full time (second shift).`,
+    `Thesis: Design and FPGA-based implementation of a MUX/DEMUX system in SONET/SDH data communication networks.`]},
+{id:"e_be", p:"edu", l:"B.E., IIEST Shibpur", f:"B.E. in Computer Science and Technology", tag:"Education",
+ m:"Indian Institute of Engineering Science and Technology (IIEST), Shibpur · 2004 – 2008",
+ b:[`AICTE approved, full time.`,`Thesis: Vertical hand-off in 4G architecture.`]},
+{id:"e_school", p:"edu", l:"Midnapore Collegiate School", f:"Pre-university (Class X and XII)", tag:"Education",
+ m:"Midnapore Collegiate School, West Bengal Board · 1999 – 2003",
+ b:[`National Talent Scholarship at both levels.`,
+    `West Bengal JEE 2004: state rank 360 (Engineering).`,
+    `B.Sc. (H) Chemistry at Midnapore College (2003–04) discontinued to take up engineering.`], r:["a_nts","a_jee"]},
+
+/* ---------- publications ---------- */
+{id:"g_articles", p:"pubs", l:"Refereed journal articles", d:[`Eight articles indexed in Web of Science (SCIE/SSCI/ESCI); four in Scopus Q1 journals.`]},
+{id:"p_ijme", p:"g_articles", l:"AI-augmented collaborative learning model (IJME, 2027)", tag:"Journal article · solo",
+ f:"The AI-augmented collaborative learning model: A conceptual framework for integrating generative AI in business and management education",
+ m:"SSCI · ABDC B · Scopus Q1 · CiteScore 14.9 · IF 8.0",
+ d:[`Pan, A. (2027). The International Journal of Management Education.`],
+ u:"https://doi.org/10.1016/j.ijme.2026.101517", ul:"doi:10.1016/j.ijme.2026.101517", r:["m_ped","t_genai","t_media"]},
+{id:"p_ijppm", p:"g_articles", l:"Mapping green finance research (IJPPM, 2026)", tag:"Journal article",
+ f:"Mapping and decoding green finance research: Themes and topic interconnections using a multi-method approach",
+ m:"SSCI · ABDC B · Scopus Q1 · CiteScore 10.3 · IF 4.1",
+ d:[`Ray, S., Pan, A., Shukla, A., & Rastogi, S. (2026). International Journal of Productivity and Performance Management. Advance online publication.`],
+ u:"https://doi.org/10.1108/IJPPM-08-2024-0557", ul:"doi:10.1108/IJPPM-08-2024-0557", r:["ca_ray","ca_shukla","ca_rastogi","m_topic","cf_paniim"]},
+{id:"p_jba", p:"g_articles", l:"Luxury fashion marketing research landscape (JBA, 2025)", tag:"Journal article",
+ f:"Mapping the luxury fashion marketing research landscape: A BERT-based topic modeling approach",
+ m:"ESCI · ABDC C · Scopus Q2 · CiteScore 3.7 · IF 1.6",
+ d:[`Pan, A., Mukhopadhyay, S., Banerjee, S., & Sanyal, P. (2025). Journal of Business Analytics. Advance online publication.`],
+ u:"https://doi.org/10.1080/2573234X.2025.2599770", ul:"doi:10.1080/2573234X.2025.2599770", r:["ca_mukh","ca_banerjee","ca_sanyal","m_topic","cf_orsi","cf_gbe_topic"]},
+{id:"p_ieee", p:"g_articles", l:"Global South higher education (IEEE Access, 2024)", tag:"Journal article",
+ f:"From colonial legacies to linguistic inclusion: A BERTopic enhanced bibliometric insight into Global South higher education",
+ m:"SCIE · Scopus Q1 · CiteScore 9.8 · IF 3.4",
+ d:[`Banerjee, S., & Pan, A. (2024). IEEE Access.`],
+ u:"https://ieeexplore.ieee.org/document/10643545", ul:"ieeexplore.ieee.org/document/10643545", r:["ca_banerjee","m_topic"]},
+{id:"p_heliyon", p:"g_articles", l:"Sovereign bond yields: multi-scaling and connectedness (Heliyon, 2023)", tag:"Journal article",
+ f:"Investigating the multi-scaling properties and connectedness of the sovereign bond yields: Hurst exponent and network analysis approach",
+ m:"SCIE · Scopus Q1 · CiteScore 4.0 · IF 3.776",
+ d:[`Das, S., Pan, A., & Jain, N. K. (2023). Heliyon (Business and Management).`],
+ u:"https://www.cell.com/heliyon/fulltext/S2405-8440(23)03873-2", ul:"S2405-8440(23)03873-2", r:["ca_das","ca_jain","m_net","cf_icbf"]},
+{id:"p_abr", p:"g_articles", l:"High-frequency limit-order executions (American Business Review, 2022)", tag:"Journal article",
+ f:"Carry-forward modeling for high frequency limit-order executions: An emerging market perspective",
+ m:"ABDC A · Scopus Q3",
+ d:[`Pan, A., & Misra, A. K. (2022). American Business Review, 25(1).`],
+ u:"https://digitalcommons.newhaven.edu/americanbusinessreview/vol25/iss1/7/", ul:"digitalcommons.newhaven.edu/americanbusinessreview/vol25/iss1/7", r:["ca_misra","m_micro"]},
+{id:"p_ijhisi", p:"g_articles", l:"Liver disease detection with machine learning (IJHISI, 2022)", tag:"Journal article",
+ f:"Liver disease detection – Evaluation of machine learning algorithms performances with optimal thresholds",
+ m:"ESCI · ABDC C · Scopus Q3",
+ d:[`Pan, A., Mukhopadhyay, S., & Samanta, S. (2022). International Journal of Healthcare Information Systems and Informatics.`],
+ u:"https://doi.org/10.4018/IJHISI.299956", ul:"doi:10.4018/IJHISI.299956", r:["ca_mukh","ca_samanta","m_trees","cf_liver"]},
+{id:"p_cogent", p:"g_articles", l:"Bid-ask spread and its determinants in India (Cogent Economics & Finance, 2021)", tag:"Journal article",
+ f:"A comprehensive study on bid-ask spread and its determinants in India",
+ m:"ESCI · ABDC B · Scopus Q2",
+ d:[`Pan, A., & Misra, A. K. (2021). Cogent Economics & Finance.`],
+ u:"https://doi.org/10.1080/23322039.2021.1898735", ul:"doi:10.1080/23322039.2021.1898735", r:["ca_misra","m_micro"]},
+{id:"p_gbr", p:"g_articles", l:"Asymmetric information cost in the Indian stock market (Global Business Review, 2020)", tag:"Journal article",
+ f:"Assessment of asymmetric information cost in Indian stock market: A sectoral approach",
+ m:"ESCI · ABDC C · Scopus Q2",
+ d:[`Pan, A., & Misra, A. K. (2020). Global Business Review.`],
+ u:"https://doi.org/10.1177/0972150919865085", ul:"doi:10.1177/0972150919865085", r:["ca_misra","m_micro"]},
+{id:"p_case", p:"pubs", l:"Teaching case: SBI merger (ET Cases, 2018)", tag:"Teaching case",
+ f:"Asymmetric information during merger: A case of SBI",
+ d:[`Pan, A., & Misra, A. K. (2018). ET Cases, Economic Times.`], r:["ca_misra","cf_sbi"]},
+{id:"g_coauth", p:"pubs", l:"Co-authors and co-presenters", d:[`Co-authors on published journal articles and the teaching case, and co-presenters of conference papers. A line joins two people who share a paper or a talk with me; a thicker line means more joint work. Open a name to see the work.`]},
+{id:"ca_misra", p:"g_coauth", l:"A. K. Misra", tag:"Co-author", d:[`Co-author on three journal articles and the teaching case.`]},
+{id:"ca_mukh", p:"g_coauth", l:"S. Mukhopadhyay", tag:"Co-author", d:[`Co-author on two journal articles.`]},
+{id:"ca_samanta", p:"g_coauth", l:"S. Samanta", tag:"Co-author", d:[`Co-author on one journal article.`]},
+{id:"ca_banerjee", p:"g_coauth", l:"S. Banerjee", tag:"Co-author", d:[`Co-author on two journal articles.`]},
+{id:"ca_bharadwaja", p:"g_coauth", l:"M. Bharadwaja", tag:"Conference co-presenter", d:[`Co-presenter of one conference paper.`]},
+{id:"ca_sanyal", p:"g_coauth", l:"P. Sanyal", tag:"Co-author", d:[`Co-author on one journal article.`]},
+{id:"ca_mandal", p:"g_coauth", l:"S. Mandal", tag:"Conference co-presenter", d:[`Co-presenter of one conference paper.`]},
+{id:"ca_ray", p:"g_coauth", l:"S. Ray", tag:"Co-author", d:[`Co-author on one journal article.`]},
+{id:"ca_shukla", p:"g_coauth", l:"A. Shukla", tag:"Co-author", d:[`Co-author on one journal article.`]},
+{id:"ca_rastogi", p:"g_coauth", l:"S. Rastogi", tag:"Co-author", d:[`Co-author on one journal article.`]},
+{id:"ca_das", p:"g_coauth", l:"S. Das", tag:"Co-author", d:[`Co-author on one journal article.`]},
+{id:"ca_jain", p:"g_coauth", l:"N. K. Jain", tag:"Co-author", d:[`Co-author on one journal article.`]},
+{id:"ca_shankar", p:"g_coauth", l:"A. Shankar", tag:"Conference co-presenter", d:[`Co-presenter of one conference paper.`]},
+{id:"ca_titiyal", p:"g_coauth", l:"R. Titiyal", tag:"Conference co-presenter", d:[`Co-presenter of one conference paper.`]},
+{id:"ca_parhi", p:"g_coauth", l:"S. Parhi", tag:"Conference co-presenter", d:[`Co-presenter of one conference paper.`]},
+
+/* ---------- research pipeline ---------- */
+{id:"g_review", p:"pipe", l:"Under review"},
+{id:"ur_gw", p:"g_review", l:"Generative AI and greenwashing", tag:"Under review", m:"ABDC B", r:["m_resp"]},
+{id:"ur_app", p:"g_review", l:"Mobile app user engagement: machine learning and UTAUT", tag:"Under review", m:"ABDC C",
+ f:"Understanding mobile app user engagement through machine learning and UTAUT", r:["m_trees"]},
+{id:"ur_oil", p:"g_review", l:"Crude oil and its substitutes: volatility connectedness", tag:"Under review", m:"ABDC A",
+ f:"Crude oil and its substitutes: Volatility connectedness and implications for portfolio diversification", r:["m_net"]},
+{id:"ur_e5", p:"g_review", l:"Workforce resilience and Education 5.0", tag:"Under review", m:"ABDC C",
+ f:"Revolutionizing workforce resilience: A strategic framework for leveraging Education 5.0 enablers in the Industry 4.0 era"},
+{id:"g_wip", p:"pipe", l:"Work in progress"},
+{id:"wip_neuro", p:"g_wip", l:"Neuromarketing themes and research clusters", tag:"Work in progress",
+ f:"Identifying themes and research clusters in neuromarketing using language transformers (BERT) and a topic recommendation system", r:["m_topic","cf_neuro"]},
+{id:"wip_suicide", p:"g_wip", l:"Suicides in India, 2001–2018", tag:"Work in progress",
+ f:"Suicides in India, 2001–2018, and associated factors: A network analytics approach", r:["m_net"]},
+{id:"wip_misc", p:"g_wip", l:"Insurance, FinTech and clean energy analytics", tag:"Work in progress",
+ d:[`Insurance analytics; text mining in FinTech and banking; network modelling and analytics in clean energy.`]},
+{id:"r_focus", p:"pipe", l:"Research focus, past year", tag:"Research contributions",
+ d:[`In the past year, I have dedicated my efforts to applying Large Language Models (LLMs) and advanced machine learning techniques in business and social science research.`],
+ b:[`One solo project published on a conceptual framework for integration of AI in business and management education (The International Journal of Management Education).`,
+    `Completion of five projects applying LLMs, traditional machine learning, and graphical network models, published in IEEE Access, International Journal of Productivity and Performance Management, and Journal of Business Analytics, while two others are under review.`,
+    `One solo conceptual research work is at "revise and resubmission" stage.`,
+    `One solo project focusing on advanced bibliometric methods using LLMs and Deep Learning.`,
+    `Two projects are empirical studies leveraging traditional machine learning and network models.`,
+    `Currently focused on understanding consumer behavior and associated traits in three different sectors, leading to four parallel research projects, one of them an ambitious solo endeavor.`]},
+
+/* ---------- teaching ---------- */
+{id:"g_innov", p:"teach", l:"Teaching philosophy and innovations", d:[`In recent years, I have implemented several innovative teaching methods to create engaging and impactful learning experiences.`]},
+{id:"t_story", p:"g_innov", l:"Storytelling instead of presentations", tag:"Teaching innovation",
+ d:[`Replaced traditional project presentations with storytelling through drama or other creative methods (no PowerPoint allowed) to simplify complex techniques and processes, applied in Machine Learning and SQL courses.`], r:["m_sql"]},
+{id:"t_dynamic", p:"g_innov", l:"Dynamic, problem-driven teaching", tag:"Teaching innovation",
+ d:[`Adopted a hands-on, problem-driven teaching style for SQL courses, starting from real-world data analysis and gradually moving through understanding, defining, modeling, and executing solutions. Students engage in group projects from day one, exploring problems and datasets, bypassing the conventional chapter-by-chapter flow.`], r:["m_sql"]},
+{id:"t_genai", p:"g_innov", l:"Generative AI as virtual consultant", tag:"Teaching innovation",
+ d:[`Introduced Generative AI tools in the MIS course as virtual consultants to discuss cases and business problems. Students also practice live prompt engineering to interact effectively with these tools and address their queries.`], r:["m_prompt","t_media"]},
+{id:"t_noppt", p:"g_innov", l:"No PowerPoint policy", tag:"Teaching innovation",
+ d:[`To prevent classes from becoming heavy or monotonous, I focus on case and scenario discussions, deriving theory and frameworks organically from these discussions.`]},
+{id:"t_media", p:"g_innov", l:"Economic Times article (2025)", tag:"Media",
+ f:"AI in business education: A classroom experiment with broader lessons",
+ d:[`Economic Times (Education), 2025.`],
+ u:"https://education.economictimes.indiatimes.com/blog/revolutionizing-business-education-the-impact-of-ai-like-chatgpt/122893880", ul:"Read the article"},
+{id:"g_courses", p:"teach", l:"Courses taught"},
+{id:"c_mse", p:"g_courses", l:"Courses at MSE", f:"Madras School of Economics (M.Sc. Data Science and MBA)", tag:"Courses taught",
+ b:[`Statistics with R (M.Sc.)`,`Artificial Intelligence (M.Sc.)`,`Data Science (M.Sc.)`,`Programming with SQL (MBA)`,`Large Language Models (M.Sc.)`,`NLP and Text Analytics (MBA)`],
+ r:["m_r","m_sql","mg_genai","mg_nlp"]},
+{id:"c_imt", p:"g_courses", l:"Courses at IMT Ghaziabad", f:"IMT Ghaziabad (PGDM / Executive PGDM)", tag:"Courses taught",
+ b:[`Business Analytics (core, PGDM-BFS; elective, 150+ students)`,`Data Science in Business (elective, 100+)`,`Analytics in Financial Markets (elective, 70+)`,`Analytics in Marketing (elective, 40+)`,`Emerging Technology in Business II (core)`,`Business Intelligence and Big Data (Executive)`,`Information Management (Executive)`]},
+{id:"c_others", p:"g_courses", l:"Courses at IMI, IIM Bodh Gaya, IFMR", f:"IMI Bhubaneswar, IIM Bodh Gaya, IFMR GSB", tag:"Courses taught",
+ d:[`Core and elective courses in analytics, machine learning, SQL, and MIS across MBA/PGDM, IPM, and data science tracks.`], r:["m_sql"]},
+{id:"c_iit", p:"g_courses", l:"Courses at IIT Kharagpur", f:"IIT Kharagpur", tag:"Courses taught",
+ b:[`Banking and Financial Market Analytics (MBA)`,`Market Microstructure (B.Tech/M.Tech/M.Sc./MBA)`], r:["m_micro"]},
+{id:"t_superv", p:"teach", l:"Research supervision", tag:"Teaching",
+ b:[`Co-guided four postgraduate students at IIT Kharagpur; assisted Prof. A. K. Misra on four MBA applied research projects and Prof. G. S. Hiremath on two Ph.D. (Financial Engineering) projects.`,
+    `Supervised 20+ undergraduate projects (IEM Kolkata and SITM Kolkata, WBUT) and 50+ postgraduate (full-time and executive MBA) projects at IMT Ghaziabad and IMI Bhubaneswar.`]},
+
+/* ---------- methods and tools ---------- */
+{id:"mg_genai", p:"meth", l:"Generative AI and LLMs", d:[`Also: AI-assisted research pipelines for text classification and topic modelling; agentic and multi-step AI workflows.`]},
+{id:"m_ft", p:"mg_genai", l:"LLM fine-tuning and distillation", tag:"Method", d:[`DeBERTa and transformer architectures.`]},
+{id:"m_prompt", p:"mg_genai", l:"Prompt engineering and LLM APIs", tag:"Method", d:[`Prompt engineering and LLM API workflows (Claude, Gemini, GPT).`]},
+{id:"m_rag", p:"mg_genai", l:"RAG and vector embeddings", tag:"Method", d:[`Retrieval-augmented generation and vector embeddings.`]},
+{id:"m_resp", p:"mg_genai", l:"Responsible AI", tag:"Method", d:[`AI-washing detection, disclosure auditing, AI governance.`]},
+{id:"m_ped", p:"mg_genai", l:"AI-augmented pedagogy", tag:"Method"},
+{id:"mg_nlp", p:"meth", l:"NLP and text analytics"},
+{id:"m_topic", p:"mg_nlp", l:"Topic modelling", tag:"Method", d:[`BERTopic, LDA, UMAP/HDBSCAN, transformer fine-tuning.`]},
+{id:"m_kg", p:"mg_nlp", l:"Knowledge graphs", tag:"Method"},
+{id:"m_arm", p:"mg_nlp", l:"Association rule mining", tag:"Method"},
+{id:"m_scrape", p:"mg_nlp", l:"Web scraping and disclosure extraction", tag:"Method", d:[`Web scraping and regulatory disclosure extraction (SEC EDGAR).`]},
+{id:"mg_ml", p:"meth", l:"Machine learning", d:[`Also: reinforcement learning; k-fold cross-validation.`]},
+{id:"m_surv", p:"mg_ml", l:"Survival models", tag:"Method", d:[`Multivariate and survival regression (AFT, Cox PH, random survival forests).`]},
+{id:"m_trees", p:"mg_ml", l:"Classification and ensembles", tag:"Method", d:[`Logistic regression, GBM, XGBoost, SVM, random forests, ensembles.`]},
+{id:"m_clust", p:"mg_ml", l:"Clustering", tag:"Method", d:[`Clustering (k-NN, PAM).`]},
+{id:"mg_econ", p:"meth", l:"Econometrics and statistics"},
+{id:"m_micro", p:"mg_econ", l:"Market microstructure", tag:"Method", d:[`Market-microstructure modelling with high-frequency data.`]},
+{id:"m_net", p:"mg_econ", l:"Connectedness and network analysis", tag:"Method", d:[`Baruník–Křehlík frequency connectedness; network analysis.`]},
+{id:"m_event", p:"mg_econ", l:"Event-study pipelines", tag:"Method"},
+{id:"m_ts", p:"mg_econ", l:"Regression, time series and panel data", tag:"Method", d:[`Regression diagnostics, MLE, nonlinear regression, time series, panel data.`]},
+{id:"mg_prog", p:"meth", l:"Programming and tools"},
+{id:"m_py", p:"mg_prog", l:"Python", tag:"Tool", d:[`pandas, NumPy, scikit-learn, Colab/CUDA.`]},
+{id:"m_r", p:"mg_prog", l:"R", tag:"Tool", d:[`Advanced; Bloomberg data handling; Plotly.`]},
+{id:"m_sql", p:"mg_prog", l:"SQL", tag:"Tool", d:[`Advanced querying, window functions, CTEs; MySQL, DB2; schema design, stored procedures, indexing; SQL–Python/R integration.`]},
+{id:"m_unix", p:"mg_prog", l:"UNIX, Hadoop and ETL tools", tag:"Tool", d:[`UNIX shell; Hadoop, Ab-initio, Perl, Ruby on Rails.`]},
+{id:"m_stat", p:"mg_prog", l:"RapidMiner, Gretl, SPSS", tag:"Tool"},
+{id:"mg_ba", p:"meth", l:"Business analytics", tag:"Skills",
+ d:[`End-to-end data mining and multivariate analysis, very-large-scale databases, visualisation, data strategy consulting, forecasting, risk and early-warning modelling.`]},
+
+/* ---------- leadership and service ---------- */
+{id:"g_chairs", p:"lead", l:"Area and programme leadership"},
+{id:"l_imi_it", p:"g_chairs", l:"Chair, IT Services and Cybersecurity (IMI)", tag:"Leadership", f:"Chairperson, IT Services, Infrastructure and Cybersecurity, IMI Bhubaneswar",
+ m:"Jul 2022 – Dec 2025", d:[`Drafted IMI Bhubaneswar's first IT policy document.`]},
+{id:"l_imi_ima", p:"g_chairs", l:"Chair, Information Management and Analytics (IMI)", tag:"Leadership", f:"Chairperson, Information Management and Analytics Area, IMI Bhubaneswar", m:"Jul 2022 – Nov 2024"},
+{id:"l_imt_ba", p:"g_chairs", l:"Chair, Business Analytics Area (IMT)", tag:"Leadership", f:"Chairperson, newly formed Business Analytics Area, IMT Ghaziabad", m:"Oct 2020 – Jun 2021"},
+{id:"l_imt_it", p:"g_chairs", l:"Chair, IT & Analytics Area (IMT)", tag:"Leadership", f:"Chairperson, IT & Analytics Area, IMT Ghaziabad", m:"May 2020 – Oct 2020"},
+{id:"l_imt_design", p:"g_chairs", l:"Business Analytics track design (IMT)", tag:"Leadership", m:"Nov 2019 – Feb 2020",
+ d:[`Assisted the Area Chairperson in designing the Business Analytics specialisation track (launched 2020), IMT Ghaziabad: course architecture, external collaborations, expert committee.`]},
+{id:"l_imt_prc", p:"g_chairs", l:"Joint Head, Program Review (IMT Group)", tag:"Leadership", f:"Joint Head, Program Review Committee, IMT Group of Institutions 2020", m:"Mar 2020 – Jun 2020"},
+{id:"g_comm", p:"lead", l:"Committees"},
+{id:"cm_imi", p:"g_comm", l:"IMI Bhubaneswar committees", tag:"Committees",
+ b:[`Member, Strategic Initiative and Infrastructure Office Committee (Jun 2024 – Jun 2026)`,`Member, Program Restructure Committee (Apr 2024 – Jun 2024)`,`FPM, Research, Faculty Recruitment and Staff Recruitment committees`]},
+{id:"cm_iimbg", p:"g_comm", l:"IIM Bodh Gaya committees", tag:"Committees", m:"Dec 2021 – Jun 2022",
+ b:[`Member: Entrepreneurship, IT Infrastructure, Research and Publication, and Ph.D. Program Committees`]},
+{id:"cm_ifmr", p:"g_comm", l:"IFMR GSB committees", tag:"Committees", m:"Jul 2021 – Nov 2021",
+ b:[`Member: MBA Program, Research Symposium, and Student Life Committees, IFMR GSB, Krea University`]},
+{id:"cm_imt", p:"g_comm", l:"IMT Ghaziabad committees", tag:"Committees",
+ b:[`AACSB AoL Institute Accreditation`,`Member, NIRF Ranking Committee (Jul 2020 – Jun 2021)`,`Member, Program Review Committee, IMT Group of Institutions 2019 (Mar 2019 – Jul 2019)`,`External Relations`,`Curriculum Development (IMT CDL)`,`Member, Academic Review Committee, IMT CDL (Jul 2019 – Jun 2021)`,`Member, Emerging Technology Lab Committee (Feb 2019 – Jun 2021)`]},
+{id:"cm_ind", p:"g_comm", l:"Industry recruitment and training", tag:"Service",
+ b:[`Certified Corporate Trainer; Member, Recruitment Specialist Team, PwC (Dec 2017 – Dec 2018)`,`Member, Technical Recruitment Team, RS Software (Mar 2012 – Mar 2014)`]},
+{id:"g_edit", p:"lead", l:"Editorial and reviewing"},
+{id:"l_editor", p:"g_edit", l:"Associate Editor, IMI Journal of Innovation and Management", tag:"Editorial", m:"SAGE · 2022 – 2026"},
+{id:"l_review", p:"g_edit", l:"Journal and conference reviewer", tag:"Reviewing",
+ b:[`Financial Innovation (IF 8.4; 3rd of 111 in Business, Finance; 1st of 53 in Social Science, Mathematical Methods)`,`Heliyon (Business and Economics; Scopus Q1)`,`Finance Research Letters (ABDC A)`,`Journal of Business Analytics (ABDC C)`,`Journal of Retailing and Consumer Services (ABDC A)`,`IEEE International Conference on Computing, Analytics and Security Trends (CAST-2016)`]},
+{id:"g_prog", p:"lead", l:"Programmes and student initiatives"},
+{id:"l_vish", p:"g_prog", l:"Vishleshan analytics club (IMI)", tag:"Student initiative",
+ d:[`Faculty Coordinator, Vishleshan (Students' Analytics Club), IMI Bhubaneswar; initiated its first student-driven magazine, Dataverse.`]},
+{id:"l_bbn", p:"g_prog", l:"Bharat Blockchain Network chapter (IMI)", tag:"Student initiative",
+ d:[`Faculty Coordinator, Bharat Blockchain Network (BBN) Chapter under AICTE/IDS (2 yrs); led the MoU with IDS and conducted the Bharat Blockchain Yatra 2023.`], r:["a_bbn"]},
+{id:"l_etlab", p:"g_prog", l:"Emerging Technology Laboratory (IMT)", tag:"Programme", d:[`Coordinator, Emerging Technology Laboratory (AWS, R, Python), IMT Ghaziabad.`]},
+{id:"l_fdp", p:"g_prog", l:"FDP and MDP delivery (IMT)", tag:"Executive education",
+ d:[`Program Director and primary instructor of a 3-day FDP on "Advanced Statistical Modelling and Data Science" (20 participants); MDP for GMR.`]},
+
+/* ---------- talks and conferences ---------- */
+{id:"g_invited", p:"talks", l:"Invited talks and workshops"},
+{id:"tk_rbi", p:"g_invited", l:"RBI workshop (2023)", tag:"Workshop", d:[`Workshop on "Data and Business Analytics" for AGMs and Managers, Reserve Bank of India, Bhubaneswar Regional Office, August 2023.`]},
+{id:"tk_rav", p:"g_invited", l:"Ravenshaw University lecture (2023)", tag:"Guest lecture", d:[`Guest lecture on "Big Data Analytics", Ravenshaw University, September 2023.`]},
+{id:"tk_ims", p:"g_invited", l:"IMS India masterclass", tag:"Masterclass", d:[`Management Masterclass, "Introduction to Business Analytics", IMS India (recorded).`]},
+{id:"tk_conclave", p:"g_invited", l:"Analytics Conclave moderator (2022)", tag:"Panel", d:[`Moderator, Analytics Conclave panel discussion with industry experts, IMI Bhubaneswar, 2022.`]},
+{id:"tk_sem", p:"g_invited", l:"Seminars attended", tag:"Seminars",
+ b:[`CII Smart HR Summit on the Role of Technology in Transforming the Workplace, New Delhi, 2019 (IMT Ghaziabad nominated academic expert)`,`Image Classification and Pattern Recognition, Vidyasagar University, 2009`]},
+{id:"g_conf", p:"talks", l:"Conference presentations"},
+{id:"cf_paniim", p:"g_conf", r:["ca_shukla","ca_ray"], l:"PAN-IIM World Management Conference (2024)", tag:"Conference presentation",
+ d:[`Pan, A., Shukla, A., & Ray, S. (2024). Identifying themes and research clusters in green finance using language transformers (BERT) and topic recommendation system. 9th PAN-IIM World Management Conference, IIM Sambalpur, 22–24 January.`]},
+{id:"cf_orsi", p:"g_conf", r:["ca_mukh","ca_banerjee"], l:"ORSI and ICBAI, IISc Bangalore (2023)", tag:"Conference presentation",
+ d:[`Pan, A., Mukhopadhyay, S., & Banerjee, S. (2023). What after bibliometric? Recommending topics for research in luxury fashion marketing: A topic recommendation approach. 56th Annual Convention of ORSI & 10th International Conference on Business Analytics and Intelligence (ICBAI), IISc Bangalore, December.`]},
+{id:"cf_gbe_topic", p:"g_conf", r:["ca_banerjee"], l:"Global Business Environment: topic recommendation (2023)", tag:"Conference presentation",
+ d:[`Pan, A., & Banerjee, S. (2023). A topic recommendation approach for luxury fashion marketing research beyond bibliometric. 9th International Conference on the Global Business Environment (with EGADE Business School, Tecnológico de Monterrey), 15–16 December.`]},
+{id:"cf_gbe_pers", p:"g_conf", r:["ca_banerjee","ca_bharadwaja"], l:"Global Business Environment: persuasive appeals (2023)", tag:"Conference presentation",
+ d:[`Pan, A., Banerjee, S., & Bharadwaja, M. (2023). Decoding persuasive appeals: A focus group study in management instruction. 9th International Conference on the Global Business Environment (with EGADE Business School, Tecnológico de Monterrey), 15–16 December.`]},
+{id:"cf_neuro", p:"g_conf", r:["ca_sanyal","ca_mandal"], l:"International Business Analytics Conference, Mumbai (2023)", tag:"Conference presentation",
+ d:[`Pan, A., Sanyal, P., & Mandal, S. (2023). Identifying themes and research clusters in neuromarketing using language transformers (BERT) and topic recommendation system. 3rd International Business Analytics Conference, K J Somaiya Institute of Management (SVU) with New Jersey City University, Mumbai, March. Invited for submission to Management Decision (ABDC B).`]},
+{id:"cf_icbf", p:"g_conf", r:["ca_das"], l:"Banking and Finance conference, IMI (2023)", tag:"Conference presentation",
+ d:[`Das, S., & Pan, A. (2023). Investigating the multi-scaling properties and connectedness of the sovereign bond yields: Hurst exponent analysis approach. 5th International Conference on Banking and Finance, IMI Bhubaneswar.`]},
+{id:"cf_gscm", p:"g_conf", r:["ca_parhi"], l:"Global Business Environment: green supply chain (2022)", tag:"Conference presentation",
+ d:[`Parhi, S., & Pan, A. (2022). Evaluation of socio-environmental factors for green supply chain management. International Conference on Global Business Environment 2022, IMI Bhubaneswar.`]},
+{id:"cf_liver", p:"g_conf", r:["ca_mukh","ca_samanta"], l:"Doctoral Colloquium: liver disease detection (2020)", tag:"Conference presentation",
+ d:[`Mukhopadhyay, S., Pan, A., & Samanta, S. (2020). Liver disease detection using machine learning: Efficient algorithm selection. Management Doctoral Colloquium, IIT Kharagpur.`]},
+{id:"cf_sbi", p:"g_conf", r:["ca_misra"], l:"Financial Markets conference: SBI merger (2017)", tag:"Conference presentation",
+ d:[`Pan, A., & Misra, A. K. (2017). Asymmetric information during merger: A case of SBI. International Conference on Financial Markets and Corporate Finance, IIT Kharagpur.`]},
+{id:"cf_hft", p:"g_conf", l:"Doctoral Colloquium: high frequency trading (2017)", tag:"Conference presentation",
+ d:[`Pan, A. (2017). Characteristics of high frequency trading – A study on NSE. Management Doctoral Colloquium, IIT Kharagpur.`]},
+{id:"cf_spread", p:"g_conf", l:"Doctoral Colloquium: determinants of spread (2016)", tag:"Conference presentation",
+ d:[`Pan, A. (2016). High frequency determinants of spread: A study in selected Nifty50 stocks. Management Doctoral Colloquium, IIT Kharagpur.`]},
+{id:"cf_erec", p:"g_conf", r:["ca_shankar","ca_titiyal"], l:"Doctoral Colloquium: e-recruitment (2015)", tag:"Conference presentation",
+ d:[`Pan, A., Shankar, A., & Titiyal, R. (2015). Changing dimensions of e-recruitment: A roadmap ahead. Management Doctoral Colloquium, IIT Kharagpur.`]},
+
+/* ---------- honours and credentials ---------- */
+{id:"g_awards", p:"hon", l:"Honours and awards"},
+{id:"a_bbn", p:"g_awards", l:"Bharat Blockchain Academic Excellence Award 2024", tag:"Award",
+ d:[`Gold Category (Odisha), Bharat Blockchain Yatra Grand Finale, as institutional lead, IMI Bhubaneswar.`]},
+{id:"a_mhrd", p:"g_awards", l:"MHRD Doctoral Scholarship", tag:"Scholarship", d:[`IIT Kharagpur (2014–2018).`]},
+{id:"a_nts", p:"g_awards", l:"National Talent Scholarship", tag:"Scholarship", d:[`Higher Secondary and Secondary levels.`]},
+{id:"a_jee", p:"g_awards", l:"West Bengal JEE 2004: state rank 360", tag:"Distinction",
+ d:[`West Bengal Joint Entrance Examination 2004: state rank 360 (Engineering); 80th in state, Secondary Board examination.`]},
+{id:"h_cert", p:"hon", l:"Certifications", tag:"Certifications",
+ b:[`Certified Microsoft Innovative Educator`,`Machine Learning (Stanford, Coursera)`,`The Data Scientist's Toolbox and R Programming (Johns Hopkins, Coursera)`,`Kaggle R Tutorial on Machine Learning, Introduction to Machine Learning, and Plotly and R (DataCamp)`,`Text Mining and NLP in R, Data Mining & NLP in R, and Data Science in Python (Udemy)`,`Try R and Try Python (Code School)`]},
+{id:"h_memb", p:"hon", l:"Professional memberships", tag:"Memberships",
+ b:[`Member, IEEE`,`Life Member, Operational Research Society of India`,`Member, Institution of Engineers (India)`,`Fellow, All India Council for Robotics & Automation`,`Member, IEEE Intelligent Transportation Systems Society`,`Member, IEEE Technology and Engineering Management Society`]},
+{id:"h_lang", p:"hon", l:"Languages", tag:"Languages", d:[`English, Bengali, Hindi.`]},
+{id:"g_refs", p:"hon", l:"References"},
+{id:"ref_jain", p:"g_refs", l:"Dr. Nikunj Kumar Jain", tag:"Reference", d:[`Associate Professor, Operations and Production Management, Indian Institute of Management Nagpur.`]},
+{id:"ref_das", p:"g_refs", l:"Dr. Santanu Das", tag:"Reference", d:[`Professor, Financial Management, Indian Institute of Forest Management Bhopal.`]},
+{id:"ref_ray", p:"g_refs", l:"Dr. Sougata Ray", tag:"Reference", d:[`Associate Professor, Finance and Accounting, IMI Bhubaneswar.`]},
+{id:"ref_roy", p:"g_refs", l:"Saugata Guha Roy", tag:"Reference", d:[`Assistant Director, Business Consulting, EY Global Delivery Services India LLP, Kolkata.`]}
+];
+/* ===================== END OF CV CONTENT ===================== */
+
+const HUB_COLOR = { me:"#1f4e79", appt:"#2c6aa0", ind:"#c0622d", edu:"#7556a8", pubs:"#1c8a6e", pipe:"#7a9a2e",
+  teach:"#b98a12", meth:"#1f9bb0", lead:"#b0413e", talks:"#c0589a", hon:"#6f7782" };
+const LENS = { all:null, hire:["appt","pubs","lead","edu","teach"], collab:["pubs","pipe","meth","talks"], student:["teach","meth","ind","talks"] };
+
+/* ---------- build the tree ---------- */
+const N = new Map();
+CV.forEach(n => { n.children = []; n.rel = new Set(); N.set(n.id, n); });
+CV.forEach(n => { if (n.p) N.get(n.p).children.push(n); });
+CV.forEach(n => (n.r || []).forEach(t => { const o = N.get(t); if (o) { n.rel.add(t); o.rel.add(n.id); } }));
+CV.forEach(n => { n.co = new Map(); });
+CV.forEach(w => { if(!/^(p_|cf_)/.test(w.id)) return;
+  const ppl=[...w.rel].filter(id=>id.startsWith("ca_"));
+  ppl.forEach(a => ppl.forEach(b => { if(a!==b){ const m=N.get(a).co; m.set(b,(m.get(b)||0)+1); } })); });
+function ancestors(n){ const a=[]; let c=n; while(c.p){ c=N.get(c.p); a.unshift(c); } return a; }
+CV.forEach(n => { const a = ancestors(n); n.depth = a.length; n.hub = n.depth===0 ? "me" : (n.depth===1 ? n.id : a[1].id);
+  n.color = HUB_COLOR[n.hub] || "#666"; n.count = 0; });
+function countLeaves(n){ if(!n.children.length) return 1; let c=0; n.children.forEach(k=>c+=countLeaves(k)); n.count=c; return c; }
+countLeaves(N.get("me"));
+CV.forEach(n => { n.search = [n.l, n.f||"", n.tag||"", n.m||"", (n.d||[]).join(" "), (n.b||[]).join(" ")].join(" ").toLowerCase(); });
+
+/* ---------- state ---------- */
+const S = { expanded:new Set(["me"]), selected:"me", multi:false, conn:true, lens:"all", history:[], query:"" };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function childDist(n){ return Math.max(85, Math.min(240, 17*n.children.length + 30)); }
+function reach(n){ let m=0; n.children.forEach(c=>{ if(S.expanded.has(c.id)) m=Math.max(m,reach(c)); }); return childDist(n) + 45 + m; }
+function radius(n){ if(n.depth===0) return 32; if(n.depth===1) return 24; return n.children.length ? 15 : 8; }
+function collapse(n){ S.expanded.delete(n.id); n.children.forEach(collapse); }
+function expand(n){
+  if(!n.children.length) return;
+  if(!S.multi && n.p) N.get(n.p).children.forEach(s => { if(s!==n) collapse(s); });
+  S.expanded.add(n.id);
+}
+function treeVisible(){
+  const out=[]; (function walk(n){ out.push(n); if(S.expanded.has(n.id)) n.children.forEach(walk); })(N.get("me")); return out;
+}
+function select(id, push=true){
+  if(push && S.selected && S.selected!==id){ S.history.push(S.selected); if(S.history.length>60) S.history.shift(); }
+  S.selected=id;
+  try{ history.replaceState(null,"","#"+id); }catch(e){}
+}
+function navigate(id, push=true){
+  const n=N.get(id); if(!n) return;
+  ancestors(n).forEach(expand); expand(n);
+  select(id,push); update(true);
+}
+function clickNode(n){
+  const vis = new Set(treeVisible().map(x=>x.id));
+  if(!vis.has(n.id)){ navigate(n.id); return; }
+  if(n.children.length){
+    if(S.expanded.has(n.id) && S.selected===n.id && n.id!=="me") collapse(n); else expand(n);
+  }
+  select(n.id); update(true);
+}
+
+/* ---------- graph ---------- */
+const HAS_D3 = typeof d3 !== "undefined";
+let svg, vp, gL, gN, zoom, sim, linkSel, nodeSel, fitTimers=[];
+if(!HAS_D3){ document.body.classList.add("list","nograph"); }
+else {
+svg = d3.select("#graph"); vp = d3.select("#vp"); gL = d3.select("#links"); gN = d3.select("#nodes");
+zoom = d3.zoom().scaleExtent([0.25,3]).on("zoom", e => vp.attr("transform", e.transform));
+svg.call(zoom).on("dblclick.zoom", null);
+sim = d3.forceSimulation()
+  .force("link", d3.forceLink().id(d=>d.id)
+     .distance(l => l.co ? 80 : l.cross ? 150 : (l.source.depth===0 ? 180 : childDist(l.source)) + (S.expanded.has(l.target.id) ? reach(l.target) : 0))
+     .strength(l => l.co ? 0.35 : l.cross ? (l.ghost ? 0.35 : 0.01) : 0.9))
+  .force("charge", d3.forceManyBody().strength(d => -260 - 9*radius(d)).distanceMax(520))
+  .force("collide", d3.forceCollide().radius(d => radius(d) + (d.depth<=1 ? 36 : 38)).strength(1).iterations(2))
+  .force("x", d3.forceX(0).strength(0.035)).force("y", d3.forceY(0).strength(0.035))
+  .on("tick", ticked);
+linkSel = gL.selectAll("line"); nodeSel = gN.selectAll("g.node");
+svg.on("click",()=>{ document.getElementById("hint").style.display="none"; });
+}
+
+function wrap(s,max,maxLines){
+  const out=[]; let cur="";
+  s.split(/\s+/).forEach(w => { if(cur && (cur+" "+w).length>max){ out.push(cur); cur=w; } else cur = cur ? cur+" "+w : w; });
+  if(cur) out.push(cur);
+  if(out.length>maxLines){ out.length=maxLines; out[maxLines-1]=out[maxLines-1].replace(/[\s,;:(]*\S{0,2}$/,"")+"…"; }
+  return out;
+}
+function seed(n, from){
+  if(n.x!==undefined) return;
+  const a = Math.random()*Math.PI*2, base = from || {x:0,y:0};
+  let dx=Math.cos(a), dy=Math.sin(a);
+  if(from && (from.x||from.y)){ const m=Math.hypot(from.x,from.y)||1; dx = from.x/m*0.8 + dx*0.6; dy = from.y/m*0.8 + dy*0.6; }
+  n.x = base.x + dx*70; n.y = base.y + dy*70;
+}
+function update(refit){
+  if(!HAS_D3){ renderPanel(); renderCrumbs(); return; }
+  const tv = treeVisible(), tvSet = new Set(tv.map(n=>n.id));
+  if(!tvSet.has(S.selected)){ let c=N.get(S.selected); while(c && !tvSet.has(c.id)) c=N.get(c.p); S.selected = c ? c.id : "me"; }
+  const sel = N.get(S.selected);
+  const ghosts = S.conn ? [...sel.rel].filter(id=>!tvSet.has(id)).map(id=>N.get(id)) : [];
+  const nodes = tv.concat(ghosts), vis = new Set(nodes.map(n=>n.id)), ghostSet = new Set(ghosts.map(n=>n.id));
+  const root=N.get("me"); root.fx=0; root.fy=0; root.x=0; root.y=0;
+  root.children.forEach((h,i) => { if(h.x===undefined){ const a=-Math.PI/2+i*2*Math.PI/root.children.length; h.x=190*Math.cos(a); h.y=190*Math.sin(a); } });
+  tv.forEach(n => { if(!n.p || n.depth<2 || n.x!==undefined) return;
+    const par=N.get(n.p), gp=N.get(par.p)||{x:0,y:0}, k=par.children.length, i=par.children.indexOf(n);
+    const out=Math.atan2(par.y-gp.y, par.x-gp.x), span=2*Math.PI*k/(k+1), a=out+(k>1 ? (i/(k-1)-0.5)*span : 0), d=childDist(par);
+    n.x=par.x+d*Math.cos(a); n.y=par.y+d*Math.sin(a); });
+  ghosts.forEach(n => seed(n, sel));
+  const links=[];
+  tv.forEach(n => { if(n.p) links.push({source:n.p, target:n.id, cross:false, key:n.p+">"+n.id, color:n.color}); });
+  if(S.conn){
+    const seen=new Set();
+    nodes.forEach(n => n.rel.forEach(t => { if(!vis.has(t)) return; const k=[n.id,t].sort().join("~"); if(seen.has(k)) return; seen.add(k);
+      links.push({source:n.id, target:t, cross:true, key:k, ghost:ghostSet.has(n.id)||ghostSet.has(t)}); }));
+  }
+  tv.forEach(n => n.co.forEach((w,t) => { if(n.id<t && tvSet.has(t)) links.push({source:n.id, target:t, co:true, w, key:"co:"+n.id+"~"+t}); }));
+  const lens = LENS[S.lens], q = S.query;
+  const dimmed = n => lens && n.depth>0 && !lens.includes(n.hub) && n.id!==S.selected && !sel.rel.has(n.id);
+
+  linkSel = gL.selectAll("line").data(links, d=>d.key).join("line")
+    .attr("class", d => "link"+(d.cross?" cross":"")+(d.co?" co":"")).attr("stroke", d => d.cross?null:(d.co?HUB_COLOR.pubs:d.color))
+    .style("stroke-width", d => d.co ? (1.2+1.8*d.w)+"px" : null);
+  nodeSel = gN.selectAll("g.node").data(nodes, d=>d.id).join(
+    enter => { const g = enter.append("g").attr("tabindex",0).attr("role","button");
+      g.append("circle").attr("class","sel"); g.append("circle").attr("class","body"); g.append("text").attr("class","in").attr("dy","0.35em");
+      g.append("text").attr("class","lab");
+      g.on("click",(e,d)=>{ e.stopPropagation(); clickNode(d); })
+       .on("keydown",(e,d)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); clickNode(d); } })
+       .call(d3.drag().on("start",(e,d)=>{ if(!e.active) sim.alphaTarget(0.25).restart(); d.fx=d.x; d.fy=d.y; })
+         .on("drag",(e,d)=>{ d.fx=e.x; d.fy=e.y; })
+         .on("end",(e,d)=>{ if(!e.active) sim.alphaTarget(0); if(d.id!=="me"){ d.fx=null; d.fy=null; } }));
+      return g; });
+  nodeSel.attr("class", d => "node"+(d.depth===0?" root":d.depth===1?" hub":"")+(d.id===S.selected?" selected":"")+(ghostSet.has(d.id)?" ghost":"")
+      +(dimmed(d)?" dim":"")+(q && d.search.includes(q)?" match":""))
+    .attr("aria-label", d => d.l + (d.children.length ? ", "+d.count+" items" : ""));
+  nodeSel.each(function(d){
+    const g=d3.select(this), r=radius(d), open=S.expanded.has(d.id), has=d.children.length>0;
+    g.select("circle.body").attr("r",r).attr("fill",d.color).attr("fill-opacity", has && open && d.depth>0 ? 0.28 : 1)
+      .attr("stroke",d.color).attr("stroke-width", has ? 2.5 : 1);
+    g.select("circle.sel").attr("r",r+5);
+    g.select("text.in").text(d.depth===0 ? "AP" : (has && !open ? d.count : ""));
+    const lines = wrap(d.l, d.depth<=1 ? 16 : 20, d.depth<=1 ? 2 : 3), t=g.select("text.lab"); t.selectAll("tspan").remove();
+    lines.forEach((ln,i)=> t.append("tspan").attr("x",0).attr("y", r+14+i*12.5).text(ln));
+  });
+  linkSel.classed("dim", d => { const s=N.get(d.source.id||d.source), t=N.get(d.target.id||d.target); return dimmed(s)||dimmed(t); });
+  sim.nodes(nodes); sim.force("link").links(links); sim.alpha(0.9).restart();
+  renderPanel(); renderCrumbs();
+  if(refit){ fitTimers.forEach(clearTimeout); fitTimers=[setTimeout(()=>fit(500),450), setTimeout(()=>fit(600),1400)]; }
+}
+function ticked(){
+  linkSel.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y).attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
+  nodeSel.attr("transform",d=>`translate(${d.x},${d.y})`);
+}
+function fit(dur){
+  if(!HAS_D3) return;
+  let ns=sim.nodes(); if(!ns.length) return;
+  const cur=N.get(S.selected);
+  if(cur && cur.depth>0){
+    const keep=new Set([cur.id, cur.p]); cur.children.forEach(c=>keep.add(c.id)); cur.rel.forEach(id=>keep.add(id));
+    if(!cur.children.length || !S.expanded.has(cur.id)) N.get(cur.p).children.forEach(c=>keep.add(c.id));
+    const f=ns.filter(n=>keep.has(n.id)); if(f.length>1) ns=f;
+  }
+  const el=document.getElementById("graphwrap"), w=el.clientWidth||900, h=el.clientHeight||600;
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  ns.forEach(n=>{ const r=radius(n); x0=Math.min(x0,n.x-r-62); x1=Math.max(x1,n.x+r+62); y0=Math.min(y0,n.y-r-48); y1=Math.max(y1,n.y+r+54); });
+  const k=Math.max(0.3,Math.min(1.5, 0.96*Math.min(w/(x1-x0), h/(y1-y0))));
+  const t=d3.zoomIdentity.translate(w/2-k*(x0+x1)/2, h/2-k*(y0+y1)/2).scale(k);
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (reduce||!dur ? svg : svg.transition().duration(dur)).call(zoom.transform,t);
+}
+
+/* ---------- detail panel, breadcrumb ---------- */
+function bodyHtml(n){
+  let h="";
+  if(n.m) h+=`<div class="meta">${esc(n.m)}</div>`;
+  (n.d||[]).forEach(p=>h+=`<p>${esc(p)}</p>`);
+  if(n.b) h+="<ul>"+n.b.map(x=>`<li>${esc(x)}</li>`).join("")+"</ul>";
+  if(n.u) h+=`<p><a href="${esc(n.u)}" target="_blank" rel="noopener">${esc(n.ul||n.u)}</a></p>`;
+  return h;
+}
+function chip(n){ return `<button class="chip" data-go="${n.id}"><i style="background:${n.color}"></i>${esc(n.l)}</button>`; }
+function renderPanel(){
+  const n=N.get(S.selected), hubName = n.depth>1 ? N.get(n.hub).l : "";
+  let h=`<div class="tag">${esc(n.tag || hubName || (n.depth===1?"Section":""))}</div><h2>${esc(n.f||n.l)}</h2>`+bodyHtml(n);
+  if(n.children.length) h+=`<h3>Inside this section (${n.count})</h3><div class="chips">${n.children.map(chip).join("")}</div>`;
+  if(n.co.size) h+=`<h3>Worked together with</h3><div class="chips">${[...n.co].map(([id,w])=>{ const o=N.get(id); return `<button class="chip" data-go="${id}"><i style="background:${o.color}"></i>${esc(o.l)} · ${w} joint work${w>1?"s":""}</button>`; }).join("")}</div>`;
+  if(n.rel.size) h+=`<h3>Connected to</h3><div class="chips">${[...n.rel].map(id=>chip(N.get(id))).join("")}</div>`;
+  const p=document.getElementById("panel"); p.innerHTML=h; p.scrollTop=0;
+}
+document.getElementById("panel").addEventListener("click", e => { const b=e.target.closest("[data-go]"); if(b) navigate(b.dataset.go); });
+function renderCrumbs(){
+  const n=N.get(S.selected), path=ancestors(n).concat([n]);
+  document.getElementById("crumbs").innerHTML = path.map((x,i)=> i<path.length-1 ? `<button data-go="${x.id}">${esc(x.l)}</button> › ` : esc(x.l)).join("");
+}
+document.getElementById("crumbs").addEventListener("click", e => { const b=e.target.closest("[data-go]"); if(b) navigate(b.dataset.go); });
+
+/* ---------- list view ---------- */
+function listHtml(n){
+  if(n.children.length) return `<details ${n.depth<1?"open":""} id="L_${n.id}"><summary>${esc(n.f||n.l)} <span class="lbl">(${n.count})</span></summary>${bodyHtml(n)}${n.children.map(listHtml).join("")}</details>`;
+  return `<div class="leaf" id="L_${n.id}"><b>${esc(n.f||n.l)}</b>${bodyHtml(n)}</div>`;
+}
+document.getElementById("listview").innerHTML =
+  `<p><button class="btn" id="lOpen">Expand all</button> <button class="btn" id="lClose">Collapse all</button></p>` + listHtml(N.get("me"));
+document.getElementById("lOpen").onclick = () => document.querySelectorAll("#listview details").forEach(d=>d.open=true);
+document.getElementById("lClose").onclick = () => document.querySelectorAll("#listview details").forEach(d=>d.open = d.id==="L_me");
+
+/* ---------- controls ---------- */
+function setView(list){
+  document.body.classList.toggle("list",list);
+  document.getElementById("vGraph").setAttribute("aria-pressed",!list); document.getElementById("vList").setAttribute("aria-pressed",list);
+  if(!list) setTimeout(()=>fit(0),50);
+}
+document.getElementById("vGraph").onclick=()=>setView(false);
+document.getElementById("vList").onclick=()=>setView(true);
+document.querySelectorAll("#lens button").forEach(b => b.onclick = () => {
+  S.lens=b.dataset.lens; document.querySelectorAll("#lens button").forEach(x=>x.setAttribute("aria-pressed",x===b)); update(false); });
+const tConn=document.getElementById("tConn"), tMulti=document.getElementById("tMulti");
+tConn.onclick=()=>{ S.conn=!S.conn; tConn.setAttribute("aria-pressed",S.conn); update(true); };
+tMulti.onclick=()=>{ S.multi=!S.multi; tMulti.setAttribute("aria-pressed",S.multi); };
+document.getElementById("bFit").onclick=()=>fit(500);
+document.getElementById("bBack").onclick=()=>{ const id=S.history.pop(); if(id) navigate(id,false); };
+document.getElementById("bReset").onclick=()=>{ S.expanded=new Set(["me"]); S.history=[]; S.query=""; document.getElementById("search").value=""; select("me",false); update(true); };
+if(CONFIG.pdfUrl){ const a=document.getElementById("bPdf"); a.href=CONFIG.pdfUrl; a.hidden=false; a.setAttribute("download",""); }
+
+const sInput=document.getElementById("search"), sRes=document.getElementById("results");
+function runSearch(){
+  const q=sInput.value.trim().toLowerCase(); S.query=q;
+  if(q.length<2){ sRes.style.display="none"; S.query=""; update(false); return; }
+  const toks=q.split(/\s+/), hits=CV.filter(n=>n.id!=="me" && toks.every(t=>n.search.includes(t)))
+    .sort((a,b)=> (b.l.toLowerCase().includes(q)-a.l.toLowerCase().includes(q)) || a.depth-b.depth).slice(0,14);
+  S.query = toks.length===1 ? q : "";
+  sRes.innerHTML = hits.length ? hits.map(n=>`<button data-go="${n.id}">${esc(n.l)}<small>${esc(n.depth>1?N.get(n.hub).l:"Section")}</small></button>`).join("")
+    : `<button disabled>No match found</button>`;
+  sRes.style.display="block"; update(false);
+}
+sInput.addEventListener("input",runSearch);
+sInput.addEventListener("keydown",e=>{ if(e.key==="Enter"){ const b=sRes.querySelector("[data-go]"); if(b){ pick(b.dataset.go); } } if(e.key==="Escape"){ sRes.style.display="none"; } });
+function pick(id){
+  sRes.style.display="none";
+  if(document.body.classList.contains("list")){
+    const el=document.getElementById("L_"+id); if(!el) return;
+    let p=el; while(p && p.id!=="listview"){ if(p.tagName==="DETAILS") p.open=true; p=p.parentElement; }
+    el.scrollIntoView({block:"center"});
+  } else navigate(id);
+}
+sRes.addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if(b) pick(b.dataset.go); });
+document.addEventListener("click",e=>{ if(!e.target.closest(".searchwrap")) sRes.style.display="none"; });
+window.addEventListener("resize",()=>{ if(!document.body.classList.contains("list")) fit(0); });
+window.addEventListener("hashchange",()=>{ const id=location.hash.slice(1); if(N.has(id) && id!==S.selected) navigate(id); });
+
+/* ---------- start ---------- */
+const startId = N.has(location.hash.slice(1)) ? location.hash.slice(1) : "me";
+if(startId!=="me"){ ancestors(N.get(startId)).forEach(expand); S.selected=startId; }
+if(window.innerWidth<520 && startId==="me"){ /* phones open on the network; the list is one tap away */ }
+update(true);
+</script>
+</body>
+</html>
