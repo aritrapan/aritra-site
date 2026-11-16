@@ -21,6 +21,8 @@ body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system
 header{padding:10px 16px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
 .titlerow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
 h1{font:600 21px/1.2 Georgia,"Times New Roman",serif;margin:0}
+h1 a{color:inherit;text-decoration:none}
+h1 a:hover,h1 a:focus-visible{text-decoration:underline;text-underline-offset:3px}
 .sub{color:var(--accent);font-size:13.5px}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
 .searchwrap{position:relative;flex:1 1 190px;max-width:320px}
@@ -112,7 +114,7 @@ body.nograph #vGraph{display:none}
 <body>
 <header>
   <div class="titlerow">
-    <h1>Dr. Aritra Pan</h1>
+    <h1><a href="./" title="Back to the homepage">Dr. Aritra Pan</a></h1>
     <span class="sub">Associate Professor of Data Science, Madras School of Economics · CV as a network</span>
   </div>
   <div class="controls">
