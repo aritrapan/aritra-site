@@ -1,0 +1,38 @@
+---
+title: "My CV is a graph now: a force-directed network you can drill into"
+description: "A CV is a list. A career is a network. I rebuilt mine as one, and here is what that showed."
+date: 2026-11-16
+categories: [networks, data visualisation, meta]
+---
+
+A CV is a list, and lists are good at one thing: order. Mine runs to seven pages and tells you what I did and when. It does not tell you that the survival models from my PhD turned up again in a churn project at PwC and then in a course I teach. Those three facts sit on three different pages.
+
+I work with networks and knowledge graphs in my research, so reading my own career as a flat list had started to feel like a small hypocrisy. The [interactive version](/cv-network.html) is the fix.
+
+## What it does
+
+I sit at the centre with ten hubs around me: appointments, industry, education, publications, the research pipeline, teaching, methods, leadership, talks and honours. Click a hub and it opens into its own subgraph. Click again and you reach the actual CV text, with the DOI where there is one.
+
+All 162 entries on one screen would be a hairball, which is the standard way network visualisations fail. Drill-down keeps about a dozen nodes in view at a time.
+
+## The useful part
+
+The dashed lines are the reason to build this at all. Select a paper and its co-authors, its method and the conference talk it came from appear from other parts of the graph. Select a method and you see every paper, project and course that uses it.
+
+The co-author view was the one that taught me something. Draw a line between any two people who share a paper or a talk with me and the picture falls into five separate groups, with two people standing alone. I had never seen my collaborations as five conversations that do not talk to each other. A list of names cannot show that.
+
+## How it is built
+
+I built it in one evening with an AI coding assistant, and the design decisions are mine.
+
+It is a single web page with no server behind it. The layout is a D3 force simulation, and the whole CV lives in one block of plain data at the top, one line per entry. Updating the CV means editing that block. The co-author lines are computed from the paper and talk links, so a new paper draws its own lines.
+
+There are three reading lenses, for a hiring committee, a collaborator or a student, each bringing different hubs forward. There is also a plain list view, because some readers want a CV to behave like a CV, and because graphs are miserable on small phones.
+
+## What I left out
+
+My phone number, my referees' email addresses and my marks. A public page is public all the way down, including its source.
+
+It does not replace the PDF. A screening committee wants a document it can print and tick. This is for everyone else.
+
+*Statistically Yours, Aritra*
