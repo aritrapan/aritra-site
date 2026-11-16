@@ -44,6 +44,11 @@ h3 { font-size: 1.25rem; margin-top: 1.6rem; }
 
 .lead { font-size: 1.3rem; line-height: 1.5; }
 
+/* Blog sign-off: a short rule, then the closing line and the name on separate lines */
+.signoff { margin-top: 2.2rem; }
+.signoff::before { content: ""; display: block; width: 3rem; border-top: 1px solid $secondary; margin-bottom: 0.9rem; }
+.signoff p { margin-bottom: 0; line-height: 1.5; }
+
 /* Publication list */
 .pub { margin-bottom: 1.1rem; }
 .pub .venue { font-family: $font-family-sans-serif; font-size: 0.85rem; color: $secondary; display: block; margin-top: 0.15rem; }

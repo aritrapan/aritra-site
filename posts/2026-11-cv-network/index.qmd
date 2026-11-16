@@ -35,4 +35,7 @@ My phone number, my referees' email addresses and my marks. A public page is pub
 
 It does not replace the PDF. A screening committee wants a document it can print and tick. This is for everyone else.
 
-*Statistically Yours, Aritra*
+::: {.signoff}
+*Statistically Yours,*\
+*Aritra*
+:::
