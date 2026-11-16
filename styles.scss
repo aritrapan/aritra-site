@@ -37,7 +37,7 @@ h3 { font-size: 1.25rem; margin-top: 1.6rem; }
   flex: 1 1 100%;
   background: #264653 !important; border-color: #264653 !important; color: #fff !important;
   font-size: 1rem; font-weight: 500;
-  @media (min-width: 992px) { padding: 0.55rem 1rem !important; }
+  @media (min-width: 992px) { flex: 0 0 80%; white-space: nowrap; padding: 0.55rem 0.75rem !important; }
 }
 .about-links .about-link[href*="cv-network"]:hover,
 .about-links .about-link[href*="cv-network"]:focus { background: #1d3540 !important; border-color: #1d3540 !important; }
