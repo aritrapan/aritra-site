@@ -32,6 +32,14 @@ h3 { font-size: 1.25rem; margin-top: 1.6rem; }
 
 .quarto-about-trestles .about-entity .about-image { border-radius: 4px; }
 .about-links .about-link { font-family: $font-family-sans-serif; font-size: 0.9rem; border-radius: 4px; }
+/* Homepage: the network-view link sits on its own row under the profile links and is filled so it stands out */
+.about-links .about-link[href*="cv-network"] {
+  flex: 1 1 100%;
+  background: #264653 !important; border-color: #264653 !important; color: #fff !important;
+  font-size: 1rem; font-weight: 500; padding: 0.7rem 1rem;
+}
+.about-links .about-link[href*="cv-network"]:hover,
+.about-links .about-link[href*="cv-network"]:focus { background: #1d3540 !important; border-color: #1d3540 !important; }
 
 .lead { font-size: 1.3rem; line-height: 1.5; }
 

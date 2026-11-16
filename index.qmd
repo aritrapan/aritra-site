@@ -25,16 +25,12 @@ about:
     - icon: envelope
       text: aritra.pan@mse.ac.in
       href: mailto:aritra.pan@mse.ac.in
+    - icon: diagram-3
+      text: Explore my profile as an interactive network
+      href: cv-network.html
 ---
 
 ::: {#hero}
-
-```{=html}
-<a href="cv-network.html" style="display:flex;align-items:center;justify-content:center;gap:.7rem;width:100%;padding:.9rem 1rem;margin:0 0 1.5rem;border-radius:6px;background:#264653;color:#fff;text-decoration:none;font-size:1.15rem;font-weight:500">
-  <svg width="34" height="28" viewBox="0 0 44 36" fill="#fff" stroke="#fff" stroke-width="2.4" aria-hidden="true"><path d="M6 30 22 19 38 28M22 19V5M6 30 22 5 38 28" fill="none"/><circle cx="6" cy="30" r="5"/><circle cx="22" cy="5" r="5"/><circle cx="38" cy="28" r="5"/><circle cx="22" cy="19" r="6"/></svg>
-  <span>Explore my profile as an interactive network</span>
-</a>
-```
 
 ::: {.lead}
 Associate Professor of Data Science and MBA programmes at the [Madras School of Economics](https://mse.ac.in), Chennai. I work on applied natural language processing and transformer-based models, predictive modelling in financial market microstructure and cross-market connectedness, and on generative AI in management, education and social science - after a decade in industry as Lead Data Scientist at PwC and in payments software as SME Developer at RS Software.
