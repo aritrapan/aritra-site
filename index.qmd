@@ -26,7 +26,7 @@ about:
       text: aritra.pan@mse.ac.in
       href: mailto:aritra.pan@mse.ac.in
     - icon: diagram-3
-      text: Explore my profile as an interactive network
+      text: Explore my profile as a network
       href: cv-network.html
 ---
 
