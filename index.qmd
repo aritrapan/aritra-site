@@ -44,6 +44,8 @@ I teach in the M.Sc. Data Science and MBA programmes at MSE. Before that I was A
 
 | Date | Update |
 |---|---|
+| Nov 19, 2026 | New blog post: **[Two course chatbots, one semester](posts/2026-11-course-chatbots/index.qmd)** — how the course assistants for Statistics with R and Introduction to Artificial Intelligence came together. |
+| Nov 16, 2026 | New blog post: **[My CV is a graph now: a force-directed network you can drill into](posts/2026-11-cv-network/index.qmd)** — my CV rebuilt as an interactive network. |
 | Aug 26, 2026 | New solo-authored paper: **[The AI-augmented collaborative learning model: A conceptual framework for integrating generative AI in business and management education](https://www.sciencedirect.com/science/article/pii/S1472811726001618)** — *International Journal of Management Education* (Elsevier; Scopus Q1, ABDC B). |
 | Jun 15, 2026 | Joined **Madras School of Economics** as Associate Professor of Data Science. [Faculty profile](https://mse.ac.in/faculty/aritra-pan/). |
 | Dec 17, 2025 | New paper: **[Mapping the luxury fashion marketing research landscape: a BERT-based topic modelling approach](https://www.tandfonline.com/doi/full/10.1080/2573234X.2025.2599770)** — *Journal of Business Analytics* (Scopus Q2, ABDC C). |
