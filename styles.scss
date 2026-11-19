@@ -82,15 +82,7 @@ main dd,
   -webkit-hyphens: auto;
 }
 
-/* On narrow phone screens justification creates big gaps; keep left-aligned there */
-@media (max-width: 575px) {
-  main p,
-  main li,
-  main dd,
-  .pub {
-    text-align: left;
-  }
-}
+/* Text is justified at every screen width, phones included (owner's choice, Nov 2026) */
 
 /* Timeline fixes: remove default bullets, keep entries left-aligned */
 .timeline ul {
@@ -162,12 +154,4 @@ main .play-how div {
   text-align: justify;
   hyphens: auto;
   -webkit-hyphens: auto;
-}
-/* Phones: keep these left-aligned too, as with the rest of the text */
-@media (max-width: 575px) {
-  main dt,
-  main .timeline li,
-  main .play-how div {
-    text-align: left;
-  }
 }
