@@ -12,7 +12,7 @@ I teach applied, code-first courses: every topic is anchored in a dataset and a 
 |---|---|---|
 | Statistics with R | M.Sc. Data Science 2026–28, Semester I | Probability, distributions, sampling, estimation and hypothesis testing, taught entirely through R on case datasets. |
 | Introduction to Artificial Intelligence | M.Sc. Data Science 2026–28, Semester I | Search, constraint satisfaction, reasoning under uncertainty, and knowledge graphs, with Python notebooks. |
-| Programming in SQL | MBA 2025–27 | Relational modelling and MySQL 8, from single-table queries to analytics-style window functions, with a short bridge to NoSQL and BI. |
+| Programming in SQL | MBA 2025–27, Term IV | Relational modelling and MySQL 8, from single-table queries to analytics-style window functions, with a short bridge to NoSQL and BI. |
 
 : {tbl-colwidths="[25,35,40]"}
 

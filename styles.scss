@@ -98,7 +98,7 @@ main dd,
   padding-left: 0;
 }
 main .timeline li {
-  text-align: left;
+  text-align: justify;
 }
 
 /* Current position: green dot with a soft halo */
@@ -152,4 +152,26 @@ main .quarto-about-trestles .subtitle {
 .pub details.cite pre code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+
+/* Justify the remaining left-aligned content: table cells, definition terms,
+   and the "how it works" strip on Learn by Playing */
+main td:last-child,
+main dt,
+main .play-how div {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+/* Narrow label columns (dates, course names, batches) stay left-aligned:
+   justifying two or three words per line leaves wide gaps */
+/* Phones: keep these left-aligned too, as with the rest of the text */
+@media (max-width: 575px) {
+  main td:last-child,
+  main dt,
+  main .timeline li,
+  main .play-how div {
+    text-align: left;
+  }
 }
