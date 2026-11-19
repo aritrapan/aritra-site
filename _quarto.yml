@@ -13,7 +13,7 @@ project:
 website:
   title: "Aritra Pan"
   site-url: https://aritra.ai
-  description: "Aritra Pan — Associate Professor of Data Science, Madras School of Economics. Applied NLP, financial market microstructure, AI in management education."
+  description: "Aritra Pan — Associate Professor of Data Science, Madras School of Economics. Ethical AI and AI governance, applied NLP, generative AI in management education."
   favicon: img/favicon.png
   image: img/AP.png
   open-graph: true
@@ -26,18 +26,20 @@ website:
         text: Home
       - href: research.qmd
         text: Research
-      - href: teaching.qmd
-        text: Teaching
-      - href: projects.qmd
-        text: Projects
-      - href: workshops.qmd
-        text: Workshops
-      - href: opportunities.qmd
-        text: Work with me
-      - href: blog.qmd
-        text: Blog
+      - text: Teaching
+        menu:
+          - href: teaching.qmd
+            text: Courses
+          - href: workshops.qmd
+            text: Workshops and training
       - href: play.qmd
         text: Learn by Playing
+      - href: blog.qmd
+        text: Blog
+      - href: opportunities.qmd
+        text: Work with me
+      - href: off-the-clock.qmd
+        text: Off the Clock
     right:
       - icon: google
         href: https://scholar.google.co.in/citations?user=m9SYPDMAAAAJ

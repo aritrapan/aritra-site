@@ -8,17 +8,46 @@ I teach applied, code-first courses: every topic is anchored in a dataset and a 
 
 ## Madras School of Economics (2026 onwards)
 
-| Course | Programme | Notes |
+| Course | Programme and batch | Notes |
 |---|---|---|
-| Statistics with R | M.Sc. Data Science | Probability, distributions, sampling, estimation and hypothesis testing, taught entirely through R on case datasets. |
-| Introduction to Artificial Intelligence | M.Sc. Data Science | Search, constraint satisfaction, reasoning under uncertainty, and knowledge graphs, with Python notebooks. |
-| Programming in SQL | MBA | Relational modelling and MySQL 8, from single-table queries to analytics-style window functions, with a short bridge to NoSQL and BI. |
+| Statistics with R | M.Sc. Data Science 2026–28, Semester I | Probability, distributions, sampling, estimation and hypothesis testing, taught entirely through R on case datasets. |
+| Introduction to Artificial Intelligence | M.Sc. Data Science 2026–28, Semester I | Search, constraint satisfaction, reasoning under uncertainty, and knowledge graphs, with Python notebooks. |
+| Programming in SQL | MBA 2025–27 | Relational modelling and MySQL 8, from single-table queries to analytics-style window functions, with a short bridge to NoSQL and BI. |
 
-: {tbl-colwidths="[30,22,48]"}
+: {tbl-colwidths="[25,35,40]"}
+
+### Coming up in 2027
+
+| Course | Programme and batch |
+|---|---|
+| Large Language Models | M.Sc. Data Science 2025–27, Semester IV |
+| Introduction to Data Science | M.Sc. Data Science 2026–28, Semester II |
+
+: {tbl-colwidths="[40,60]"}
+
+## Beyond the classroom
+
+### Course assistants
+
+Students of Statistics with R and Introduction to Artificial Intelligence have a chat assistant that answers only from the course notes. [How it came together](posts/2026-11-course-chatbots/index.qmd).
+
+### Learn by Playing
+
+Free, story-based courses in statistics and SQL, open to anyone. [Start here](play.qmd).
+
+## Supervision
+
+At MSE I supervise postgraduate dissertations across the M.Sc. Data Science, MBA and MA programmes.
+
+At IMI Bhubaneswar I supervised more than 40 master's projects, including the following:
+
+- A study on consumer preferences towards online food delivery applications and their marketing strategies — Retesh Kumar, PGDM 2021–23
+- A comparative study of factors influencing offline and online shopping in the pharmaceutical sector — Deberko Saha, PGDM 2021–23
+- A study on consumer buying behaviour towards e-wallets — Pratyusha Mishra, PGDM 2021–23
+- Impact of social media marketing on impulse buying behaviour — Kanika Bhattacharyya, PGDM 2021–23
+- Factors affecting brand loyalty for toothpastes — Maitreya Sengupta, PGDM 2021–23
 
 ## Earlier courses
-
-<!-- Fill from the courses table export: course name, institution, term. Delete this comment when done. -->
 
 Business analytics, data management using SQL, management information systems, business intelligence and data science, and statistics for management, taught at IMI Bhubaneswar, IIM Bodh Gaya, IFMR GSB (Krea University) and IMT Ghaziabad between 2017 and 2026.
 

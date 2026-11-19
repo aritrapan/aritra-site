@@ -121,3 +121,35 @@ main .quarto-about-trestles .subtitle {
   text-align: center;
   hyphens: manual;
 }
+
+/* Research page: DOI link and expandable citation box */
+.pub .doi {
+  font-family: $font-family-sans-serif;
+  font-size: 0.72rem;
+  margin-left: 0.35rem;
+  white-space: nowrap;
+}
+.pub details.cite {
+  display: inline-block;
+  width: 100%;
+  margin-top: 0.15rem;
+  text-align: left;
+  hyphens: manual;
+}
+.pub details.cite summary {
+  font-family: $font-family-sans-serif;
+  font-size: 0.78rem;
+  color: $primary;
+  cursor: pointer;
+  width: fit-content;
+}
+.pub details.cite pre {
+  font-size: 0.78rem;
+  margin: 0.4rem 0;
+  overflow-x: visible;
+}
+.pub details.cite pre,
+.pub details.cite pre code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
