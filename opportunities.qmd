@@ -6,7 +6,7 @@ description: "Remote research internships for Post-Graduate students with Aritra
 
 ## Research internships
 
-I take a small number of postgraduate research interns each year. Internships are remote, unpaid and run for at least three months. Please read this page before writing to me.
+I take a small number of postgraduate research interns each year. Internships are remote and run for at least three months. Please read this page before writing to me.
 
 ### Research area
 
@@ -32,7 +32,6 @@ Research is broader than coding. Expect literature review, data cleaning, valida
 - Work runs on weekly milestones.
 - Code and data pipelines must be documented and reproducible. Fabricated data, unverified AI-generated output or plagiarism are not allowed.
 - Data, code and drafts from the project are confidential and stay with the project. You may list the project title and a short summary on your CV.
-- Unpaid: I have no grant funding for stipends at present. If that changes, I will tell you before the internship starts.
 
 ### What you get
 

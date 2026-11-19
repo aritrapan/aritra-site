@@ -8,7 +8,7 @@ Things I build for fun, mostly to solve my own problems.
 
 ## 29 and Call Bridge
 
-The two card games of my college years, rebuilt to play against computer opponents on my phone, with the house rules we actually used.
+The two card games of my college years, rebuilt to play against computer opponents on my phone, with the house rules we actually used. Friends can also join a private online table by invitation.
 
 ## Daba
 
