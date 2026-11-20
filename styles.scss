@@ -1,5 +1,5 @@
 /*-- scss:defaults --*/
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=Cormorant+Garamond:ital,wght@1,500&display=swap');
 
 $font-family-sans-serif: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 $font-family-base: "Newsreader", Georgia, "Times New Roman", serif;
@@ -154,4 +154,38 @@ main .play-how div {
   text-align: justify;
   hyphens: auto;
   -webkit-hyphens: auto;
+}
+
+
+/* Home page motto: a centred italic line above the photo, with a hairline on each side */
+main .motto {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 0.5rem 0 0;
+}
+main .motto::before,
+main .motto::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: $border-color;
+}
+main .motto p {
+  margin: 0;
+  font-family: "Cormorant Garamond", "Newsreader", Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 2rem;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: $primary;
+  text-align: center;
+  hyphens: manual;
+}
+@media (max-width: 767px) {
+  main .motto { margin: 0.25rem 0 1.5rem; }
+  main .motto::before,
+  main .motto::after { display: none; }
+  main .motto p { font-size: 1.55rem; width: 100%; }
 }

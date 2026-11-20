@@ -30,6 +30,10 @@ about:
       href: cv-network.html
 ---
 
+::: {.motto}
+Cross-examining data until it tells the truth
+:::
+
 ::: {#hero}
 
 ::: {.lead}
