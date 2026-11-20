@@ -31,7 +31,7 @@ about:
 ---
 
 ::: {.motto}
-Cross-examining data until it tells the truth
+Listening to data until it tells the truth
 :::
 
 ::: {#hero}
