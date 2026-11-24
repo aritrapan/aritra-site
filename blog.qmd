@@ -9,6 +9,7 @@ listing:
   categories: true
   feed: true
   fields: [date, title, description, categories]
+image: img/cards/blog.jpg
 ---
 
 Working notes and method write-ups: mostly code, occasionally opinion.

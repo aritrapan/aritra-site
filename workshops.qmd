@@ -2,6 +2,7 @@
 title: "Workshops and memberships"
 pagetitle: "Workshops, training and professional memberships"
 description: "Management and faculty development programmes conducted by Aritra Pan, invited workshops, and professional memberships."
+image: img/cards/workshops.jpg
 ---
 
 ## Training programmes

@@ -2,6 +2,7 @@
 title: "Work with me"
 pagetitle: "Research internships and collaboration"
 description: "Remote research internships for Post-Graduate students with Aritra Pan on ethical AI and AI governance: requirements, terms and how to apply."
+image: img/cards/work-with-me.jpg
 ---
 
 ## Research internships

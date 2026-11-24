@@ -2,6 +2,7 @@
 title: "Teaching"
 pagetitle: "Teaching"
 description: "Courses taught by Aritra Pan at the Madras School of Economics and earlier at IMI Bhubaneswar, IIM Bodh Gaya, IFMR GSB (Krea) and IMT Ghaziabad."
+image: img/cards/teaching.jpg
 ---
 
 I teach applied, code-first courses: every topic is anchored in a dataset and a case, and students write code from the first session. Course material is shared with enrolled students through the institute's learning platform.

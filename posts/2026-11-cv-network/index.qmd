@@ -3,6 +3,7 @@ title: "My CV is a graph now: a force-directed network you can drill into"
 description: "A CV is a list. A career is a network. I rebuilt mine as one, and here is what that showed."
 date: 2026-11-16
 categories: [networks, data visualisation, meta]
+image: ../../img/cards/post-cv-network.jpg
 ---
 
 A CV is a list, and lists are good at one thing: order. Mine runs to seven pages and tells you what I did and when. It does not tell you that the survival models from my PhD turned up again in a churn project at PwC and then in a course I teach. Those three facts sit on three different pages.

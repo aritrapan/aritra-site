@@ -7,6 +7,7 @@ aliases:
 toc: true
 toc-location: left
 toc-title: "On this page"
+image: img/cards/research.jpg
 ---
 
 My current research is on ethical AI and AI governance. I build open, reproducible text-analysis methods, based on transformer models and large language models, to compare what organisations claim with what they do. Earlier strands, listed below, cover transformer-based mapping of research fields, generative AI in management education, and financial market microstructure and connectedness.

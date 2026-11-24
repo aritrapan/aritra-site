@@ -2,6 +2,7 @@
 title: "Off the Clock"
 pagetitle: "Off the Clock: side projects"
 description: "Side projects by Aritra Pan: card games, a chess app, a Bengali–Tamil voice translator and an interactive CV network."
+image: img/cards/off-the-clock.jpg
 ---
 
 Things I build for fun, mostly to solve my own problems.

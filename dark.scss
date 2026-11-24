@@ -1,0 +1,16 @@
+/*-- scss:defaults --*/
+// Dark-mode palette. Listed BEFORE styles.scss in _quarto.yml: Quarto reads the colour
+// settings in reverse order, so these replace the ones in styles.scss.
+$body-bg: #11171c;
+$body-color: #dde3e8;
+$primary: #86c8d9;        // light teal: links, accents
+$secondary: #9aa5b1;
+$link-color: #86c8d9;
+$link-hover-color: #b5e2ee;
+$navbar-bg: #11171c;
+$navbar-fg: #dde3e8;
+$navbar-hl: #86c8d9;
+$footer-bg: #0c1116;
+$border-color: #2a343d;
+
+/*-- scss:rules --*/

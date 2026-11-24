@@ -3,6 +3,7 @@ title: "Two course chatbots, one semester"
 description: "My students had an extra teaching assistant this semester, one that answered only from my course notes. Here is how it came together."
 date: 2026-11-19
 categories: [teaching, AI in education]
+image: ../../img/cards/post-course-chatbots.jpg
 ---
 
 This semester my M.Sc. Data Science students at MSE had an extra teaching assistant for two courses, Statistics with R and Introduction to Artificial Intelligence. It never slept, never lost patience, and answered only from my course notes. Here is how it came together.

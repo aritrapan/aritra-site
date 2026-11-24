@@ -2,7 +2,7 @@
 title: "Learn by playing"
 subtitle: "Free courses you play: a story, the theory, a lab that moves, and challenges that earn XP."
 description: "Free gamified courses in statistics, data science and SQL by Aritra Pan. Every module is a fictional company with a real problem, live simulations, challenges, XP and badges."
-image: play/thumbs/statistics.svg
+image: img/cards/play.jpg
 page-layout: full
 toc: false
 ---

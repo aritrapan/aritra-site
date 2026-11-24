@@ -15,9 +15,10 @@ website:
   site-url: https://aritra.ai
   description: "Aritra Pan — Associate Professor of Data Science, Madras School of Economics. Ethical AI and AI governance, applied NLP, generative AI in management education."
   favicon: img/favicon.png
-  image: img/AP.png
+  image: img/cards/home.jpg
   open-graph: true
-  twitter-card: true
+  twitter-card:
+    card-style: summary_large_image
   google-analytics: ""
   navbar:
     pinned: true
@@ -56,11 +57,15 @@ website:
     center: "[ORCID 0000-0001-5740-0804](https://orcid.org/0000-0001-5740-0804) · [Scopus 57214111533](https://www.scopus.com/authid/detail.uri?authorId=57214111533)"
     right: "Built with [Quarto](https://quarto.org)"
   page-navigation: false
-  search: false
+  search:
+    location: navbar
+    type: overlay
 
 format:
   html:
-    theme: [flatly, styles.scss]
+    theme:
+      light: [flatly, styles.scss]
+      dark: [darkly, dark.scss, styles.scss]
     toc: false
     include-in-header: schema.html
     include-after-body: counter.html

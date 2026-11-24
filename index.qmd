@@ -4,6 +4,10 @@ subtitle: "অরিত্র পান [Associate Professor of Dept. of Data Sc
 pagetitle: "Associate Professor of Dept. of Data Science and MSE Business School, Madras School of Economics"
 description: "Associate Professor of Dept. of Data Science and MSE Business School, Madras School of Economics, Chennai."
 image: img/AP.png
+open-graph:
+  image: img/cards/home.jpg
+twitter-card:
+  image: img/cards/home.jpg
 about:
   id: hero
   template: trestles
